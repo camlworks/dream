@@ -162,9 +162,7 @@ module Make (Stack : Tcpip.Stack.V4V6) = struct
   let info = default_log.info
   let debug = default_log.debug
 
-  module Session = struct
-    include Dream__server.Session
-  end
+  module Session = Dream__server.Session
   module Flash = Dream__server.Flash
 
 
