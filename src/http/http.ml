@@ -670,7 +670,7 @@ let default_interface = "localhost"
 let default_port = 8080
 let on_sigterm =
   let promise, resolve = Lwt.wait () in
-  ignore (Lwt_unix.on_signal Sys.sigterm (fun _ -> Lwt.wakeup_later signal_stop ()));
+  ignore (Lwt_unix.on_signal Sys.sigterm (fun _ -> Lwt.wakeup_later resolve ()));
   promise
 
 let network ~port ~socket_path =
