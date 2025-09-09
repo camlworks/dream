@@ -673,7 +673,10 @@ let serve_with_maybe_https
 
 let default_interface = "localhost"
 let default_port = 8080
-let never = fst (Lwt.wait ())
+let on_sigterm =
+  let promise, resolve = Lwt.wait () in
+  ignore (Lwt_unix.on_signal Sys.sigterm (fun _ -> Lwt.wakeup_later signal_stop ()));
+  promise
 
 let network ~port ~socket_path =
   match socket_path with
@@ -684,7 +687,7 @@ let serve
     ?(interface = default_interface)
     ?(port = default_port)
     ?socket_path
-    ?(stop = never)
+    ?(stop = on_sigterm)
     ?(error_handler = Error_handler.default)
     ?(tls = false)
     ?certificate_file
@@ -712,7 +715,7 @@ let run
     ?(interface = default_interface)
     ?(port = default_port)
     ?socket_path
-    ?(stop = never)
+    ?(stop = on_sigterm)
     ?(error_handler = Error_handler.default)
     ?(tls = false)
     ?certificate_file
