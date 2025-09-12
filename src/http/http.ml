@@ -495,10 +495,8 @@ let serve_with_details
     match network with
     | `Unix path ->
       (* Optimistically delete the socket file, if any. *)
-      let%lwt () =
-        try%lwt Lwt_unix.unlink path
-        with Unix.Unix_error (ENOENT, _, _) -> Lwt.return_unit
-      in
+      (try%lwt Lwt_unix.unlink path
+      with Unix.Unix_error (ENOENT, _, _) -> Lwt.return_unit);%lwt
       Lwt.return (Lwt_unix.ADDR_UNIX path)
     | `Inet port ->
       let%lwt addresses =
