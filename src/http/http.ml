@@ -494,9 +494,11 @@ let serve_with_details
   let%lwt listen_address =
     match network with
     | `Unix path ->
-      (* Optimistically delete the socket file, if any. *)
-      (try%lwt Lwt_unix.unlink path
-      with Unix.Unix_error (ENOENT, _, _) -> Lwt.return_unit);%lwt
+      (match%lwt Lwt_unix.stat path with
+      | exception Unix.Unix_error (ENOENT, _, _) -> Lwt.return_unit
+      (* Only delete socket file, and ignore other files *)
+      | { Unix.st_kind = S_SOCK; _ } -> Lwt_unix.unlink path
+      | _ -> Lwt.return_unit);%lwt
       Lwt.return (Lwt_unix.ADDR_UNIX path)
     | `Inet port ->
       let%lwt addresses =
