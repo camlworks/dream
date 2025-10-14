@@ -5,7 +5,7 @@
 This example splits the code of the basic template example,
 [**`r-template`**](../r-template#folders-and-files), into two files. The first is the
 template, in
-[`template.eml.html`](https://github.com/aantron/dream/blob/master/example/r-template-files/template.eml.html). We use the `.html` extension because it is
+[`template.eml.html`](https://github.com/camlworks/dream/blob/master/example/r-template-files/template.eml.html). We use the `.html` extension because it is
 mostly HTML, and to prevent `refmt` from trying to format the file:
 
 ```html
@@ -21,7 +21,7 @@ let render = param => {
 After preprocessing by the templater, this file becomes `template.re`, so it
 defines a module `Template`, containing a function `Template.render`. We call
 this function from the main server module in
-[`server.ml`](https://github.com/aantron/dream/blob/master/example/r-template-files/server.re):
+[`server.ml`](https://github.com/camlworks/dream/blob/master/example/r-template-files/server.re):
 
 ```reason
 let () =
@@ -39,7 +39,7 @@ let () =
 
 Because we are using the extension `.eml.html` rather than `.eml.re`, we now
 have to specifically tell the templater to emit Reason syntax in our
-[`dune`](https://github.com/aantron/dream/blob/master/example/r-template-files/dune)
+[`dune`](https://github.com/camlworks/dream/blob/master/example/r-template-files/dune)
 file:
 
 <pre><code>(rule

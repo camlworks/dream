@@ -25,7 +25,7 @@ will respond with its friendly greeting!
 <br>
 
 Note that we had to make an addition to
-[`esy.json`](https://github.com/aantron/dream/blob/master/example/r-hello/esy.json):
+[`esy.json`](https://github.com/camlworks/dream/blob/master/example/r-hello/esy.json):
 
 <pre>"dependencies": {
   <b>"@opam/reason": "^3.0.0"</b>

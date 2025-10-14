@@ -4,7 +4,7 @@
 
 Most of this example defines a GraphQL schema using
 [ocaml-graphql-server](https://github.com/andreas/ocaml-graphql-server#readme).
-Then, it's [one line](https://aantron.github.io/dream/#val-graphql) to serve
+Then, it's [one line](https://camlworks.github.io/dream/#val-graphql) to serve
 the schema from Dream, and a second line to serve
 [GraphiQL](https://github.com/graphql/graphiql/tree/main/packages/graphiql#readme)
 to explore it!
@@ -66,14 +66,14 @@ let () =
 Visit [http://localhost:8080](http://localhost:8080), and you can interact with
 the schema:
 
-![GraphiQL](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/graphiql.png)
+![GraphiQL](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/graphiql.png)
 
 <br>
 
 Even though this toy schema does not define any
 [mutations](https://github.com/andreas/ocaml-graphql-server/blob/d615cbb164d4ddfdc2efeb246a198dfe114adf24/graphql/src/graphql_intf.ml#L66),
 the example uses
-[`Dream.origin_referrer_check`](https://aantron.github.io/dream/#val-origin_referrer_check)
+[`Dream.origin_referrer_check`](https://camlworks.github.io/dream/#val-origin_referrer_check)
 to protect future extensions of it
 [against CSRF](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#identifying-source-origin-via-originreferer-header). See example
 [**`e-json`**](../e-json#security) for more details on how this works.
@@ -82,7 +82,7 @@ If you'd like to do I/O or other asynchronous operations in your resolvers, use
 [`io_field`](https://github.com/andreas/ocaml-graphql-server#lwt-support)
 rather than `field`.
 
-Use [`Dream.no_route`](https://aantron.github.io/dream/#val-no_route) to serve
+Use [`Dream.no_route`](https://camlworks.github.io/dream/#val-no_route) to serve
 GraphiQL conditionally, only during development.
 
 <br>

@@ -1,5 +1,5 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
@@ -21,11 +21,11 @@ and response = server message
 
 and handler = request -> response promise
 (** Handlers are asynchronous functions from requests to responses. Example
-    {{:https://github.com/aantron/dream/tree/master/example/1-hello#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/1-hello#folders-and-files}
     [1-hello]} shows the simplest handler, an anonymous function which we pass
     to {!Dream.run}. This creates a complete Web server! You can also see the
     Reason version in example
-    {{:https://github.com/aantron/dream/tree/master/example/r-hello#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/r-hello#folders-and-files}
     [r-hello]}.
 
     {[
@@ -37,7 +37,7 @@ and handler = request -> response promise
 and middleware = handler -> handler
 (** Middlewares are functions that take a {!handler}, and run some code before
     or after — producing a “bigger” handler. Example
-    {{:https://github.com/aantron/dream/tree/master/example/2-middleware#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files}
     [2-middleware]} inserts the {!Dream.logger} middleware into a Web app:
 
     {[
@@ -48,9 +48,9 @@ and middleware = handler -> handler
     ]}
 
     Examples
-    {{:https://github.com/aantron/dream/tree/master/example/4-counter#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/4-counter#folders-and-files}
     [4-counter]} and
-    {{:https://github.com/aantron/dream/tree/master/example/5-promise#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/5-promise#folders-and-files}
     [5-promise]} show user-defined middlewares:
 
     {[
@@ -72,7 +72,7 @@ and middleware = handler -> handler
 and route
 (** Routes tell {!Dream.router} which handler to select for each request. See
     {!section-routing} and example
-    {{:https://github.com/aantron/dream/tree/master/example/3-router#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/3-router#folders-and-files}
     [3-router]}. Routes are created by helpers such as {!Dream.get} and
     {!Dream.scope}:
 
@@ -122,7 +122,7 @@ and server = Dream_pure.Message.server
 and 'a promise = 'a Lwt.t
 (** Dream uses {{:https://github.com/ocsigen/lwt} Lwt} for promises and
     asynchronous I/O. See example
-    {{:https://github.com/aantron/dream/tree/master/example/5-promise#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/5-promise#folders-and-files}
     [5-promise]}.
 
     Use [raise] to reject promises. If you are writing a library, you may prefer
@@ -377,7 +377,7 @@ val prefix : request -> string
 val path : request -> string list
 [@@ocaml.deprecated
 "Router path access is being removed from the API. Comment at
-https://github.com/aantron/dream/issues
+https://github.com/camlworks/dream/issues
 "]
 (** Parsed request path. For example, ["foo"; "bar"]. *)
 (* TODO If not removing this, move it to section Routing. *)
@@ -393,7 +393,7 @@ val set_method_ : request -> [< method_ ] -> unit
 val with_path : string list -> request -> request
 [@@ocaml.deprecated
 "Router path access is being removed from the API. Comment at
-https://github.com/aantron/dream/issues
+https://github.com/camlworks/dream/issues
 "]
 (** Replaces the path. See {!Dream.val-path}. *)
 (**/**)
@@ -402,7 +402,7 @@ val query : request -> string -> string option
 (** First query parameter with the given name. See
     {{:https://tools.ietf.org/html/rfc3986#section-3.4} RFC 3986 §3.4} and
     example
-    {{:https://github.com/aantron/dream/tree/master/example/w-query#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/w-query#folders-and-files}
     [w-query]}. *)
 
 val queries : request -> string -> string list
@@ -449,7 +449,7 @@ val html :
 
     As your Web app develops, consider adding [Content-Security-Policy] headers,
     as described in example
-    {{:https://github.com/aantron/dream/tree/master/example/w-content-security-policy#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/w-content-security-policy#folders-and-files}
     [w-content-security-policy]}. These headers are completely optional, but
     they can provide an extra layer of defense for a mature app. *)
 
@@ -460,7 +460,7 @@ val json :
     string -> response promise
 (** Same as {!Dream.respond}, but adds [Content-Type: application/json]. See
     {!Dream.application_json} and example
-    {{:https://github.com/aantron/dream/tree/master/example/e-json#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/e-json#folders-and-files}
     [e-json]}. *)
 
 val redirect :
@@ -526,7 +526,7 @@ val set_header : 'a message -> string -> string -> unit
     {!Dream.set_cookie} and {!Dream.cookie} are designed for round-tripping
     secure cookies. The most secure settings applicable to the current server
     are inferred automatically. See example
-    {{:https://github.com/aantron/dream/tree/master/example/c-cookie#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/c-cookie#folders-and-files}
     [c-cookie]}.
 
     {[
@@ -568,7 +568,7 @@ val set_cookie :
     decrypt cookies from prior starts.
 
     See example
-    {{:https://github.com/aantron/dream/tree/master/example/c-cookie#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/c-cookie#folders-and-files}
     [c-cookie]}.
 
     Most of the optional arguments are for overriding inferred defaults.
@@ -655,7 +655,7 @@ val cookie :
   ?secure:bool ->
     request -> string -> string option
 (** First cookie with the given name. See example
-    {{:https://github.com/aantron/dream/tree/master/example/c-cookie#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/c-cookie#folders-and-files}
     [c-cookie]}.
 
     {[
@@ -676,7 +676,7 @@ val all_cookies : request -> (string * string) list
 
 val body : 'a message -> string promise
 (** Retrieves the entire body. See example
-    {{:https://github.com/aantron/dream/tree/master/example/6-echo#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/6-echo#folders-and-files}
     [6-echo]}. *)
 
 val set_body : 'a message -> string -> unit
@@ -700,7 +700,7 @@ val stream :
     (stream -> unit promise) -> response promise
 (** Creates a response with a {!type-stream} open for writing, and passes the
     stream to the callback when it is ready. See example
-    {{:https://github.com/aantron/dream/tree/master/example/j-stream#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/j-stream#folders-and-files}
     [j-stream]}.
 
     {[
@@ -714,7 +714,7 @@ val stream :
 
 val read : stream -> string option promise
 (** Retrieves a body chunk. See example
-    {{:https://github.com/aantron/dream/tree/master/example/j-stream#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/j-stream#folders-and-files}
     [j-stream]}. *)
 (* TODO Document difference between receiving a request and receiving on a
    WebSocket. *)
@@ -848,7 +848,7 @@ val websocket :
 (** Creates a fresh [101 Switching Protocols] response. Once this response is
     returned to Dream's HTTP layer, the callback is passed a new
     {!type-websocket}, and the application can begin using it. See example
-    {{:https://github.com/aantron/dream/tree/master/example/k-websocket#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/k-websocket#folders-and-files}
     [k-websocket]}.
 
     {[
@@ -909,7 +909,7 @@ val close_websocket : ?code:int -> websocket -> unit promise
     for generating JSON parsers and serializers for OCaml data types.
 
     See example
-    {{:https://github.com/aantron/dream/tree/master/example/e-json#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/e-json#folders-and-files}
     [e-json]}. *)
 
 val origin_referrer_check : middleware
@@ -920,7 +920,7 @@ val origin_referrer_check : middleware
     - their value must match [Host:]
 
     Responds with [400 Bad Request] if the check fails. See example
-    {{:https://github.com/aantron/dream/tree/master/example/e-json#security}
+    {{:https://github.com/camlworks/dream/tree/master/example/e-json#security}
     [e-json]}.
 
     Implements the
@@ -961,7 +961,7 @@ val origin_referrer_check : middleware
     ]}
 
     See example
-    {{:https://github.com/aantron/dream/tree/master/example/d-form#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/d-form#folders-and-files}
     [d-form]}. *)
 
 type 'a form_result = [
@@ -975,7 +975,7 @@ type 'a form_result = [
 ]
 (** Form CSRF checking results, in order from least to most severe. See
     {!Dream.val-form} and example
-    {{:https://github.com/aantron/dream/tree/master/example/d-form#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/d-form#folders-and-files}
     [d-form]}.
 
     The first three constructors, [`Ok], [`Expired], and [`Wrong_session] can
@@ -990,7 +990,7 @@ val form : ?csrf:bool -> request -> (string * string) list form_result promise
 (** Parses the request body as a form. Performs CSRF checks. Use
     {!Dream.csrf_tag} in a form template to transparently generate forms that
     will pass these checks. See {!section-templates} and example
-    {{:https://github.com/aantron/dream/tree/master/example/d-form#readme}
+    {{:https://github.com/camlworks/dream/tree/master/example/d-form#readme}
     [d-form]}.
 
     - [Content-Type:] must be [application/x-www-form-urlencoded].
@@ -1060,7 +1060,7 @@ type multipart_form =
     ]}
 
     See example
-    {{:https://github.com/aantron/dream/tree/master/example/g-upload#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/g-upload#folders-and-files}
     [g-upload]} and {{:https://datatracker.ietf.org/doc/html/rfc7578} RFC 7578}.
 
     Note that clients such as curl can send files with no filename ([None]),
@@ -1090,7 +1090,7 @@ val multipart : ?csrf:bool -> request -> multipart_form form_result promise
     ]}
 
     See section {!section-templates}, and example
-    {{:https://github.com/aantron/dream/tree/master/example/g-upload#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/g-upload#folders-and-files}
     [g-upload]}.
 
     Note that, like {!Dream.form}, this function sorts form fields by field
@@ -1193,24 +1193,24 @@ let render message =
     v}
 
     See examples
-    {{:https://github.com/aantron/dream/tree/master/example/7-template#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/7-template#folders-and-files}
     [7-template]} and
-    {{:https://github.com/aantron/dream/tree/master/example/r-template#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/r-template#folders-and-files}
     [r-template]}.
 
     There is also a typed alternative, provided by an external library,
     {{:https://github.com/ocsigen/tyxml} TyXML}. It is shown in example
-    {{:https://github.com/aantron/dream/tree/master/example/w-tyxml#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/w-tyxml#folders-and-files}
     [w-tyxml]}. If you are using Reason syntax, TyXML can be used with
     {{:https://ocsigen.org/tyxml/latest/manual/jsx} server-side JSX}. See
     example
-    {{:https://github.com/aantron/dream/tree/master/example/r-tyxml#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/r-tyxml#folders-and-files}
     [r-tyxml]}.
 
     Another alternative, {{:https://github.com/ocaml-mlx/mlx} mlx}, provides a
     middle ground between a fully type-checked HTML representation and the
     string-based Dream templating language. See example
-    {{:https://github.com/aantron/dream/tree/master/example/w-mlx} [w-mlx]}.
+    {{:https://github.com/camlworks/dream/tree/master/example/w-mlx} [w-mlx]}.
 
     To use the built-in templates, add this to [dune]:
 
@@ -1232,9 +1232,9 @@ let render message =
     supported presently is [%% response] for streaming the template using
     {!Dream.write}, to a {!type-response} that is in scope. This is shown in
     examples
-    {{:https://github.com/aantron/dream/tree/master/example/w-template-stream#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/w-template-stream#folders-and-files}
     [w-template-stream]} and
-    {{:https://github.com/aantron/dream/tree/master/example/r-template-stream#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/r-template-stream#folders-and-files}
     [r-template-stream]}.
 
     A template ends...
@@ -1365,7 +1365,7 @@ val router : route list -> handler
 (** Creates a router. If none of the routes match the request, the router
     responds with [404 Not Found]. Route components starting with [:] are
     parameters, which can be retrieved with {!Dream.param}. See example
-    {{:https://github.com/aantron/dream/tree/master/example/3-router#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/3-router#folders-and-files}
     [3-router]}.
 
     {[
@@ -1399,7 +1399,7 @@ val router : route list -> handler
     structure metadata.
 
     Note: routes that end with [/] and routes that don't end with [/] are
-    {{:https://github.com/aantron/dream/issues/244#issuecomment-1511624682}
+    {{:https://github.com/camlworks/dream/issues/244#issuecomment-1511624682}
     different}. *)
 
 val get     : string -> handler -> route
@@ -1486,7 +1486,7 @@ val static :
   ?loader:(string -> string -> handler) ->
     string -> handler
 (** Serves static files from a local directory. See example
-    {{:https://github.com/aantron/dream/tree/master/example/f-static#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/f-static#folders-and-files}
     [f-static]}.
 
     {[
@@ -1511,7 +1511,7 @@ val static :
     - [path] is what was substituted for [**].
 
     The default loader is {!Dream.from_filesystem}. See example
-    {{:https://github.com/aantron/dream/tree/master/example/w-one-binary#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/w-one-binary#folders-and-files}
     [w-one-binary]} for a loader that serves files from memory instead. *)
 
 val from_filesystem : string -> string -> handler
@@ -1568,7 +1568,7 @@ val mime_lookup : string -> (string * string) list
     the next request that it is assigned to.
 
     See example
-    {{:https://github.com/aantron/dream/tree/master/example/b-session#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/b-session#folders-and-files}
     [b-session]}. *)
 
 val session_field : request -> string -> string option
@@ -1629,7 +1629,7 @@ val session_expires_at : request -> float
     Flash messages are short strings which are stored in cookies during one
     request, to be made available for the next request. The typical use case is
     to provide form feedback across a redirect. See example
-    {{:https://github.com/aantron/dream/tree/master/example/w-flash#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/w-flash#folders-and-files}
     [w-flash]}. *)
 
 val flash : middleware
@@ -1648,16 +1648,16 @@ val add_flash_message : request -> string -> string -> unit
     Dream integrates {{:https://github.com/andreas/ocaml-graphql-server#readme}
     ocaml-graphql-server}. See examples:
 
-    - {{:https://github.com/aantron/dream/tree/master/example/i-graphql#folders-and-files}
+    - {{:https://github.com/camlworks/dream/tree/master/example/i-graphql#folders-and-files}
       [i-graphql]}
-    - {{:https://github.com/aantron/dream/tree/master/example/r-graphql#folders-and-files}
+    - {{:https://github.com/camlworks/dream/tree/master/example/r-graphql#folders-and-files}
       [r-graphql]}
-    - {{:https://github.com/aantron/dream/tree/master/example/w-graphql-subscription#folders-and-files}
+    - {{:https://github.com/camlworks/dream/tree/master/example/w-graphql-subscription#folders-and-files}
       [w-graphql-subscription]}.
 
     If you are also
-    {{:https://github.com/aantron/dream/tree/master/example#full-stack} writing
-    a client in a flavor of OCaml}, consider
+    {{:https://github.com/camlworks/dream/tree/master/example#full-stack}
+    writing a client in a flavor of OCaml}, consider
     {{:https://github.com/reasonml-community/graphql-ppx} graphql-ppx} for
     generating GraphQL queries.
 
@@ -1710,9 +1710,9 @@ val graphiql : ?default_query:string -> string -> handler
     manually.
 
     Dream's build of GraphiQL is found in the
-    {{:https://github.com/aantron/dream/tree/master/src/graphiql} src/graphiql}
-    directory. If you have the need, you can use it as the starting point for
-    your own customized GraphiQL.
+    {{:https://github.com/camlworks/dream/tree/master/src/graphiql}
+    src/graphiql} directory. If you have the need, you can use it as the
+    starting point for your own customized GraphiQL.
 
     Use {!Dream.no_route} to disable GraphiQL conditionally outside of
     development. *)
@@ -1724,7 +1724,7 @@ val graphiql : ?default_query:string -> string -> handler
     Dream provides thin convenience functions over
     {{:https://github.com/paurkedal/ocaml-caqti/#readme} Caqti}, an SQL
     interface with several back ends. See example
-    {{:https://github.com/aantron/dream/tree/master/example/h-sql#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/h-sql#folders-and-files}
     [h-sql]}.
 
     Dream installs the core {{:https://opam.ocaml.org/packages/caqti/} [caqti]}
@@ -1759,7 +1759,7 @@ val sql_pool : ?size:int -> string -> middleware
 
 val sql : request -> (Caqti_lwt.connection -> 'a promise) -> 'a promise
 (** Runs the callback with a connection from the SQL pool. See example
-    {{:https://github.com/aantron/dream/tree/master/example/h-sql#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/h-sql#folders-and-files}
     [h-sql]}.
 
     {[
@@ -1789,7 +1789,7 @@ val sql : request -> (Caqti_lwt.connection -> 'a promise) -> 'a promise
 
 val logger : middleware
 (** Logs and times requests. Time spent logging is included. See example
-    {{:https://github.com/aantron/dream/tree/master/example/2-middleware#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files}
     [2-middleware]}. *)
 
 val log : ('a, Format.formatter, unit, unit) format4 -> 'a
@@ -1798,7 +1798,7 @@ val log : ('a, Format.formatter, unit, unit) format4 -> 'a
     {{:https://v2.ocaml.org/api/Printf.html#VALfprintf} [Printf]} and
     {{:https://v2.ocaml.org/api/Format.html#VALfprintf} [Format]}. The rest of
     the arguments are determined by the format string. See example
-    {{:https://github.com/aantron/dream/tree/master/example/a-log#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
     [a-log]}.
 
     {[
@@ -1825,7 +1825,7 @@ val error     : ('a, unit) conditional_log
 (** Formats a message and writes it to the log at level [`Error]. The inner
     formatting function is called only if the {{!initialize_log} current log
     level} is [`Error] or higher. See example
-    {{:https://github.com/aantron/dream/tree/master/example/a-log#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
     [a-log]}.
 
     {[
@@ -1870,7 +1870,7 @@ val sub_log : ?level:[< log_level] -> string -> sub_log
     unless {!Dream.set_log_level} is used.
 
     See [README] of example
-    {{:https://github.com/aantron/dream/tree/master/example/a-log#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
     [a-log]}. *)
 
 val initialize_log :
@@ -2048,7 +2048,7 @@ type error_handler = error -> response option promise
 val error_template :
   (error -> string -> response -> response promise) -> error_handler
 (** Builds an {!error_handler} from a template. See example
-    {{:https://github.com/aantron/dream/tree/master/example/9-error#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/9-error#folders-and-files}
     [9-error]}.
 
     {[
@@ -2132,19 +2132,19 @@ val run :
       promise that never resolves.
     - [~error_handler] handles all errors, both from the application, and
       low-level errors. See {!section-errors} and example
-      {{:https://github.com/aantron/dream/tree/master/example/9-error#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/9-error#folders-and-files}
       [9-error]}.
       {!Dream.debug_error_handler} is a default error handler that can be passed
       here to help debug Web apps. See example
-      {{:https://github.com/aantron/dream/tree/master/example/8-debug#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/8-debug#folders-and-files}
       [8-debug]}.
     - [~tls:true] enables TLS. You should also specify [~certificate_file] and
       [~key_file]. However, for development, Dream includes an insecure
       compiled-in
-      {{:https://github.com/aantron/dream/tree/master/src/certificate#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/src/certificate#folders-and-files}
       localhost certificate}. Enabling HTTPS also enables transparent upgrading
       of connections to HTTP/2. See example
-      {{:https://github.com/aantron/dream/tree/master/example/l-https#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/l-https#folders-and-files}
       [l-https]}.
     - [~certificate_file] and [~key_file] specify the certificate and key file,
       respectively, when using [~tls]. They are not required for development,
@@ -2230,7 +2230,7 @@ val html_escape : string -> string
 
     This function is {e not} suitable for use with unquoted attributes, inline
     scripts, or inline CSS. See {i Security} in example
-    {{:https://github.com/aantron/dream/tree/master/example/7-template#security}
+    {{:https://github.com/camlworks/dream/tree/master/example/7-template#security}
     [7-template]}. *)
 
 val to_base64url : string -> string

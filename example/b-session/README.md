@@ -2,7 +2,8 @@
 
 <br>
 
-Adding [sessions](https://aantron.github.io/dream/#sessions) is straightforward:
+Adding [sessions](https://camlworks.github.io/dream/#sessions) is
+straightforward:
 
 ```ocaml
 let () =
@@ -30,16 +31,16 @@ let () =
 
 The first time you access the app, it “logs you in” by saving you user name in
 a session. The session manager,
-[`Dream.memory_sessions`](https://aantron.github.io/dream/#val-memory_sessions),
+[`Dream.memory_sessions`](https://camlworks.github.io/dream/#val-memory_sessions),
 a middleware, adds a `dream.session` cookie to the response, containing the
 session key. The next time you access the app, the session is looked up again
 by this key, and the app recognizes you as logged in!
 
-![Logged in](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/session.png)
+![Logged in](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/session.png)
 
 <br>
 
-The [default sessions](https://aantron.github.io/dream/#sessions) provided by
+The [default sessions](https://camlworks.github.io/dream/#sessions) provided by
 Dream contain string-to-string maps (dicts). In this example, we created
 
 ```
@@ -50,7 +51,7 @@ Dream contain string-to-string maps (dicts). In this example, we created
 
 <br>
 
-[`Dream.memory_sessions`](https://aantron.github.io/dream/#val-memory_sessions)
+[`Dream.memory_sessions`](https://camlworks.github.io/dream/#val-memory_sessions)
 stores sessions in server memory only. This is great for development, because
 you don't have to worry about a database or a secret key. But it means that all
 session data is lost when the server is restarted. For example, if your Web app
@@ -58,15 +59,15 @@ logs in users, server restart will log all users out.
 
 There are two other session back ends, which are persistent:
 
-- [`Dream.cookie_sessions`](https://aantron.github.io/dream/#val-cookie_sessions)
+- [`Dream.cookie_sessions`](https://camlworks.github.io/dream/#val-cookie_sessions)
   stores session data in encrypted cookies. That is, session data is stored on
   clients, rather than on the server. You can replace `Dream.memory_sessions`
   with `Dream.cookie_sessions` and it will work right away. However, if you
   want to be able to decrypt sessions set by previous runs of the server, use
-  the [`Dream.set_secret`](https://aantron.github.io/dream/#val-set_secret)
+  the [`Dream.set_secret`](https://camlworks.github.io/dream/#val-set_secret)
   middleware before `Dream.cookie_sessions`. If you don't, the server will be
   using a different random encryption key each time it starts.
-- [`Dream.sql_sessions`](https://aantron.github.io/dream/#val-sql_sessions)
+- [`Dream.sql_sessions`](https://camlworks.github.io/dream/#val-sql_sessions)
   stores sessions in a database. It is shown in example
   [**`h-sql`**](../h-sql#folders-and-files).
 
@@ -82,14 +83,14 @@ fresh, empty session, also known as a *pre-session*.
 
 If you log in a user, grant a user or session any enhanced access rights, or
 similar, be sure to replace the existing session with a new one by calling
-[`Dream.invalidate_session`](https://aantron.github.io/dream/#val-invalidate_session).
+[`Dream.invalidate_session`](https://camlworks.github.io/dream/#val-invalidate_session).
 This helps to mitigate
 [session fixation](https://en.wikipedia.org/wiki/Session_fixation) attacks. The
 new session will, again, be an empty pre-session.
 
 It is best to use HTTPS when using sessions, to prevent session cookies from
 being easily observed by third parties. See
-[`Dream.run`](https://aantron.github.io/dream/#val-run) argument `~https`, and
+[`Dream.run`](https://camlworks.github.io/dream/#val-run) argument `~https`, and
 example [**`l-https`**](../l-https#folders-and-files). If you redirect from HTTP to HTTPS,
 do not issue sessions for HTTP requests. If you do, don't accept them later
 from HTTPS requests.

@@ -75,13 +75,13 @@ let () =
 Try visiting [http://localhost:8080](http://localhost:8080) and leaving some
 comments!
 
-![Comments](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/sql.png)
+![Comments](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/sql.png)
 
 <br>
 
 We take the opportunity to try out
-[`Dream.sql_sessions`](https://aantron.github.io/dream/#val-sql_sessions), which
-stores session data persistently in `db.sqlite`. See example
+[`Dream.sql_sessions`](https://camlworks.github.io/dream/#val-sql_sessions),
+which stores session data persistently in `db.sqlite`. See example
 [**`b-session`**](../b-session#folders-and-files) for an introduction to session management.
 Both the comments and the sessions survive server restarts.
 
@@ -104,7 +104,8 @@ CREATE TABLE dream_session (
 ```
 
 We also had to make an addition to our
-[`dune`](https://github.com/aantron/dream/blob/master/example/h-sql/dune) file:
+[`dune`](https://github.com/camlworks/dream/blob/master/example/h-sql/dune)
+file:
 
 <pre>(executable
  (name sql)
@@ -118,7 +119,7 @@ We also had to make an addition to our
 </pre>
 
 ...and to
-[`sql.opam`](https://github.com/aantron/dream/blob/master/example/h-sql/esy.json):
+[`sql.opam`](https://github.com/camlworks/dream/blob/master/example/h-sql/esy.json):
 
 <pre>depends: [
   <b>"caqti-driver-sqlite3" {>= "1.7.0"}</b>

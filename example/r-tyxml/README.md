@@ -37,7 +37,7 @@ let () =
 <br>
 
 To get this, we depend on package `tyxml-jsx` in
-[`esy.json`](https://github.com/aantron/dream/blob/master/example/r-tyxml/esy.json):
+[`esy.json`](https://github.com/camlworks/dream/blob/master/example/r-tyxml/esy.json):
 
 <pre><code>{
   "dependencies": {
@@ -55,7 +55,7 @@ To get this, we depend on package `tyxml-jsx` in
 </code></pre>
 
 and add `tyxml-jsx` to our preprocessor list in
-[`dune`](https://github.com/aantron/dream/blob/master/example/r-tyxml/dune):
+[`dune`](https://github.com/camlworks/dream/blob/master/example/r-tyxml/dune):
 
 <pre><code>(executable
  (name tyxml)

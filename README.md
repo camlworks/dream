@@ -8,15 +8,15 @@ Easy-to-use, feature-complete Web framework without boilerplate.
 
 <p align="center">
 <img
-  src="https://raw.githubusercontent.com/aantron/dream/master/docs/asset/sample.png"
+  src="https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/sample.png"
   alt="Source code of minimal app using the Dream Web framework for OCaml">
 </p>
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> |
-  <a href="https://github.com/aantron/dream/tree/master/example#readme">
+  <a href="https://github.com/camlworks/dream/tree/master/example#readme">
     Tutorial</a> |
-  <a href="https://aantron.github.io/dream/">Reference</a>
+  <a href="https://camlworks.github.io/dream/">Reference</a>
   &nbsp;&nbsp;
 </p>
 
@@ -79,43 +79,43 @@ Dream binary][one-binary], or use Dream in a subcommand. Dream tries to be as
 functional as possible, touching global runtime state only lazily, when called
 into.
 
-[https]: https://github.com/aantron/dream/tree/master/example/l-https#folders-and-files
-[websocket]: https://github.com/aantron/dream/tree/master/example/k-websocket#folders-and-files
-[graphql]: https://github.com/aantron/dream/tree/master/example/w-graphql-subscription#folders-and-files
-[templates]: https://github.com/aantron/dream/tree/master/example/7-template#folders-and-files
-[reason-templates]: https://github.com/aantron/dream/tree/master/example/r-template#folders-and-files
-[middleware]: https://github.com/aantron/dream/tree/master/example/2-middleware#folders-and-files
-[handler]: https://aantron.github.io/dream/#type-handler
-[routing]: https://github.com/aantron/dream/tree/master/example/3-router#folders-and-files
-[cookies]: https://aantron.github.io/dream/#cookies
-[forms]: https://aantron.github.io/dream/#forms
-[sessions]: https://github.com/aantron/dream/tree/master/example/b-session#folders-and-files
-[back-ends]: https://aantron.github.io/dream/#back-ends
-[errors]: https://github.com/aantron/dream/tree/master/example/9-error#folders-and-files
-[crypto]: https://aantron.github.io/dream/#cryptography
-[logging]: https://github.com/aantron/dream/tree/master/example/2-middleware#folders-and-files
-[melange]: https://github.com/aantron/dream/tree/master/example/r-fullstack-melange#folders-and-files
-[rescript]: https://github.com/aantron/dream/tree/master/example/w-fullstack-rescript#folders-and-files
-[jsoo]: https://github.com/aantron/dream/tree/master/example/w-fullstack-jsoo#folders-and-files
-[types]: https://aantron.github.io/dream/#types
-[basic-read]: https://aantron.github.io/dream/#val-body
-[streaming]: https://aantron.github.io/dream/#streaming
-[raw]: https://aantron.github.io/dream/#builtin
+[https]: https://github.com/camlworks/dream/tree/master/example/l-https#folders-and-files
+[websocket]: https://github.com/camlworks/dream/tree/master/example/k-websocket#folders-and-files
+[graphql]: https://github.com/camlworks/dream/tree/master/example/w-graphql-subscription#folders-and-files
+[templates]: https://github.com/camlworks/dream/tree/master/example/7-template#folders-and-files
+[reason-templates]: https://github.com/camlworks/dream/tree/master/example/r-template#folders-and-files
+[middleware]: https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files
+[handler]: https://camlworks.github.io/dream/#type-handler
+[routing]: https://github.com/camlworks/dream/tree/master/example/3-router#folders-and-files
+[cookies]: https://camlworks.github.io/dream/#cookies
+[forms]: https://camlworks.github.io/dream/#forms
+[sessions]: https://github.com/camlworks/dream/tree/master/example/b-session#folders-and-files
+[back-ends]: https://camlworks.github.io/dream/#back-ends
+[errors]: https://github.com/camlworks/dream/tree/master/example/9-error#folders-and-files
+[crypto]: https://camlworks.github.io/dream/#cryptography
+[logging]: https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files
+[melange]: https://github.com/camlworks/dream/tree/master/example/r-fullstack-melange#folders-and-files
+[rescript]: https://github.com/camlworks/dream/tree/master/example/w-fullstack-rescript#folders-and-files
+[jsoo]: https://github.com/camlworks/dream/tree/master/example/w-fullstack-jsoo#folders-and-files
+[types]: https://camlworks.github.io/dream/#types
+[basic-read]: https://camlworks.github.io/dream/#val-body
+[streaming]: https://camlworks.github.io/dream/#streaming
+[raw]: https://camlworks.github.io/dream/#builtin
 [alpn]: https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation
-[libs]: https://github.com/aantron/dream/tree/master/src
-[deploy]: https://github.com/aantron/dream/tree/master/example#deploying
-[jsx]: https://github.com/aantron/dream/tree/master/example/r-tyxml#folders-and-files
-[one-binary]: https://github.com/aantron/dream/tree/master/example/w-one-binary#folders-and-files
+[libs]: https://github.com/camlworks/dream/tree/master/src
+[deploy]: https://github.com/camlworks/dream/tree/master/example#deploying
+[jsx]: https://github.com/camlworks/dream/tree/master/example/r-tyxml#folders-and-files
+[one-binary]: https://github.com/camlworks/dream/tree/master/example/w-one-binary#folders-and-files
 
 <br>
 
 ## Quick start
 
 You can get
-[one](https://github.com/aantron/dream/tree/master/example/2-middleware#folders-and-files)
+[one](https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files)
 of the first [tutorials][tutorial] and build it locally with:
 
-<pre><b>bash -c "$(curl -fsSL https://raw.githubusercontent.com/aantron/dream/master/example/quickstart.sh)"</b></pre>
+<pre><b>bash -c "$(curl -fsSL https://raw.githubusercontent.com/camlworks/dream/master/example/quickstart.sh)"</b></pre>
 
 ### opam
 
@@ -141,16 +141,16 @@ After that, go to any of the [examples][tutorial], such as
 dune exec ./middleware.exe
 ```
 
-[esy-example]: https://github.com/aantron/dream/tree/master/example/w-esy#folders-and-files
-[quickstart.sh]: https://github.com/aantron/dream/blob/master/example/quickstart.sh
+[esy-example]: https://github.com/camlworks/dream/tree/master/example/w-esy#folders-and-files
+[quickstart.sh]: https://github.com/camlworks/dream/blob/master/example/quickstart.sh
 [esy]: https://esy.sh/
-[2-middleware]: https://github.com/aantron/dream/tree/master/example/2-middleware#folders-and-files
+[2-middleware]: https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files
 
 ## esy
 
 Visit any of the [examples][tutorial], such as
 [**`2-middleware`**][2-middleware], and re-create the files locally. The file
-[`esy.json`](https://github.com/aantron/dream/blob/master/example/2-middleware/esy.json)
+[`esy.json`](https://github.com/camlworks/dream/blob/master/example/2-middleware/esy.json)
 shows how to depend on Dream. All of the examples are installed by running `npx
 esy`, and started with `npx esy start`.
 
@@ -173,16 +173,16 @@ esy`, and started with `npx esy start`.
 - [**API reference**][api-main]
 - [Watching][watch] and [live reloading][reload].
 
-[tutorial]: https://github.com/aantron/dream/tree/master/example#readme
-[examples]: https://github.com/aantron/dream/tree/master/example#examples
-[1-hello]: https://github.com/aantron/dream/tree/master/example/1-hello#folders-and-files
-[r-hello]: https://github.com/aantron/dream/tree/master/example/r-hello#folders-and-files
-[reason-examples]: https://github.com/aantron/dream/tree/master/example#reason
-[deploying]: https://github.com/aantron/dream/tree/master/example#deploying
-[api-main]: https://aantron.github.io/dream/#types
-[fullstack]: https://github.com/aantron/dream/tree/master/example#full-stack
-[watch]: https://github.com/aantron/dream/tree/master/example/w-watch#folders-and-files
-[reload]: https://github.com/aantron/dream/tree/master/example/w-live-reload#folders-and-files
+[tutorial]: https://github.com/camlworks/dream/tree/master/example#readme
+[examples]: https://github.com/camlworks/dream/tree/master/example#examples
+[1-hello]: https://github.com/camlworks/dream/tree/master/example/1-hello#folders-and-files
+[r-hello]: https://github.com/camlworks/dream/tree/master/example/r-hello#folders-and-files
+[reason-examples]: https://github.com/camlworks/dream/tree/master/example#reason
+[deploying]: https://github.com/camlworks/dream/tree/master/example#deploying
+[api-main]: https://camlworks.github.io/dream/#types
+[fullstack]: https://github.com/camlworks/dream/tree/master/example#full-stack
+[watch]: https://github.com/camlworks/dream/tree/master/example/w-watch#folders-and-files
+[reload]: https://github.com/camlworks/dream/tree/master/example/w-live-reload#folders-and-files
 
 <br>
 
@@ -215,7 +215,7 @@ esy`, and started with `npx esy start`.
 
 ## Contact
 
-Apart from the [issues](https://github.com/aantron/dream/issues), good places
+Apart from the [issues](https://github.com/camlworks/dream/issues), good places
 to discuss Dream are...
 
 - #dream on the [Reason Discord](https://discord.gg/2JTYRq2rYh).
@@ -232,7 +232,7 @@ Highlight `@antron` to poke @aantron specifically.
 All kinds of contributions are welcome, including examples, links to blogs,
 related libraries, and, of course, PRs! See [CONTRIBUTING.md][contributing.md].
 
-[contributing.md]: https://github.com/aantron/dream/blob/master/docs/CONTRIBUTING.md
+[contributing.md]: https://github.com/camlworks/dream/blob/master/docs/CONTRIBUTING.md
 
 <br>
 
@@ -261,9 +261,9 @@ several influences that cannot be discovered directly:
 [komar]: https://github.com/apsheronets
 [eot]: https://github.com/EmileTrotignon/embedded_ocaml_templates
 [trotignon]: https://github.com/EmileTrotignon
-[opamfile]: https://github.com/aantron/dream/blob/master/dream.opam
+[opamfile]: https://github.com/camlworks/dream/blob/master/dream.opam
 [opium]: https://github.com/rgrinberg/opium
-[vendor]: https://github.com/aantron/dream/tree/master/src/vendor
+[vendor]: https://github.com/camlworks/dream/tree/master/src/vendor
 [rgrinberg]: https://github.com/rgrinberg
 [anmonteiro]: https://github.com/anmonteiro
 [soupault]: https://github.com/dmbaturin/soupault

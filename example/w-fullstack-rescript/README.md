@@ -4,7 +4,7 @@
 
 This example shares a toy function between client and server using
 [ReScript](https://rescript-lang.org/). The function is in
-[common/common.ml](https://github.com/aantron/dream/blob/master/example/w-fullstack-rescript/common/common.ml).
+[common/common.ml](https://github.com/camlworks/dream/blob/master/example/w-fullstack-rescript/common/common.ml).
 It's in OCaml syntax because the ReScript syntax is not available when compiling
 to native code:
 
@@ -16,7 +16,7 @@ let greet = function
 
 As you can probably guess, we are going to print the first part of the message
 on the server,
-[server/server.eml.ml](https://github.com/aantron/dream/blob/master/example/w-fullstack-rescript/server/server.eml.ml):
+[server/server.eml.ml](https://github.com/camlworks/dream/blob/master/example/w-fullstack-rescript/server/server.eml.ml):
 
 ```ocaml
 let home =
@@ -42,7 +42,7 @@ let () =
 ```
 
 ...and the rest of the message in the client,
-[client/client.res](https://github.com/aantron/dream/blob/master/example/w-fullstack-rescript/client/client.res):
+[client/client.res](https://github.com/camlworks/dream/blob/master/example/w-fullstack-rescript/client/client.res):
 
 ```rescript
 open Webapi.Dom
@@ -71,7 +71,7 @@ npm start
 
 Then visit [http://localhost:8080](http://localhost:8080), and you will see...
 
-![Full-stack greeting](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/fullstack.png)
+![Full-stack greeting](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/fullstack.png)
 
 <br>
 
@@ -79,7 +79,7 @@ Besides ReScript and Dream, this example also uses
 [bs-webapi](https://github.com/reasonml-community/bs-webapi-incubator#readme)
 for DOM manipulation, and [esbuild](https://esbuild.github.io/) for bundling the
 client in `./static/client.js`. The example serves the bundled client using
-[`Dream.static`](https://aantron.github.io/dream/#val-static).
+[`Dream.static`](https://camlworks.github.io/dream/#val-static).
 
 <br>
 
@@ -91,7 +91,7 @@ client in `./static/client.js`. The example serves the bundled client using
 - [**`w-one-binary`**](../w-one-binary#folders-and-files) bundles assets into a
   self-contained binary.
 - [**`f-static`**](../r-hello#folders-and-files) presents
-  [`Dream.static`](https://aantron.github.io/dream/#val-static).
+  [`Dream.static`](https://camlworks.github.io/dream/#val-static).
 
 <br>
 

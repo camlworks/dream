@@ -38,10 +38,10 @@ Security topics are introduced throughout, wherever they are
 applicable."""
 
 license: "MIT"
-homepage: "https://github.com/aantron/dream"
-doc: "https://aantron.github.io/dream"
-bug-reports: "https://github.com/aantron/dream/issues"
-dev-repo: "git+https://github.com/aantron/dream.git"
+homepage: "https://github.com/camlworks/dream"
+doc: "https://camlworks.github.io/dream"
+bug-reports: "https://github.com/camlworks/dream/issues"
+dev-repo: "git+https://github.com/camlworks/dream.git"
 
 author: "Anton Bachin <antonbachin@yahoo.com>"
 maintainer: "Anton Bachin <antonbachin@yahoo.com>"

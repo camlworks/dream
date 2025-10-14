@@ -49,12 +49,12 @@ You will see the server responding immediately to each line on STDIN.
 <br>
 
 Note that you don't have to call
-[`Dream.close`](https://aantron.github.io/dream/#val-close) on the stream
-explicitly. [`Dream.stream`](https://aantron.github.io/dream/#val-stream)
+[`Dream.close`](https://camlworks.github.io/dream/#val-close) on the stream
+explicitly. [`Dream.stream`](https://camlworks.github.io/dream/#val-stream)
 automatically closes the stream when the callback's promise resolves or is
 rejected with an exception.
 
-See [*Streams*](https://aantron.github.io/dream/#streams) in the API docs.
+See [*Streams*](https://camlworks.github.io/dream/#streams) in the API docs.
 
 <br>
 

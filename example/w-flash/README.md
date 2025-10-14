@@ -38,13 +38,13 @@ let result request =
 
 The app just displays the form. The text that is entered into the form by the
 user is placed into a flash message using
-[`Dream.add_flash_message`](https://aantron.github.io/dream/#val-add_flash_message).
+[`Dream.add_flash_message`](https://camlworks.github.io/dream/#val-add_flash_message).
 The app
 then tells the client to redirect to `/result`. The handler for `/result` calls
 the `result` template, which retrieves the flash message using
-[`Dream.flash_messages`](https://aantron.github.io/dream/#val-flash_messages)
+[`Dream.flash_messages`](https://camlworks.github.io/dream/#val-flash_messages)
 and displays it. We need to include
-[`Dream.flash`](https://aantron.github.io/dream/#val-flash) in our middleware
+[`Dream.flash`](https://camlworks.github.io/dream/#val-flash) in our middleware
 stack, because that is the piece that actually puts the messages into cookies
 and reads them back out:
 

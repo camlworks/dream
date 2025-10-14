@@ -5,7 +5,7 @@ set -e
 EXAMPLE=2-middleware
 EXE=middleware.exe
 DIRECTORY=dream-project
-REPO=https://github.com/aantron/dream
+REPO=https://github.com/camlworks/dream
 if [ "$1" == "" ]
 then
   REF=master

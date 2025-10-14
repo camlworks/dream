@@ -52,7 +52,7 @@ jobs:
     - run: opam exec -- make
 
     # Tests on Windows are disabled because of a difference in ppx_expect
-    # output. See https://github.com/aantron/dream/pull/282. This difference
+    # output. See https://github.com/camlworks/dream/pull/282. This difference
     # remains as of ppx_expect 0.16.
     - run: opam exec -- make test
       if: runner.os != 'Windows'
@@ -110,7 +110,7 @@ jobs:
         touch output
         tail -f output | grep --line-buffered 'Ctrl' | xargs -L1 -I FOO bash -c "echo Success && touch success && killall middleware.exe" &
         tail -f output &
-        ((curl -fsSL https://raw.githubusercontent.com/aantron/dream/$GITHUB_SHA/example/quickstart.sh | bash -s $GITHUB_SHA) || true) > output 2>&1
+        ((curl -fsSL https://raw.githubusercontent.com/camlworks/dream/$GITHUB_SHA/example/quickstart.sh | bash -s $GITHUB_SHA) || true) > output 2>&1
         sleep 1
         if [ -f success ]
         then

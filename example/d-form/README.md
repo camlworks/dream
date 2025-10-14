@@ -3,7 +3,7 @@
 <br>
 
 With the session middleware from example [**`b-session`**](../b-session#folders-and-files),
-we can build a [secure form](https://aantron.github.io/dream/#forms):
+we can build a [secure form](https://camlworks.github.io/dream/#forms):
 
 ```ocaml
 let show_form ?message request =
@@ -52,7 +52,7 @@ let () =
 <br>
 
 The template adds a CSRF token to the form using
-[`Dream.csrf_tag`](https://aantron.github.io/dream/#val-csrf_tag). Its output
+[`Dream.csrf_tag`](https://camlworks.github.io/dream/#val-csrf_tag). Its output
 looks something like this:
 
 ```html
@@ -69,11 +69,11 @@ field](https://portswigger.net/web-security/csrf/tokens#how-should-csrf-tokens-b
 in your form.
 
 When the form is submitted and parsed using
-[`Dream.form`](https://aantron.github.io/dream/#val-form), `Dream.form` expects
-to find the `dream.csrf` field, and checks it. If there is anything wrong with
-the CSRF token, [`Dream.form`](https://aantron.github.io/dream/#val-form) will
-return a [value other than
-`` `Ok _``](https://aantron.github.io/dream/#type-form_result).
+[`Dream.form`](https://camlworks.github.io/dream/#val-form), `Dream.form`
+expects to find the `dream.csrf` field, and checks it. If there is anything
+wrong with the CSRF token,
+[`Dream.form`](https://camlworks.github.io/dream/#val-form) will return a [value
+other than `` `Ok _``](https://camlworks.github.io/dream/#type-form_result).
 
 <br>
 
@@ -93,10 +93,11 @@ constructors typically correspond to bugs or attacks, only.
 <br>
 
 This example replied to the form POST directly with HTML. In most cases, it is
-better to use [`Dream.redirect`](https://aantron.github.io/dream/#val-redirect)
-instead, to forward the browser to another page that will display the outcome.
-Using a redirection prevents form resubmission on refresh. This is especially
-important on login forms and other sensitive pages.
+better to use
+[`Dream.redirect`](https://camlworks.github.io/dream/#val-redirect) instead, to
+forward the browser to another page that will display the outcome. Using a
+redirection prevents form resubmission on refresh. This is especially important
+on login forms and other sensitive pages.
 
 However, this server is so simple that it doesn't store the data anywhere, and
 the data is not sensitive, so we took a shortcut. See

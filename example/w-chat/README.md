@@ -3,7 +3,7 @@
 <br>
 
 In this example, multiple clients connect to the server by
-[WebSockets](https://aantron.github.io/dream/#websockets), and the server
+[WebSockets](https://camlworks.github.io/dream/#websockets), and the server
 forwards messages between them, creating a simple chat.
 
 The core function is called on each new WebSocket. It puts the WebSocket into a

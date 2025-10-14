@@ -4,7 +4,7 @@
 
 Most of this example defines a GraphQL schema using
 [ocaml-graphql-server](https://github.com/andreas/ocaml-graphql-server#readme).
-Then, it's [one line](https://aantron.github.io/dream/#val-graphql) to serve
+Then, it's [one line](https://camlworks.github.io/dream/#val-graphql) to serve
 the schema from Dream, and a second line to serve
 [GraphiQL](https://github.com/graphql/graphiql/tree/main/packages/graphiql#readme)
 to explore it!
@@ -77,7 +77,7 @@ let () =
 Visit [http://localhost:8080](http://localhost:8080), and you can interact with
 the schema:
 
-![GraphiQL](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/graphiql.png)
+![GraphiQL](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/graphiql.png)
 
 <br>
 

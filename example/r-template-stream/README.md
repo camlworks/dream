@@ -3,7 +3,7 @@
 <br>
 
 When a client connects to this Web app, it sends back one paragraph per second
-in a response [stream](https://aantron.github.io/dream/#streaming):
+in a response [stream](https://camlworks.github.io/dream/#streaming):
 
 ```reason
 let render = response => {
@@ -40,9 +40,9 @@ Visit [http://localhost:8080](http://localhost:8080) to see it in action.
 The important differences with regular usage of templates are:
 
 - We create the response with
-  [`Dream.stream`](https://aantron.github.io/dream/#val-stream), which is a
+  [`Dream.stream`](https://camlworks.github.io/dream/#val-stream), which is a
   convenience wrapper around some [lower-level
-  functions](https://aantron.github.io/dream/#val-with_stream) that would
+  functions](https://camlworks.github.io/dream/#val-with_stream) that would
   prepare a response for streaming.
 - We use the opening line `%% response` to tell the templater that we don't want
   to build a string, but to stream the template to a response in scope under the
@@ -51,7 +51,7 @@ The important differences with regular usage of templates are:
   template for asynchronous control flow. See example
   [**`5-promise`**](../5-promise#folders-and-files) for an introduction to Lwt.
 
-The call to [`Dream.flush`](https://aantron.github.io/dream/#val-flush) isn't
+The call to [`Dream.flush`](https://camlworks.github.io/dream/#val-flush) isn't
 necessary in most real-world cases &mdash; Dream's HTTP layer automatically
 schedules the writing of data. However, this example is trying to appear
 interactive, so we force writing of all output after generating each `<p>` tag.

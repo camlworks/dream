@@ -5,7 +5,7 @@
 This example shares a toy function between client and server using
 [js_of_ocaml](https://ocsigen.org/js_of_ocaml/latest/manual/overview). The
 function is in
-[common/common.ml](https://github.com/aantron/dream/blob/master/example/w-fullstack-jsoo/common/common.ml).
+[common/common.ml](https://github.com/camlworks/dream/blob/master/example/w-fullstack-jsoo/common/common.ml).
 
 ```ocaml
 let greet = function
@@ -14,7 +14,7 @@ let greet = function
 ```
 
 The first part of the message is printed by the server, in
-[server/server.eml.ml](https://github.com/aantron/dream/blob/master/example/w-fullstack-jsoo/server/server.eml.ml):
+[server/server.eml.ml](https://github.com/camlworks/dream/blob/master/example/w-fullstack-jsoo/server/server.eml.ml):
 
 ```ocaml
 let home =
@@ -40,7 +40,7 @@ let () =
 ```
 
 The rest is printed by the client, in
-[client/client.ml](https://github.com/aantron/dream/blob/master/example/w-fullstack-jsoo/client/client.ml):
+[client/client.ml](https://github.com/camlworks/dream/blob/master/example/w-fullstack-jsoo/client/client.ml):
 
 ```ocaml
 open Js_of_ocaml
@@ -64,7 +64,7 @@ $ dune exec --root . server/server.exe
 
 Then visit [http://localhost:8080](http://localhost:8080), and you will see...
 
-![Full-stack greeting](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/fullstack.png)
+![Full-stack greeting](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/fullstack.png)
 
 <br>
 

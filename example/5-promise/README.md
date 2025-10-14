@@ -64,7 +64,7 @@ I/O library](https://ocsigen.org/lwt/latest/api/Lwt_unix).
 <br>
 
 To use `let%lwt`, we need to modify our
-[`dune`](https://github.com/aantron/dream/blob/master/example/5-promise/dune)
+[`dune`](https://github.com/camlworks/dream/blob/master/example/5-promise/dune)
 file a bit to include `lwt_ppx`:
 
 <pre><code>(executable

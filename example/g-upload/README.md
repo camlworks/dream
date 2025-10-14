@@ -66,26 +66,27 @@ bar.png, 1807 bytes
 <br>
 
 This example uses
-[`Dream.multipart`](https://aantron.github.io/dream/#val-multipart) (named
+[`Dream.multipart`](https://camlworks.github.io/dream/#val-multipart) (named
 after `Content-Type: multipart/form-data`).
-[`Dream.multipart`](https://aantron.github.io/dream/#val-multipart) receives
+[`Dream.multipart`](https://camlworks.github.io/dream/#val-multipart) receives
 entire files into strings. Size limits will be added in one of the early alphas.
 However, this is only good for rare, small uploads, such as user avatars, or for
 prototyping.
 
 For more heavy usage, see
-[`Dream.upload`](https://aantron.github.io/dream/#val-upload) for
+[`Dream.upload`](https://camlworks.github.io/dream/#val-upload) for
 streaming file uploads.
 
 <br>
 
 ## Security
 
-[`Dream.multipart`](https://aantron.github.io/dream/#val-multipart) behaves just
-like [`Dream.form`](https://aantron.github.io/dream/#val-form) when it comes to
+[`Dream.multipart`](https://camlworks.github.io/dream/#val-multipart) behaves
+just like [`Dream.form`](https://camlworks.github.io/dream/#val-form) when it
+comes to
 [CSRF protection](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
 See example [**`d-form`**](../d-form#folders-and-files). We use
-[`Dream.csrf_tag`](https://aantron.github.io/dream/#val-csrf_tag) to generate
+[`Dream.csrf_tag`](https://camlworks.github.io/dream/#val-csrf_tag) to generate
 the CSRF token in the template, and pass the `enctype="multipart/form-data"`
 attribute as needed for forms to upload files. The template output looks like
 this:
@@ -121,7 +122,7 @@ for a checklist of additional security precautions.
   interface for receiving file uploads.
 - [**`w-multipart-dump`**](../w-multipart-dump#folders-and-files) shows the request body
   that is interpreted by
-  [`Dream.multipart`](https://aantron.github.io/dream/#val-multipart).
+  [`Dream.multipart`](https://camlworks.github.io/dream/#val-multipart).
 
 <br>
 

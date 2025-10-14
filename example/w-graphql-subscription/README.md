@@ -5,7 +5,7 @@
 This example sets up a GraphQL subscription, which receives events that count up
 to 3:
 
-![Subscription](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/subscription.gif)
+![Subscription](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/subscription.gif)
 
 <br>
 

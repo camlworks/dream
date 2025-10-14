@@ -74,9 +74,9 @@ server log will show something like
 You can use CSP to limit which resources can be loaded by the pages you serve,
 forbid execution of JavaScript `eval`, and so on. You may want to apply CSP by
 writing a wrapper around
-[`Dream.html`](https://aantron.github.io/dream/#val-html), or in a middleware.
+[`Dream.html`](https://camlworks.github.io/dream/#val-html), or in a middleware.
 Note that static file loaders such as
-[`Dream.from_filesystem`](https://aantron.github.io/dream/#val-from_filesystem)
+[`Dream.from_filesystem`](https://camlworks.github.io/dream/#val-from_filesystem)
 can also serve HTML pages, so if you choose not to use a middleware and have
 static HTML pages, be sure to write a custom static loader as well.
 
