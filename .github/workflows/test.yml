@@ -133,9 +133,8 @@ jobs:
     - run: cd example/w-mirage && opam exec -- make depends
     - run: cd example/w-mirage && ls duniverse
     - run: cp -r ../repo-copy example/w-mirage/duniverse/dream
-    - run: cd example/w-mirage/duniverse && rm -rf ocaml-cstruct logs ke fmt lwt bytes seq mirage-flow sexplib0 ptime tls domain-name ocaml-ipaddr mirage-ptime ocplib-endian digestif eqaf mirage-crypto mirage-runtime psq
+    - run: cd example/w-mirage/duniverse && rm -rf ocaml-cstruct logs fmt lwt bytes seq mirage-flow ptime domain-name ocaml-ipaddr mirage-ptime ocplib-endian digestif eqaf mirage-crypto psq mirage-tcpip duration mirage cmdliner randomconv mirage-mtime mtime lru arp ethernet mirage-net mirage-sleep
     - run: cd example/w-mirage && mv config.ml.backup config.ml
-    - run: cd example/w-mirage && sed -e 's/(libraries/(libraries dream-mirage/' < dune.build > dune.build.2
-    - run: cd example/w-mirage && mv dune.build.2 dune.build
+    - run: cd example/w-mirage && sed -i -e 's/(libraries/(libraries dream-mirage/' dune.build
     - run: cd example/w-mirage && opam exec -- dune build
     - run: file example/w-mirage/_build/default/main.exe
