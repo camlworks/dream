@@ -4,7 +4,7 @@
 
 Let's serve a list of comments with a comment form! First, we define a couple of
 prepared statements using
-[Caqti](https://paurkedal.github.io/ocaml-caqti/index.html/caqti-lwt/Caqti_lwt/module-type-CONNECTION/index.html),
+[Caqti](https://ocaml.org/p/caqti/latest),
 a library for talking to SQL databases:
 
 ```ocaml
@@ -143,12 +143,12 @@ at some route.
 
 See
 
-- [`Caqti_connect_sig.S.CONNECTION`](https://paurkedal.github.io/ocaml-caqti/caqti/Caqti_connect_sig/module-type-S/module-type-CONNECTION/index.html)
+- [`Caqti_connect_sig.S`](https://ocaml.org/p/caqti/latest/doc/caqti/Caqti_connection_sig/module-type-S/index.html)
   for Caqti's statement runners. These are the fields of the module `Db` in the
   example.
-- [`Caqti_request`](https://paurkedal.github.io/ocaml-caqti/caqti/Caqti_request/)
+- [`Caqti_request`](https://ocaml.org/p/caqti/latest/doc/caqti/Caqti_request/index.html)
   sets up prepared statements.
-- [`Caqti_type`](https://paurkedal.github.io/ocaml-caqti/caqti/Caqti_type/) is
+- [`Caqti_type`](https://ocaml.org/p/caqti/latest/doc/caqti/Caqti_type/index.html) is
   used to specify the types of statement arguments and results.
 
 <br>
