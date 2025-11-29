@@ -74,7 +74,7 @@ let forward_body
     response
     (Httpun.Body.Writer.write_string body)
     (Httpun.Body.Writer.write_bigstring body)
-    (Httpun.Body.Writer.flush body)
+    (fun f -> Httpun.Body.Writer.flush body (fun _ -> f ()))
     (fun _code -> Httpun.Body.Writer.close body)
 
 let forward_body_h2
