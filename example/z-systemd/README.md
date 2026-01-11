@@ -117,7 +117,7 @@ $ ssh build@my-droplet "cd app && bash build.sh"
 $ ssh root@my-droplet "bash /home/build/app/deploy.sh"
 ```
 
-[`build.sh`](https://github.com/aantron/dream/blob/master/example/z-systemd/build.sh):
+[`build.sh`](https://github.com/camlworks/dream/blob/master/example/z-systemd/build.sh):
 
 ```sh
 #!/bin/bash
@@ -131,7 +131,7 @@ npx esy
 npx esy cp '#{self.target_dir}/default/app.exe' .
 ```
 
-[`deploy.sh`](https://github.com/aantron/dream/blob/master/example/z-systemd/deploy.sh):
+[`deploy.sh`](https://github.com/camlworks/dream/blob/master/example/z-systemd/deploy.sh):
 
 ```sh
 #!/bin/bash

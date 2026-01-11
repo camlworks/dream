@@ -8,7 +8,7 @@ This example shows how to use
 Web server with a PostgreSQL database.
 
 The
-[code](https://github.com/aantron/dream/blob/master/example/w-postgres/postgres.eml.ml)
+[code](https://github.com/camlworks/dream/blob/master/example/w-postgres/postgres.eml.ml)
 is almost identical to [**`h-sql`**](../h-sql#folders-and-files). The only differences are:
 
 - we now listen on `"0.0.0.0"`, since our client will definitely be outside the
@@ -40,7 +40,7 @@ let () =
 
 In addition, we now link with `caqti-driver-postgres` instead of
 `caqti-driver-sqlite3` in
-[`dune`](https://github.com/aantron/dream/blob/master/example/w-postgres/dune):
+[`dune`](https://github.com/camlworks/dream/blob/master/example/w-postgres/dune):
 
 <pre><code>(executable
  (name postgres)
@@ -48,7 +48,7 @@ In addition, we now link with `caqti-driver-postgres` instead of
  (preprocess (pps lwt_ppx)))</code></pre>
 
 and the
-[schema](https://github.com/aantron/dream/blob/master/example/w-postgres/schema.sql) is slightly different, due to differences in PostgreSQL syntax, compared to
+[schema](https://github.com/camlworks/dream/blob/master/example/w-postgres/schema.sql) is slightly different, due to differences in PostgreSQL syntax, compared to
 SQLite:
 
 <pre><code>CREATE TABLE comment (
@@ -63,12 +63,12 @@ To build, run:
 <b>$ docker-compose up</b></code></pre>
 
 This will build and start the
-[two containers](https://github.com/aantron/dream/blob/master/example/w-postgres/docker-compose.yml),
+[two containers](https://github.com/camlworks/dream/blob/master/example/w-postgres/docker-compose.yml),
 one for PostgreSQL and one for our Web server. The first build of the Web server
 will take several minutes. Later builds will be faster, due to caching.
 
 On the first start, the database does not have a
-[schema](https://github.com/aantron/dream/blob/master/example/w-postgres/schema.sql),
+[schema](https://github.com/camlworks/dream/blob/master/example/w-postgres/schema.sql),
 so open another terminal session and run
 
 <pre><code><b>$ docker-compose exec postgres psql -U dream -c "$(cat schema.sql)"</b></code></pre>
@@ -81,7 +81,7 @@ application!
 Tips:
 
 - If you modify
-  [`postgres.eml.ml`](https://github.com/aantron/dream/blob/master/example/w-postgres/postgres.eml.ml),
+  [`postgres.eml.ml`](https://github.com/camlworks/dream/blob/master/example/w-postgres/postgres.eml.ml),
   run
 
   ```

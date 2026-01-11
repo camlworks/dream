@@ -1,5 +1,5 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
@@ -38,17 +38,17 @@ let welcome =
   <p>
     Edit the code to the left, and press <strong>Run</strong> to recompile! Use
     the navigation bar above to visit different paths on your server. Many of
-    the <a href="https://github.com/aantron/dream/tree/master/example#readme">
+    the <a href="https://github.com/camlworks/dream/tree/master/example#readme">
     examples</a> are loaded into the playground. For example, try
     <a href="http://dream.as/1-hello">dream.as/2-middleware</a>.
   </p>
   <p>Links:</p>
   <ul>
-    <li><a target="_blank" href="https://github.com/aantron/dream">
+    <li><a target="_blank" href="https://github.com/camlworks/dream">
       GitHub</a></li>
-    <li><a target="_blank" href="https://github.com/aantron/dream/tree/master/example#readme">
+    <li><a target="_blank" href="https://github.com/camlworks/dream/tree/master/example#readme">
       Tutorial</a></li>
-    <li><a target="_blank" href="https://aantron.github.io/dream">
+    <li><a target="_blank" href="https://camlworks.github.io/dream">
       API reference</a></li>
   </ul>
   <p>Loaded examples:</p>
