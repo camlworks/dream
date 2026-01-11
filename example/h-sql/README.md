@@ -151,11 +151,11 @@ let add_session =
 
 See
 
-- [`Caqti_response`](https://ocaml.org/p/caqti/2.1.2/doc/Caqti_connection_sig/module-type-S/index.html)
+- [`Caqti_response`](https://ocaml.org/p/caqti/latest/doc/Caqti_connection_sig/module-type-S/index.html)
   for Caqti's statement runners. These are the fields of the module `Db` in the example.
-- [`Caqti_request`](https://ocaml.org/p/caqti/2.1.2/doc/Caqti_request/Infix/index.html#indep)
+- [`Caqti_request`](https://ocaml.org/p/caqti/latest/doc/Caqti_request/Infix/index.html#indep)
   sets up prepared statements.
-- [`Caqti_type`](https://ocaml.org/p/caqti/2.1.2/doc/Caqti_type/index.html) is
+- [`Caqti_type`](https://ocaml.org/p/caqti/latest/doc/Caqti_type/index.html) is
   used to specify the types of statement arguments and results.
 
 <br>
