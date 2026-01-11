@@ -130,15 +130,7 @@ We also had to make an addition to our
 
 <br>
 
-If you are deploying in alpine linux, you must have sqlite shared libraries. In Dockerfile
-```
-RUN sudo apk add --no-cache --update sqlite-dev sqlite-libs
-```
-You need to install those for both the build and runtime stages.
-
-<br>
-
-Pass multiple arguments with `(?, ?, ..)`.  See [Caqti utop](https://github.com/paurkedal/ocaml-caqti?tab=readme-ov-file#running-under-utop).
+Pass multiple arguments with `(?, ?, ..)`.  See [Caqti utop](https://ocaml.org/p/caqti/latest#running-under-utop).
 
 Tips.
 - `->.` returns a unit and uses `Db.exec`.
@@ -171,6 +163,13 @@ See
 SQLite is good for small-to-medium sites and examples. For a larger site,
 microservices, or other needs, you can switch, for example, to PostgreSQL. See
 [**`w-postgres`**](../w-postgres#folders-and-files).
+
+Using SQLite requires its shared libraries. For e.g. Dockerfiles using Alpine Linux you can install them via:
+
+``` sh
+RUN sudo apk add --no-cache --update sqlite-dev sqlite-libs
+```
+You need to install those for both the build and runtime stages.
 
 A good program for examining databases locally is
 [Beekeeper Studio](https://www.beekeeperstudio.io/). Dream might also integrate
