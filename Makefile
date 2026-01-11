@@ -13,6 +13,11 @@ deps :
 	opam install --deps-only --with-test --with-doc \
 	  ./dream-pure.opam ./dream-httpaf.opam ./dream.opam
 
+.PHONY : deps-no-test
+deps-no-test :
+	opam install --deps-only --with-doc \
+	  ./dream-pure.opam ./dream-httpaf.opam ./dream.opam
+
 TEST ?= test
 ROOT := $(shell [ -f ../dune-workspace ] && echo .. || echo .)
 

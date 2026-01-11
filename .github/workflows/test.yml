@@ -41,7 +41,13 @@ jobs:
     - run: opam pin add ssl 0.6.0 --no-action
       if: runner.os == 'Windows'
 
+    # Postgres is required for the tests and difficult to install on Windows
+    # As the tests don't run on Windows anyway right now we just disable those dependencies
+    - run: opam exec -- make deps-no-test
+      if: runner.os == 'Windows'
+
     - run: opam exec -- make deps
+      if: runner.os != 'Windows'
 
     - run: opam exec -- make
 
