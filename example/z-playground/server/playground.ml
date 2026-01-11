@@ -479,12 +479,6 @@ let rec gc ?(initial = true) () =
 let () =
   Dream.log "Starting playground";
 
-  (* Stop when systemd sends SIGTERM. *)
-  let stop, signal_stop = Lwt.wait () in
-  Lwt_unix.on_signal Sys.sigterm (fun _signal ->
-    Lwt.wakeup_later signal_stop ())
-  |> ignore;
-
   (* Build the base image. *)
   Lwt_main.run begin
     Lwt_io.(with_file ~mode:Output "Dockerfile" (fun channel ->
@@ -520,7 +514,7 @@ let () =
     Dream.html (Client.html example)
   in
 
-  Dream.run ~interface:"0.0.0.0" ~port:80 ~stop ~adjust_terminal:false
+  Dream.run ~interface:"0.0.0.0" ~port:80 ~adjust_terminal:false
   @@ Dream.logger
   @@ Dream.router [
 

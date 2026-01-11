@@ -2129,7 +2129,7 @@ val run :
     - [~stop] is a promise that causes the server to stop accepting new
       requests, and {!Dream.run} to return. Requests that have already entered
       the Web application continue to be processed. The default value is a
-      promise that never resolves.
+      promise that resolves when the [TERM] signal is received.
     - [~error_handler] handles all errors, both from the application, and
       low-level errors. See {!section-errors} and example
       {{:https://github.com/aantron/dream/tree/master/example/9-error#folders-and-files}
