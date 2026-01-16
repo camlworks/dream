@@ -17,7 +17,7 @@ let hardcoded_users = [
   {id = 2; name = "bob"};
 ]
 
-let user =
+let user () =
   Graphql_lwt.Schema.(obj "user"
     ~fields:[
       field "id"
@@ -30,10 +30,10 @@ let user =
         ~resolve:(fun _info user -> user.name);
     ])
 
-let schema =
+let schema () =
   Graphql_lwt.Schema.(schema [
     field "users"
-      ~typ:(non_null (list (non_null user)))
+      ~typ:(non_null (list (non_null (user ()))))
       ~args:Arg.[arg "id" ~typ:int]
       ~resolve:(fun _info () id ->
         match id with
@@ -52,7 +52,7 @@ let () =
   @@ Dream.logger
   @@ Dream.origin_referrer_check
   @@ Dream.router [
-    Dream.any "/graphql" (Dream.graphql Lwt.return schema);
+    Dream.any "/graphql" (Dream.graphql Lwt.return (schema ()));
     Dream.get "/" (Dream.graphiql ~default_query "/graphql");
   ]
 ```
