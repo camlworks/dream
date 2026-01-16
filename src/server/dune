@@ -11,16 +11,17 @@
   lwt
   magic-mime
   markup
-  mirage-clock
+  mirage-ptime
   multipart_form
   multipart_form-lwt
   ptime
   unstrctrd
   uri
-  yojson
- )
- (preprocess (pps lwt_ppx))
- (instrumentation (backend bisect_ppx)))
+  yojson)
+ (preprocess
+  (pps lwt_ppx))
+ (instrumentation
+  (backend bisect_ppx)))
 
 (rule
  (targets error_template.ml)
@@ -31,4 +32,5 @@
 (rule
  (targets tag.ml)
  (deps tag.eml.ml)
- (action (run dream_eml %{deps} --workspace %{workspace_root})))
+ (action
+  (run dream_eml %{deps} --workspace %{workspace_root})))
