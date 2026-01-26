@@ -495,10 +495,10 @@ let serve_with_details
     match network with
     | `Unix path ->
       (match%lwt Lwt_unix.stat path with
-      | exception Unix.Unix_error (ENOENT, _, _) -> Lwt.return_unit
       (* Only delete socket file, and ignore other files *)
       | { Unix.st_kind = S_SOCK; _ } -> Lwt_unix.unlink path
-      | _ -> Lwt.return_unit);%lwt
+      | _ -> Lwt.return_unit
+      | exception Unix.Unix_error (ENOENT, _, _) -> Lwt.return_unit);%lwt
       Lwt.return (Lwt_unix.ADDR_UNIX path)
     | `Inet port ->
       let%lwt addresses =
