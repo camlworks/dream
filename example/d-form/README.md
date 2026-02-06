@@ -27,7 +27,7 @@ let show_form ?message request =
 let () =
   Dream.run
   @@ Dream.logger
-  @@ Dream.memory_sessions
+  @@ Dream.memory_sessions ()
   @@ Dream.router [
 
     Dream.get  "/"
@@ -114,4 +114,3 @@ the data is not sensitive, so we took a shortcut. See
 <br>
 
 [Up to the tutorial index](../#readme)
-
