@@ -108,7 +108,7 @@ jobs:
       run: |
         set -xe
         touch output
-        tail -f output | grep -m 1 -q --line-buffered 'Ctrl' && echo Success && touch success && killall middleware.exe &
+        tail -f output | rg -m 1 --line-buffered 'Ctrl' && echo Success && touch success && killall middleware.exe &
         tail -f output &
         ((curl -fsSL https://raw.githubusercontent.com/camlworks/dream/$GITHUB_SHA/example/quickstart.sh | bash -s $GITHUB_SHA) || true) > output 2>&1
         timeout 60 bash -c 'while [ ! -f success ]; do sleep 0.1; done'
