@@ -116,7 +116,7 @@ jobs:
         set -xe
         touch output
         (
-            if tail -f output | grep -m 1 --line-buffered 'Ctrl'; then
+            if tail -f output | grep -q --line-buffered 'Ctrl'; then
                echo Success
                touch success
             else
