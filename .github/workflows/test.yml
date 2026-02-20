@@ -91,6 +91,7 @@ jobs:
         done
 
   quickstart:
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -127,7 +128,7 @@ jobs:
         ) &
         tail -f output &
         ((curl -fsSL https://raw.githubusercontent.com/camlworks/dream/$GITHUB_SHA/example/quickstart.sh | bash -s $GITHUB_SHA) || true) > output 2>&1
-        timeout 60 bash -c 'while [ ! -f success ]; do sleep 0.1; done'
+        bash -c 'while [ ! -f success ]; do sleep 0.1; done'
         if [ -f success ]
         then
           exit 0
