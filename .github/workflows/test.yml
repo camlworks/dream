@@ -116,11 +116,12 @@ jobs:
         set -xe
         touch output
         (
-            if tail -f output | grep -q --line-buffered 'Ctrl'; then
+            # tail with receive SIGPIPE once grep finds its match and fail -> || true
+            if (tail -f output || true) | grep -q --line-buffered 'Ctrl'; then
                echo Success
                touch success
             else
-                echo Failure
+                echo Failed with $?
             fi
             killall middleware.exe
         ) &
