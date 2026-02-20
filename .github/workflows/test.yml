@@ -100,9 +100,6 @@ jobs:
         ocaml:
         - 5.2.x
         - 4.14.x
-        include:
-        - os: macos-latest
-          ocaml: 4.14.x
 
     runs-on: ${{matrix.os}}
     steps:
@@ -117,7 +114,7 @@ jobs:
         set -xe
         touch output
         (
-            # tail with receive SIGPIPE once grep finds its match and fail -> || true
+            # tail will receive SIGPIPE once grep finds its match and fail -> catch with || true
             if (tail -f output || true) | grep -q --line-buffered 'Ctrl'; then
                echo Success
                touch success
