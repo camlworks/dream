@@ -108,10 +108,11 @@ jobs:
       run: |
         set -xe
         touch output
-        tail -f output | grep --line-buffered 'Ctrl' | xargs -L1 -I FOO bash -c "echo Success && touch success && killall middleware.exe" &
+        tail -f output | grep -m 1 --line-buffered 'Ctrl+C' && echo Success && touch success && killall middleware.exe &
+        TAIL_PID=$!
         tail -f output &
-        (curl -fsSL https://raw.githubusercontent.com/camlworks/dream/$GITHUB_SHA/example/quickstart.sh | bash -s $GITHUB_SHA) >output 2>&1
-        sleep 1
+        ((curl -fsSL https://raw.githubusercontent.com/camlworks/dream/$GITHUB_SHA/example/quickstart.sh | bash -s $GITHUB_SHA) || true) > output 2>&1
+        wait $TAIL_PID 2>/dev/null
         if [ -f success ]
         then
           exit 0
