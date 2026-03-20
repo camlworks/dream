@@ -1,5 +1,5 @@
   $ form &> /dev/null &
-  $ $CURL localhost:8080 -c cookies -b cookies | sed 's/value=.*/value=<omitted>/'
+  $ curl_cmd / -c cookies -b cookies | sed 's/value=.*/value=<omitted>/'
   <html>
   <body>
   
@@ -13,8 +13,8 @@
   </body>
   </html>
   
-  $ $CURL localhost:8080 -X POST
-  $ $CURL localhost:8080 -c cookies -b cookies | sed 's/value=.*/value=<omitted>/'
+  $ curl_cmd / -X POST
+  $ curl_cmd / -c cookies -b cookies | sed 's/value=.*/value=<omitted>/'
   <html>
   <body>
   

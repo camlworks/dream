@@ -1,3 +1,3 @@
   $ router &> /dev/null &
-  $ $CURL localhost:8080/echo/hello-world
+  $ curl_cmd /echo/hello-world
   hello-world

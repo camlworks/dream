@@ -1,5 +1,5 @@
   $ debug &> /dev/null &
-  $ $CURL localhost:8080/bad | sed 's/::1:.*/::1:<omitted>/' | sed 's/dream.request_id: [^<]*/dream.request_id: <omitted>/'
+  $ curl_cmd /bad | sed 's/::1:.*/::1:<omitted>/' | sed 's/dream.request_id: [^<]*/dream.request_id: <omitted>/'
   <!DOCTYPE html>
   <html lang="en">
     <head>
@@ -73,7 +73,7 @@
   dream.params: </code></pre>
     </body>
   </html>
-  $ $CURL localhost:8080/fail | sed 's/::1:.*/::1:<omitted>/' | sed 's/dream.request_id: [^<]*/dream.request_id: <omitted>/'
+  $ curl_cmd /fail | sed 's/::1:.*/::1:<omitted>/' | sed 's/dream.request_id: [^<]*/dream.request_id: <omitted>/'
   <!DOCTYPE html>
   <html lang="en">
     <head>

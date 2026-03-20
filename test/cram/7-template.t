@@ -1,5 +1,5 @@
   $ template &> /dev/null &
-  $ $CURL localhost:8080/hello-world
+  $ curl_cmd /hello-world
   <html>
   <body>
     <h1>The URL parameter was hello-world!</h1>

@@ -2,7 +2,7 @@
   $ echo "Hello" > hello
   $ echo "World" > testdata/world
   $ static &> /dev/null &
-  $ $CURL localhost:8080/static/hello
+  $ curl_cmd /static/hello
   Hello
-  $ $CURL localhost:8080/static/testdata/world
+  $ curl_cmd /static/testdata/world
   World

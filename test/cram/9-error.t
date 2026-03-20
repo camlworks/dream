@@ -1,5 +1,5 @@
   $ error &> /dev/null &
-  $ $CURL localhost:8080/bad | sed 's/::1:.*/::1:<omitted>/' | sed 's/dream.request_id: [^<]*/dream.request_id: <omitted>/'
+  $ curl_cmd /bad | sed 's/::1:.*/::1:<omitted>/' | sed 's/dream.request_id: [^<]*/dream.request_id: <omitted>/'
   <html>
   <body>
     <h1>404 Not Found</h1>
@@ -22,7 +22,7 @@
   dream.fd: 6</pre>
   </body>
   </html>
-  $ $CURL localhost:8080/fail | sed 's/::1:.*/::1:<omitted>/' | sed 's/dream.request_id: [^<]*/dream.request_id: <omitted>/'
+  $ curl_cmd /fail | sed 's/::1:.*/::1:<omitted>/' | sed 's/dream.request_id: [^<]*/dream.request_id: <omitted>/'
   <html>
   <body>
     <h1>404 Not Found</h1>

@@ -1,3 +1,3 @@
   $ middleware &> /dev/null &
-  $ $CURL localhost:8080
+  $ curl_cmd /
   Good morning, world!
