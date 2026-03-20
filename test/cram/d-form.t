@@ -27,5 +27,3 @@
   
   </body>
   </html>
-  
-  $ pkill -P $$

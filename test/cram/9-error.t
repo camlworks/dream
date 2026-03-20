@@ -45,4 +45,3 @@
   dream.fd: 6</pre>
   </body>
   </html>
-  $ pkill -P $$

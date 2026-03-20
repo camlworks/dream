@@ -299,4 +299,3 @@
   dream.params: </code></pre>
     </body>
   </html>
-  $ pkill -P $$

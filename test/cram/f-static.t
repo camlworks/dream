@@ -6,4 +6,3 @@
   Hello
   $ $CURL localhost:8080/static/testdata/world
   World
-  $ pkill -P $$

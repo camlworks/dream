@@ -4,4 +4,3 @@ The cookie is encrypted so we have cannot set it ourselves
   Set language preference; come again!
   $ $CURL localhost:8080 -b cookie
   Your preferred language is ut-OP!
-  $ pkill -P $$
