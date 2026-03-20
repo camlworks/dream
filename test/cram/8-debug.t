@@ -63,7 +63,6 @@
   
   GET /bad
   Host: localhost:8080
-  User-Agent: curl/8.9.1
   Accept: */*
   
   dream.client: ::1:<omitted>
@@ -129,7 +128,7 @@
       <h3>Debug Dump</h3>
       <pre><code>Failure(&quot;The Web app failed!&quot;)
   Raised at Stdlib__Map.Make.find in file &quot;map.ml&quot;, line 141, characters 10-25
-  Called from Logs.Tag.find in file &quot;src/logs.ml&quot;, line 153, characters 14-32
+  Called from Logs.Tag.find in file &quot;src/logs.ml&quot;, line 144, characters 14-32
   
   From: Application
   Blame: Server
@@ -139,7 +138,6 @@
   
   GET /fail
   Host: localhost:8080
-  User-Agent: curl/8.9.1
   Accept: */*
   
   dream.client: ::1:<omitted>
@@ -204,7 +202,7 @@
       <h3>Debug Dump</h3>
       <pre><code>Failure(&quot;The Web app failed!&quot;)
   Raised at Stdlib__Map.Make.find in file &quot;map.ml&quot;, line 141, characters 10-25
-  Called from Logs.Tag.find in file &quot;src/logs.ml&quot;, line 153, characters 14-32
+  Called from Logs.Tag.find in file &quot;src/logs.ml&quot;, line 144, characters 14-32
   
   From: Application
   Blame: Server
@@ -214,7 +212,6 @@
   
   GET /fail
   Host: localhost:8080
-  User-Agent: curl/8.9.1
   Accept: */*
   
   dream.client: ::1:<omitted>
@@ -279,7 +276,7 @@
       <h3>Debug Dump</h3>
       <pre><code>Failure(&quot;The Web app failed!&quot;)
   Raised at Stdlib__Map.Make.find in file &quot;map.ml&quot;, line 141, characters 10-25
-  Called from Logs.Tag.find in file &quot;src/logs.ml&quot;, line 153, characters 14-32
+  Called from Logs.Tag.find in file &quot;src/logs.ml&quot;, line 144, characters 14-32
   
   From: Application
   Blame: Server
@@ -289,7 +286,6 @@
   
   GET /fail
   Host: localhost:8080
-  User-Agent: curl/8.9.1
   Accept: */*
   
   dream.client: ::1:<omitted>

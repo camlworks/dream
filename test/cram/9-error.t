@@ -13,7 +13,6 @@
   
   GET /bad
   Host: localhost:8080
-  User-Agent: curl/8.9.1
   Accept: */*
   
   dream.client: ::1:<omitted>
@@ -36,7 +35,6 @@
   
   GET /fail
   Host: localhost:8080
-  User-Agent: curl/8.9.1
   Accept: */*
   
   dream.client: ::1:<omitted>
