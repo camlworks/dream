@@ -17,11 +17,11 @@
   %{bin:static}
   %{bin:upload}
   %{bin:sql}
-  ; TODO reenable
-  ; %{bin:graphql}
+  %{bin:graphql}
   %{bin:stream}
   %{bin:websocket}
-  %{bin:https})
+  %{bin:https}
+  ../../example/h-sql/db.sqlite)
   (setup_scripts common.sh))
 
 (env
@@ -44,7 +44,7 @@
    ../../example/f-static/static.exe
    ../../example/g-upload/upload.exe
    ../../example/h-sql/sql.exe
-   ; ../../example/i-graphql/graphql.exe
+   ../../example/i-graphql/graphql.exe
    ../../example/j-stream/stream.exe
    ../../example/k-websocket/websocket.exe
    ../../example/l-https/https.exe)))
