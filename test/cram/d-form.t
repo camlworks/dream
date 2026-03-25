@@ -14,7 +14,6 @@
   </html>
   
   $ curl_cmd / -X POST
-  [1]
   $ curl_cmd / -c cookies -b cookies | sed 's/value=.*/value=<omitted>/'
   <html>
   <body>

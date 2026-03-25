@@ -1,5 +1,5 @@
   $ error &> /dev/null &
-  $ curl_cmd /bad | sed 's/::1:.*/::1:<omitted>/' | sed 's/dream.request_id: [^<]*/dream.request_id: <omitted>/'
+  $ curl_cmd /bad
   <html>
   <body>
     <h1>404 Not Found</h1>
@@ -12,7 +12,8 @@
   Client: ::1:<omitted>
   
   GET /bad
-  Host: localhost:8080
+  Host: localhost:<omitted>
+  User-Agent: <omitted>
   Accept: */*
   
   dream.client: ::1:<omitted>
@@ -21,7 +22,7 @@
   dream.fd: 6</pre>
   </body>
   </html>
-  $ curl_cmd /fail | sed 's/::1:.*/::1:<omitted>/' | sed 's/dream.request_id: [^<]*/dream.request_id: <omitted>/'
+  $ curl_cmd /fail
   <html>
   <body>
     <h1>404 Not Found</h1>
@@ -34,7 +35,8 @@
   Client: ::1:<omitted>
   
   GET /fail
-  Host: localhost:8080
+  Host: localhost:<omitted>
+  User-Agent: <omitted>
   Accept: */*
   
   dream.client: ::1:<omitted>

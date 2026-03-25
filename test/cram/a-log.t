@@ -2,4 +2,3 @@
   $ curl_cmd /
   Good morning, world!
   $ curl_cmd /fail
-  [1]
