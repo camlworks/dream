@@ -47,15 +47,14 @@ let sql_pool ?size ?post_connect uri =
       log.warning (fun log -> log ~request
         "Dream.sql_pool: \
         'sqlite' is not a valid scheme; did you mean 'sqlite3'?");
+    let post_connect =
+      match post_connect with
+      | None -> standard_post_connect
+      | Some f -> (fun db -> Lwt.map Result.ok (f db))
+    in
     let pool =
       let pool_config = Caqti_pool_config.create ?max_size:size () in
-      Caqti_lwt_unix.connect_pool ~pool_config ~post_connect:(fun db ->
-        Lwt_result.bind (standard_post_connect db) (fun () ->
-            match post_connect with
-            | Some f -> f db
-            | None -> Lwt_result.return ())
-        )
-        parsed_uri
+      Caqti_lwt_unix.connect_pool ~pool_config ~post_connect parsed_uri
     in
     match pool with
     | Ok pool ->

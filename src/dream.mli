@@ -1754,8 +1754,7 @@ val graphiql : ?default_query:string -> string -> handler
 
 val sql_pool :
   ?size:int ->
-  ?post_connect:
-    ((module Caqti_lwt.CONNECTION) -> (unit, Caqti_error.t) result promise) ->
+  ?post_connect: (Caqti_lwt.connection -> unit promise) ->
   string ->
   middleware
 (** Makes an SQL connection pool available to its inner handler. [?size] is the
