@@ -5,7 +5,7 @@
 
 
 
-let show ?syntax input =
+let show ?syntax ?(format = Fun.id) input =
   Eml.Location.reset ();
 
   let underlying = Stream.of_string input in
@@ -17,9 +17,15 @@ let show ?syntax input =
     input_stream
     |> Eml.Tokenizer.scan ?syntax
     |> List.map Eml.Token.show
+    |> List.map format
     |> List.iter print_endline
   with Failure message ->
     print_endline message
+
+let escape_tabs text =
+  text
+  |> String.split_on_char '\t'
+  |> String.concat "\\t"
 
 let%expect_test _ =
   show "";
@@ -90,6 +96,17 @@ let%expect_test _ =
     Text {|  <html>|}
     Newline
     Text {|  </html>|} |xxx}]
+
+let%expect_test _ =
+  show ~format:escape_tabs "let foo =\n\t<html>\n\t</html>";
+  [%expect {xxx|
+    (1, 0) Code_block
+    let foo =
+
+    Options , 1
+    Text {|\t<html>|}
+    Newline
+    Text {|\t</html>|} |xxx}]
 
 let%expect_test _ =
   show "let foo =\n  <html>\n  plain";
