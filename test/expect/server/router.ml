@@ -225,6 +225,17 @@ let%expect_test _ =
     Response: 200 OK
     foo |}]
 
+let%expect_test _ =
+  show "/photos/s%C3%B6dermalm_pride/" @@ Dream.router [
+    Dream.get "/photos/s%C3%B6dermalm_pride/" (fun _ ->
+      Dream.respond "encoded");
+    Dream.get "/photos/södermalm_pride/" (fun _ ->
+      Dream.respond "decoded");
+  ];
+  [%expect {|
+    Response: 200 OK
+    decoded |}]
+
 (* Router matches long paths, does not match prefixes, etc. *)
 
 let%expect_test _ =
