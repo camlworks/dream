@@ -1793,25 +1793,6 @@ val sql : request -> (Caqti_lwt.connection -> 'a promise) -> 'a promise
     OWASP {i Logging Cheat Sheet}} for a survey of security topics related to
     logging. *)
 
-val logger : middleware
-(** Logs and times requests. Time spent logging is included. See example
-    {{:https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files}
-    [2-middleware]}. *)
-
-val log : ('a, Format.formatter, unit, unit) format4 -> 'a
-(** Formats a message and logs it. Disregard the obfuscated type: the first
-    argument is a format string as described in the standard library modules
-    {{:https://v2.ocaml.org/api/Printf.html#VALfprintf} [Printf]} and
-    {{:https://v2.ocaml.org/api/Format.html#VALfprintf} [Format]}. The rest of
-    the arguments are determined by the format string. See example
-    {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
-    [a-log]}.
-
-    {[
-      Dream.log "Counter is now: %i" counter;
-      Dream.log "Client: %s" (Dream.client request);
-    ]} *)
-
 type ('a, 'b) conditional_log =
   ((?request:request ->
    ('a, Format.formatter, unit, 'b) format4 -> 'a) -> 'b) ->
@@ -1826,6 +1807,36 @@ type log_level = [
   | `Debug
 ]
 (** Log levels, in order from most urgent to least. *)
+
+type sub_log = {
+  error   : 'a. ('a, unit) conditional_log;
+  warning : 'a. ('a, unit) conditional_log;
+  info    : 'a. ('a, unit) conditional_log;
+  debug   : 'a. ('a, unit) conditional_log;
+}
+(** Sub-logs. See {!Dream.val-sub_log} below. *)
+
+val logger : ?log:sub_log -> middleware
+(** Logs and times requests. Time spent logging is included. See example
+    {{:https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files}
+    [2-middleware]}.
+
+    [~log] can be used to choose the sub-log used by this middleware. By
+    default, request logs use the ["dream.logger"] source. *)
+
+val log : ('a, Format.formatter, unit, unit) format4 -> 'a
+(** Formats a message and logs it. Disregard the obfuscated type: the first
+    argument is a format string as described in the standard library modules
+    {{:https://v2.ocaml.org/api/Printf.html#VALfprintf} [Printf]} and
+    {{:https://v2.ocaml.org/api/Format.html#VALfprintf} [Format]}. The rest of
+    the arguments are determined by the format string. See example
+    {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
+    [a-log]}.
+
+    {[
+      Dream.log "Counter is now: %i" counter;
+      Dream.log "Client: %s" (Dream.client request);
+    ]} *)
 
 val error     : ('a, unit) conditional_log
 (** Formats a message and writes it to the log at level [`Error]. The inner
@@ -1848,14 +1859,6 @@ val info      : ('a, unit) conditional_log
 val debug     : ('a, unit) conditional_log
 (** Like {!Dream.val-error}, but for each of the other {{!log_level} log
     levels}. *)
-
-type sub_log = {
-  error   : 'a. ('a, unit) conditional_log;
-  warning : 'a. ('a, unit) conditional_log;
-  info    : 'a. ('a, unit) conditional_log;
-  debug   : 'a. ('a, unit) conditional_log;
-}
-(** Sub-logs. See {!Dream.val-sub_log} right below. *)
 
 val sub_log : ?level:[< log_level] -> string -> sub_log
 (** Creates a new sub-log with the given name. For example,
