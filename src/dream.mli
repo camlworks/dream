@@ -1392,6 +1392,13 @@ val router : route list -> handler
     request's prefix to be extended by it. It is mainly useful for “mounting”
     {!Dream.static} as a subsite.
 
+    Route paths are matched against the decoded request path. In route
+    literals, write decoded characters such as ["/photos/södermalm/"], not the
+    percent-encoded wire form such as ["/photos/s%C3%B6dermalm/"]. The original
+    target, returned by {!Dream.target} and printed by the logger, remains
+    percent-encoded so it can be recorded without interpreting arbitrary client
+    input.
+
     It can also be used as an escape hatch to convert a handler, which may
     include its own router, into a subsite. However, it is better to compose
     sites with routes and {!Dream.scope} rather than opaque handlers and [**],
