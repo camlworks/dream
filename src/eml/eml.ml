@@ -146,8 +146,8 @@ struct
 
   let rec scan_whitespace stream columns =
     match Stream.peek stream with
-    | Some ' ' ->
-      Buffer.add_char lookahead_buffer ' ';
+    | Some ((' ' | '\t') as c) ->
+      Buffer.add_char lookahead_buffer c;
       Stream.junk stream;
       scan_whitespace stream (columns + 1)
     | _ ->
