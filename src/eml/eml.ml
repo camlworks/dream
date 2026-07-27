@@ -127,7 +127,7 @@ end
    through unchanged. So, it is UTF-8-safe. *)
 module Tokenizer :
 sig
-  val scan : char Stream.t -> token list
+  val scan : ?syntax:[ `OCaml | `Reason ] -> char Stream.t -> token list
 end =
 struct
 
@@ -154,12 +154,193 @@ struct
       finish lookahead_buffer
 
 
+  (* Template text is detected line-by-line, but a line inside an OCaml
+     (* *) comment must never begin template text - otherwise the comment's
+     body and terminator are tokenized as template (see #365). Knowing whether
+     the scanner is inside a comment takes a little more of OCaml's lexical
+     conventions than counting comment delimiters:
+
+     - Comments nest.
+     - String literals are lexed inside comments, so a "*)" inside a string
+       inside a comment does not close the comment.
+     - A "(*" inside a string literal ("..." or {id|...|id}) in code does not
+       open a comment.
+     - A double quote in a character literal ('"') is not a string delimiter,
+       while an apostrophe in a type variable ('a) is not a character literal.
+     - An apostrophe can also continue an identifier (x'), where it does not
+       open a character literal either.
+     - Extension quoted strings ({%ext|...|} and {%%ext delim|...|delim}) are
+       raw, like {id|...|id}.
+
+     The scanner state is advanced by scan_code_block one consumed character
+     at a time. The int in each constructor is the comment nesting depth; zero
+     means outside any comment. Tracking applies only to OCaml input; Reason
+     .eml.re input is scanned exactly as before. *)
+  type code_syntax =
+    | Code of int
+    | Identifier of int
+      (* Inside an identifier or literal: an apostrophe here continues the
+         token (x', b'c'), rather than opening a character literal. *)
+    | Open_comment of int
+      (* At '(': a '*' next enters a comment. *)
+    | Close_comment of int
+      (* At '*' with depth >= 1: a ')' next leaves a comment. *)
+    | String_literal of int
+    | String_escape of int
+      (* At a backslash inside a string literal. *)
+    | Character of int
+      (* At an apostrophe: maybe a character literal, maybe a type
+         variable. *)
+    | Character_escape of int
+      (* At a backslash after an apostrophe. *)
+    | Character_end of int * char option
+      (* After one (possibly escaped) character following an apostrophe. If no
+         closing apostrophe follows, an unescaped character is replayed as
+         code, since it was not a character literal ('a followed by "(*", for
+         example). *)
+    | Quoted_string_open of int * string
+      (* At '{', accumulating a possible "{id|" opening delimiter. *)
+    | Quoted_extension_start of int
+      (* After "{%" or "{%%": expecting an extension quoted string's
+         attribute id, as in {%html|...|}. The id must be non-empty. *)
+    | Quoted_extension of int
+      (* Consuming the rest of an extension quoted string's attribute id. *)
+    | Quoted_extension_delimiter of int * string
+      (* After the attribute id and a blank: accumulating the delimiter, as
+         in {%sql foo|...|foo}. *)
+    | Quoted_string of int * string
+    | Quoted_string_close of int * string * string
+      (* At '|' inside {id|...|id}, accumulating a possible |id} closing
+         delimiter. *)
+
+  (* Template text cannot begin on a line that starts inside a comment
+     (comment nesting depth over zero), nor on one that starts inside a
+     string or quoted string literal, whether inside a comment or not. *)
+  let suppresses_template_detection = function
+    | Code depth
+    | Identifier depth
+    | Open_comment depth
+    | Close_comment depth
+    | Character depth
+    | Character_escape depth
+    | Character_end (depth, _)
+    | Quoted_string_open (depth, _)
+    | Quoted_extension_start depth
+    | Quoted_extension depth
+    | Quoted_extension_delimiter (depth, _) ->
+      depth > 0
+    | String_literal _
+    | String_escape _
+    | Quoted_string (_, _)
+    | Quoted_string_close (_, _, _) ->
+      true
+
+  let rec next_syntax syntax character =
+    match syntax, character with
+    | Code depth, '(' ->
+      Open_comment depth
+    | Code depth, '*' when depth > 0 ->
+      Close_comment depth
+    | Code depth, '"' ->
+      String_literal depth
+    | Code depth, '\'' ->
+      Character depth
+    | Code depth, '{' ->
+      Quoted_string_open (depth, "")
+    | Code depth, ('a'..'z' | 'A'..'Z' | '0'..'9' | '_') ->
+      Identifier depth
+    | Code depth, _ ->
+      Code depth
+    | Identifier depth, ('a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '\'') ->
+      Identifier depth
+    | Identifier depth, _ ->
+      next_syntax (Code depth) character
+    | Open_comment depth, '*' ->
+      Code (depth + 1)
+    | Open_comment depth, _ ->
+      next_syntax (Code depth) character
+    | Close_comment depth, ')' ->
+      Code (depth - 1)
+    | Close_comment depth, '*' ->
+      Close_comment depth
+    | Close_comment depth, _ ->
+      next_syntax (Code depth) character
+    | String_literal depth, '"' ->
+      Code depth
+    | String_literal depth, '\\' ->
+      String_escape depth
+    | String_literal depth, _ ->
+      String_literal depth
+    | String_escape depth, _ ->
+      String_literal depth
+    | Character depth, '\\' ->
+      Character_escape depth
+    | Character depth, '\'' ->
+      Code depth
+    | Character depth, _ ->
+      Character_end (depth, Some character)
+    | Character_escape depth, _ ->
+      Character_end (depth, None)
+    | Character_end (depth, _), '\'' ->
+      Code depth
+    | Character_end (depth, replayed), _ ->
+      let syntax =
+        Option.fold
+          ~none:(Code depth) ~some:(next_syntax (Code depth)) replayed in
+      next_syntax syntax character
+    | Quoted_string_open (depth, identifier), '|' ->
+      Quoted_string (depth, identifier)
+    | Quoted_string_open (depth, identifier), ('a'..'z' | '_') ->
+      Quoted_string_open (depth, identifier ^ String.make 1 character)
+    | Quoted_string_open (depth, ""), '%' ->
+      Quoted_extension_start depth
+    | Quoted_string_open (depth, _), _ ->
+      next_syntax (Code depth) character
+    | Quoted_extension_start depth, '%' ->
+      Quoted_extension_start depth
+    | Quoted_extension_start depth, ('a'..'z' | 'A'..'Z' | '_') ->
+      Quoted_extension depth
+    | Quoted_extension_start depth, _ ->
+      next_syntax (Code depth) character
+    | Quoted_extension depth, '|' ->
+      Quoted_string (depth, "")
+    | Quoted_extension depth,
+      ('a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '\'' | '.' | '%') ->
+      Quoted_extension depth
+    | Quoted_extension depth, (' ' | '\t') ->
+      Quoted_extension_delimiter (depth, "")
+    | Quoted_extension depth, _ ->
+      next_syntax (Code depth) character
+    | Quoted_extension_delimiter (depth, identifier), '|' ->
+      Quoted_string (depth, identifier)
+    | Quoted_extension_delimiter (depth, identifier), ('a'..'z' | '_') ->
+      Quoted_extension_delimiter (depth, identifier ^ String.make 1 character)
+    | Quoted_extension_delimiter (depth, ""), (' ' | '\t') ->
+      Quoted_extension_delimiter (depth, "")
+    | Quoted_extension_delimiter (depth, _), _ ->
+      next_syntax (Code depth) character
+    | Quoted_string (depth, identifier), '|' ->
+      Quoted_string_close (depth, identifier, "")
+    | Quoted_string (depth, identifier), _ ->
+      Quoted_string (depth, identifier)
+    | Quoted_string_close (depth, identifier, closing), '}'
+      when closing = identifier ->
+      Code depth
+    | Quoted_string_close (depth, identifier, closing), ('a'..'z' | '_') ->
+      Quoted_string_close (depth, identifier, closing ^ String.make 1 character)
+    | Quoted_string_close (depth, identifier, _), '|' ->
+      Quoted_string_close (depth, identifier, "")
+    | Quoted_string_close (depth, identifier, _), _ ->
+      Quoted_string (depth, identifier)
+
   (* Consumes all characters line-by-line, until a line begins with at least two
      spaces followed by <. At the end of this scan, the stream is at the first
      significant character on the line that ended the code block, or at the end
      of input. The string contains the whitespace characters from the beginning
-     of the line that terminated the code block. *)
-  let scan_code_block : string -> char Stream.t -> token * string =
+     of the line that terminated the code block. Lines beginning inside an
+     OCaml comment or string literal never end the code block (see #365). *)
+  let scan_code_block :
+      [ `OCaml | `Reason ] -> string -> char Stream.t -> token * string =
 
     let is_template_line leading_whitespace stream =
       match leading_whitespace, Stream.peek stream with
@@ -176,34 +357,48 @@ struct
           false, more_whitespace
     in
 
-    let rec scan_lines leading_whitespace stream =
-      let is_template, whitespace =
-        is_template_line leading_whitespace stream in
-      if is_template then
-        finish token_buffer, whitespace
-      else begin
-        Buffer.add_string token_buffer whitespace;
-        let rec finish_line stream =
-          match Stream.peek stream with
-          | Some '\n' ->
-            Buffer.add_char token_buffer '\n';
-            Stream.junk stream;
-            scan_lines None stream
-          | Some c ->
-            Buffer.add_char token_buffer c;
-            Stream.junk stream;
-            finish_line stream
-          | None ->
-            finish token_buffer, ""
-        in
-        finish_line stream
-      end
+    let rec scan_lines advance syntax leading_whitespace stream =
+      if suppresses_template_detection syntax then
+        (* Inside a comment or a string literal, the line is consumed as code
+           without template detection. Its leading whitespace is still in the
+           stream, and is consumed by finish_line. *)
+        finish_line advance syntax stream
+      else
+        let is_template, whitespace =
+          is_template_line leading_whitespace stream in
+        if is_template then
+          finish token_buffer, whitespace
+        else begin
+          Buffer.add_string token_buffer whitespace;
+          finish_line
+            advance
+            (Seq.fold_left advance syntax (String.to_seq whitespace))
+            stream
+        end
+
+    and finish_line advance syntax stream =
+      match Stream.peek stream with
+      | Some '\n' ->
+        Buffer.add_char token_buffer '\n';
+        Stream.junk stream;
+        scan_lines advance (advance syntax '\n') None stream
+      | Some c ->
+        Buffer.add_char token_buffer c;
+        Stream.junk stream;
+        finish_line advance (advance syntax c) stream
+      | None ->
+        finish token_buffer, ""
     in
 
-    fun leading_whitespace stream ->
+    fun language leading_whitespace stream ->
+      let advance =
+        match language with
+        | `OCaml -> next_syntax
+        | `Reason -> fun syntax _character -> syntax
+      in
       let line, _column = Location.current () in
       let code, leftover_whitespace =
-        scan_lines (Some leading_whitespace) stream in
+        scan_lines advance (Code 0) (Some leading_whitespace) stream in
       `Code_block {
         line;
         column = 0;
@@ -341,9 +536,9 @@ struct
 
   (* Tokenizer state machine. *)
 
-  let rec at_code_block tokens leading_whitespace stream =
+  let rec at_code_block language tokens leading_whitespace stream =
     let token, leftover_whitespace =
-      scan_code_block leading_whitespace stream in
+      scan_code_block language leading_whitespace stream in
     let tokens = token::tokens in
     (* A code block can only be terminated by template text or end of input. *)
     match Stream.peek stream with
@@ -352,15 +547,15 @@ struct
       (* TODO Test that completely blank lines don't break out of the
          template. *)
       let indent = String.length leftover_whitespace in
-      at_text_line tokens true indent leftover_whitespace stream
+      at_text_line language tokens true indent leftover_whitespace stream
 
-  and at_text_line tokens first indent leading_whitespace stream =
+  and at_text_line language tokens first indent leading_whitespace stream =
     match Stream.peek stream with
     | None ->
       tokens
     | Some '%' when leading_whitespace = "" ->
       let tokens = (scan_embedded_line stream)::tokens in
-      at_text_line tokens false indent "" stream
+      at_text_line language tokens false indent "" stream
     | _ ->
       let more_whitespace = scan_whitespace stream 0 in
       match Stream.npeek 2 stream with
@@ -368,13 +563,14 @@ struct
         let line, _ = Location.current () in
         let options = scan_terminator_options stream, indent in
         if first then
-          at_text_line ((`Options options)::tokens) false indent "" stream
+          at_text_line
+            language ((`Options options)::tokens) false indent "" stream
         else
           if String.trim (fst options) <> "" then
             Printf.ksprintf failwith
               "Line %i: text following closing '%%%%'" line
           else
-            at_code_block tokens "" stream
+            at_code_block language tokens "" stream
       | _ ->
         let all_whitespace = leading_whitespace ^ more_whitespace in
         let next = Stream.peek stream in
@@ -385,11 +581,11 @@ struct
             else
               tokens
           in
-          at_text tokens indent all_whitespace stream
+          at_text language tokens indent all_whitespace stream
         else
-          at_code_block tokens all_whitespace stream
+          at_code_block language tokens all_whitespace stream
 
-  and at_text tokens indent leading_whitespace stream =
+  and at_text language tokens indent leading_whitespace stream =
     let token = scan_text leading_whitespace stream in
     let tokens = token::tokens in
     (* Template text could have been terminated by embedded code, a newline, or
@@ -401,7 +597,7 @@ struct
     | Some '\n' ->
       Stream.junk stream;
       (* let tokens = `Newline::tokens in *)
-      at_text_line (`Newline::tokens) false indent "" stream
+      at_text_line language (`Newline::tokens) false indent "" stream
       (* begin match Stream.peek stream with
       | None -> tokens
       | Some ' ' -> at_text_line tokens false indent "" stream
@@ -415,15 +611,15 @@ struct
        embedded code block. *)
     | Some '<' ->
       let tokens = (scan_embedded stream)::tokens in
-      at_text tokens indent "" stream
+      at_text language tokens indent "" stream
     (* This case should be impossible, because the text parser would have
        consumed any other character. *)
     | Some _ ->
       assert false
 
-  let scan stream =
+  let scan ?(syntax = `OCaml) stream =
     stream
-    |> at_code_block [] ""
+    |> at_code_block syntax [] ""
     |> List.rev
 end
 
@@ -810,7 +1006,7 @@ let process_file (input_file, location, syntax, std_out) =
   Location.reset ();
 
   input_stream
-  |> Tokenizer.scan
+  |> Tokenizer.scan ~syntax
   |> Transform.delimit
   |> Transform.unindent
   (* |> Transform.empty_lines *)
