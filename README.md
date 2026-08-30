@@ -6,11 +6,21 @@ Easy-to-use, feature-complete Web framework without boilerplate.
 
 <br>
 
-<p align="center">
-<img
-  src="https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/sample.png"
-  alt="Source code of minimal app using the Dream Web framework for OCaml">
-</p>
+```ocaml
+let hello who =
+  <html>
+  <body>
+    <h1>Hello, <%s who %>!</h1>
+  </body>
+  </html>
+
+let () =
+  Dream.run
+  @@ Dream.logger
+  @@ Dream.router [
+    Dream.get "/" (fun _ -> Dream.html (hello "world"));
+  ]
+```
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> |
