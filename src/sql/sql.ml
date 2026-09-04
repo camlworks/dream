@@ -17,19 +17,6 @@ let log =
 let pool_field : (_, Caqti.Error.t) Caqti_lwt_unix.Pool.t Message.field =
   Message.new_field ()
 
-(* TODO This may not be necessary since Caqti 1.8.0. May require some messing
-   around, "Enable foreign key constraint checks for SQLite3 starting at tweaks
-   version 1.8." in CHANGES. *)
-let foreign_keys_on =
-  let open Caqti_request.Infix in
-  (Caqti_type.unit ->. Caqti_type.unit) "PRAGMA foreign_keys = ON"
-  [@ocaml.warning "-3"]
-
-let standard_post_connect (module Db : Caqti_lwt.CONNECTION) =
-  match Caqti_driver_info.dialect_tag Db.driver_info with
-  | `Sqlite -> Db.exec foreign_keys_on ()
-  | _ -> Lwt.return (Ok ())
-
 let sql_pool ?size ?post_connect uri =
     let pool_cell = ref None in
     fun inner_handler request ->
@@ -48,13 +35,13 @@ let sql_pool ?size ?post_connect uri =
         "Dream.sql_pool: \
         'sqlite' is not a valid scheme; did you mean 'sqlite3'?");
     let post_connect =
-      match post_connect with
-      | None -> standard_post_connect
-      | Some f -> (fun db -> Lwt.map Result.ok (f db))
+      Option.map
+        (fun post_connect db -> Lwt.map Result.ok (post_connect db))
+        post_connect
     in
     let pool =
       let pool_config = Caqti.Pool.Config.create ?max_size:size () in
-      Caqti_lwt_unix.connect_pool ~pool_config ~post_connect parsed_uri
+      Caqti_lwt_unix.connect_pool ~pool_config ?post_connect parsed_uri
     in
     match pool with
     | Ok pool ->
