@@ -121,7 +121,7 @@ file:
 [`sql.opam`](https://github.com/camlworks/dream/blob/master/example/h-sql/esy.json):
 
 <pre>depends: [
-  <b>"caqti-driver-sqlite3" {>= "1.7.0"}</b>
+  <b>"caqti-driver-sqlite3"</b>
   "ocaml" {>= "4.08.0"}
   "dream"
   "dune" {>= "2.0.0"}
