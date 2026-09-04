@@ -9,22 +9,21 @@ a library for talking to SQL databases:
 
 ```ocaml
 module type DB = Caqti_lwt.CONNECTION
-module T = Caqti_type
 
 let list_comments =
   let query =
-    let open Caqti_request.Infix in
-    (T.unit ->* T.(t2 int string))
-    "SELECT id, text FROM comment" in
+    let open Caqti.Templater in
+    static T.(unit -->* t2 int string)
+      "SELECT id, text FROM comment" in
   fun (module Db : DB) ->
     let%lwt comments_or_error = Db.collect_list query () in
     Caqti_lwt.or_fail comments_or_error
 
 let add_comment =
   let query =
-    let open Caqti_request.Infix in
-    (T.string ->. T.unit)
-    "INSERT INTO comment (text) VALUES ($1)" in
+    let open Caqti.Templater in
+    static T.(string -->. unit)
+      "INSERT INTO comment (text) VALUES ($1)" in
   fun text (module Db : DB) ->
     let%lwt unit_or_error = Db.exec query text in
     Caqti_lwt.or_fail unit_or_error
@@ -122,7 +121,7 @@ file:
 [`sql.opam`](https://github.com/camlworks/dream/blob/master/example/h-sql/esy.json):
 
 <pre>depends: [
-  <b>"caqti-driver-sqlite3" {>= "1.7.0"}</b>
+  <b>"caqti-driver-sqlite3"</b>
   "ocaml" {>= "4.08.0"}
   "dream"
   "dune" {>= "2.0.0"}
@@ -134,17 +133,18 @@ file:
 Pass multiple arguments with `(?, ?, ..)`.  See [Caqti utop](https://ocaml.org/p/caqti/latest#running-under-utop).
 
 Tips.
-- `->.` returns a unit and uses `Db.exec`.
-- `->!` returns a single row and uses `Db.find`.
-- `->*` returns a list of rows and uses `Db.collect_list`.
+- `-->.` returns a unit and uses `Db.exec`.
+- `-->!` returns a single row and uses `Db.find`.
+- `-->?` returns zero or one row and uses `Db.find_opt`.
+- `-->*` returns a list of rows and uses `Db.collect_list`.
 
 Here is another example. We expect a single integer to be returned, which is the id of the created row. see [RETURNING sql tutorial](https://www.sqlitetutorial.net/sqlite-returning/).
 ```ocaml
 let add_session =
   let query =
-    let open Caqti_request.Infix in
-    ( T.(t4 string string float string) ->! T.int )
-    ("INSERT INTO dream_session(id, label, expires_at, payload) VALUES (?, ?, ?, ?) RETURNING id") in
+    let open Caqti.Templater in
+    static T.(t4 string string float string -->! int)
+      "INSERT INTO dream_session(id, label, expires_at, payload) VALUES (?, ?, ?, ?) RETURNING id" in
   fun (id, label, expires_at, payload) (module Db : DB) ->
     let%lwt unit_or_error = Db.find query (id, label, expires_at, payload) in
     Caqti_lwt.or_fail unit_or_error
@@ -152,11 +152,11 @@ let add_session =
 
 See
 
-- [`Caqti_response`](https://ocaml.org/p/caqti/latest/doc/Caqti_connection_sig/module-type-S/index.html)
+- [`Caqti.Connection.S`](https://ocaml.org/p/caqti/latest/doc/caqti/Caqti/Connection/module-type-S/index.html)
   for Caqti's statement runners. These are the fields of the module `Db` in the example.
-- [`Caqti_request`](https://ocaml.org/p/caqti/latest/doc/Caqti_request/Infix/index.html#indep)
-  sets up prepared statements.
-- [`Caqti_type`](https://ocaml.org/p/caqti/latest/doc/Caqti_type/index.html) is
+- [`Caqti.Templater`](https://ocaml.org/p/caqti/latest/doc/caqti/Caqti/Templater/index.html)
+  sets up request templates with prepared statements.
+- [`Caqti.Template.Row_type`](https://ocaml.org/p/caqti/latest/doc/caqti/Caqti/Template/Row_type/index.html) is
   used to specify the types of statement arguments and results.
 
 <br>
