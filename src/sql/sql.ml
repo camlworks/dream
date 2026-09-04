@@ -14,7 +14,7 @@ let log =
   Log.sub_log "dream.sql"
 
 (* TODO Debug metadata for the pools. *)
-let pool_field : (_, Caqti_error.t) Caqti_lwt_unix.Pool.t Message.field =
+let pool_field : (_, Caqti.Error.t) Caqti_lwt_unix.Pool.t Message.field =
   Message.new_field ()
 
 (* TODO This may not be necessary since Caqti 1.8.0. May require some messing
@@ -53,7 +53,7 @@ let sql_pool ?size ?post_connect uri =
       | Some f -> (fun db -> Lwt.map Result.ok (f db))
     in
     let pool =
-      let pool_config = Caqti_pool_config.create ?max_size:size () in
+      let pool_config = Caqti.Pool.Config.create ?max_size:size () in
       Caqti_lwt_unix.connect_pool ~pool_config ~post_connect parsed_uri
     in
     match pool with
@@ -66,7 +66,7 @@ let sql_pool ?size ?post_connect uri =
          debug handler. *)
       let message =
         Printf.sprintf "Dream.sql_pool: cannot create pool for '%s': %s"
-         uri (Caqti_error.show error) in
+         uri (Caqti.Error.show error) in
       log.error (fun log -> log ~request "%s" message);
       failwith message
   end

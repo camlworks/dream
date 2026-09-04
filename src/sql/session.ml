@@ -115,7 +115,7 @@ let rec create db expires_at attempt =
   (* Assume that any exception is a PRIMARY KEY collision (extremely unlikely)
      and try a couple more times. *)
   match%lwt insert db session with
-  | exception Caqti_error.Exn _ when attempt <= 3 ->
+  | exception Caqti.Error.Exn _ when attempt <= 3 ->
     create db expires_at (attempt + 1)
   | () ->
     Lwt.return session
