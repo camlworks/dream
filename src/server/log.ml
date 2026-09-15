@@ -329,20 +329,22 @@ let sub_log ?level:level_ name =
         log ~tags format_and_arguments))
   in
 
-  let level =
-    List.find Option.is_some [
-      Option.map to_logs_level level_;
-      List.assoc_opt name !custom_log_levels;
-      Some !level
-    ] in
+  let source_level =
+    match level_ with
+    | Some level ->
+      let level = to_logs_level level in
+      custom_log_levels :=
+        (name, level)::(List.remove_assoc name !custom_log_levels);
+      Some level
+    | None ->
+      List.assoc_opt name !custom_log_levels
+  in
 
   (* Create the actual Logs source, and then wrap all the interesting
      functions. *)
   let src = Logs.Src.create name in
   let (module Log) = Logs.src_log src in
-  Logs.Src.set_level src level;
-  custom_log_levels :=
-    (name, Option.get level)::(List.remove_assoc name !custom_log_levels);
+  Logs.Src.set_level src source_level;
   sources := (name, src) :: (List.remove_assoc name !sources);
 
   {
