@@ -462,7 +462,7 @@ let fd_field : int Message.field =
     end
 
   (* The request logging middleware. *)
-  let logger next_handler request =
+  let logger ?(log = log) next_handler request =
 
     let start = now () in
 

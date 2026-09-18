@@ -1524,10 +1524,34 @@ module Make
       OWASP {i Logging Cheat Sheet}} for a survey of security topics related to
       logging. *)
 
-  val logger : middleware
+  type ('a, 'b) conditional_log =
+    ((?request:request -> ('a, Format.formatter, unit, 'b) format4 -> 'a) -> 'b) ->
+    unit
+  (** Loggers. This type is difficult to read — instead, see {!Dream.val-error} for
+      usage. *)
+
+  type log_level =
+    [ `Error
+    | `Warning
+    | `Info
+    | `Debug ]
+  (** Log levels, in order from most urgent to least. *)
+
+  type sub_log = {
+    error : 'a. ('a, unit) conditional_log;
+    warning : 'a. ('a, unit) conditional_log;
+    info : 'a. ('a, unit) conditional_log;
+    debug : 'a. ('a, unit) conditional_log;
+  }
+  (** Sub-logs. See {!Dream.val-sub_log} below. *)
+
+  val logger : ?log:sub_log -> middleware
   (** Logs and times requests. Time spent logging is included. See example
       {{:https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files}
-      [2-middleware]} \[{{:http://dream.as/2-middleware} playground}\]. *)
+      [2-middleware]} \[{{:http://dream.as/2-middleware} playground}\].
+
+      [~log] can be used to choose the sub-log used by this middleware. By
+      default, request logs use the ["dream.logger"] source. *)
 
   val log : ('a, Format.formatter, unit, unit) format4 -> 'a
   (** Formats a message and logs it. Disregard the obfuscated type: the first
@@ -1542,19 +1566,6 @@ module Make
         Dream.log "Counter is now: %i" counter;
         Dream.log "Client: %s" (Dream.client request);
       ]} *)
-
-  type ('a, 'b) conditional_log =
-    ((?request:request -> ('a, Format.formatter, unit, 'b) format4 -> 'a) -> 'b) ->
-    unit
-  (** Loggers. This type is difficult to read — instead, see {!Dream.val-error} for
-      usage. *)
-
-  type log_level =
-    [ `Error
-    | `Warning
-    | `Info
-    | `Debug ]
-  (** Log levels, in order from most urgent to least. *)
 
   val error : ('a, unit) conditional_log
   (** Formats a message and writes it to the log at level [`Error]. The inner
@@ -1578,14 +1589,6 @@ module Make
   val debug : ('a, unit) conditional_log
   (** Like {!Dream.val-error}, but for each of the other {{!log_level} log
       levels}. *)
-
-  type sub_log = {
-    error : 'a. ('a, unit) conditional_log;
-    warning : 'a. ('a, unit) conditional_log;
-    info : 'a. ('a, unit) conditional_log;
-    debug : 'a. ('a, unit) conditional_log;
-  }
-  (** Sub-logs. See {!Dream.val-sub_log} right below. *)
 
   val sub_log : ?level:[< log_level] -> string -> sub_log
   (** Creates a new sub-log with the given name. For example,
