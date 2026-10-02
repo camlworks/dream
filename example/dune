@@ -1,0 +1,13 @@
+; Reason examples are standalone esy projects. Keep them out of the
+; repository-wide Dune build so Dream's test dependencies do not include reason.
+(dirs
+ :standard
+ \ r-fullstack-melange
+   r-graphql
+   r-hello
+   r-html_of_jsx
+   r-template
+   r-template-files
+   r-template-logic
+   r-template-stream
+   r-tyxml)

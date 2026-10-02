@@ -71,15 +71,15 @@ jobs:
       run: |
         set -e
         set -x
-        EXCLUDED_EXAMPLES='w-mirage*|r-tyxml|w-dream-html'
+        EXCLUDED_EXAMPLES='w-mirage*|w-dream-html'
         EXAMPLES=$(find example -maxdepth 1 -type d | grep -Ev $EXCLUDED_EXAMPLES | grep -v "^example/0" | grep -v "^example$" | sort)
         shopt -s nullglob
         for EXAMPLE in $EXAMPLES
         do
+          # Reason examples remain in the tree, but should not add a test
+          # dependency on the Reason compiler.
           FILE=$(find $EXAMPLE -maxdepth 1 -type f -and -path "${EXAMPLE}/*.ml")
-          FILE+=$(find $EXAMPLE -maxdepth 1 -type f -and -path "${EXAMPLE}/*.re")
           FILE+=$(find $EXAMPLE -maxdepth 2 -type f -and -path "${EXAMPLE}/server/*.ml")
-          FILE+=$(find $EXAMPLE -maxdepth 2 -type f -and -path "${EXAMPLE}/server/*.re")
 
           if [[ "$FILE" == "" ]]; then
               continue
