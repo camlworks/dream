@@ -35,7 +35,7 @@ To get this, we depend on package `html_of_jsx` in
 
 <pre><code>{
   "dependencies": {
-    "@opam/dream": "1.0.0~alpha4",
+    "@opam/dream": "1.0.0",
     "@opam/dune": "^2.0",
     "@opam/reason": "^3.8.0",
     <b>"@opam/html_of_jsx": "*",</b>
