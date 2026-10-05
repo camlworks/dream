@@ -44,7 +44,7 @@ bug-reports: "https://github.com/camlworks/dream/issues"
 dev-repo: "git+https://github.com/camlworks/dream.git"
 
 author: "Anton Bachin <antonbachin@yahoo.com>"
-maintainer: "Anton Bachin <antonbachin@yahoo.com>"
+maintainer: ["Sebastian Willenbrink <sebastian.willenbrink@mailbox.org>" "Yawar Amin <yawar.amin@gmail.com>" "Anton Bachin <antonbachin@yahoo.com>"]
 
 depends: [
   "base-unix"
