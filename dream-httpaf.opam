@@ -13,7 +13,7 @@ author: "Anton Bachin <antonbachin@yahoo.com>"
 maintainer: ["Sebastian Willenbrink <sebastian.willenbrink@mailbox.org>" "Yawar Amin <yawar.amin@gmail.com>" "Anton Bachin <antonbachin@yahoo.com>"]
 
 depends: [
-  "dream-pure"
+  "dream-pure" {= version}
   "dune" {>= "2.7.0"}  # --instrument-with.
   "gluten"
   "gluten-lwt-unix"

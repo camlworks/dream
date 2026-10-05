@@ -50,9 +50,9 @@ depends: [
   "bigarray-compat"
   "bigstringaf"
   "digestif" {>= "1.0.0"}
-  "dream"
-  "dream-httpaf"
-  "dream-pure"
+  "dream" {= version}
+  "dream-httpaf" {= version}
+  "dream-pure" {= version}
   "dune" {>= "2.7.0"}
   "duration"
   "emile" {>= "1.1"}
