@@ -1906,7 +1906,7 @@ let invalidate_session_expected = {|<div class="spec value" id="val-invalidate_s
 |}
 
 let memory_sessions_expected = {|<div class="spec value" id="val-memory_sessions">
- <a href="#val-memory_sessions" class="anchor"></a><code><span><span class="keyword">val</span> memory_sessions : <span>?lifetime:float <span class="arrow">-&gt;</span></span> <a href="#type-middleware">middleware</a></span></code>
+ <a href="#val-memory_sessions" class="anchor"></a><code><span><span class="keyword">val</span> memory_sessions : <span>?lifetime:float <span class="arrow">-&gt;</span></span> <span>unit <span class="arrow">-&gt;</span></span> <a href="#type-middleware">middleware</a></span></code>
 </div>
 |}
 
@@ -1951,8 +1951,7 @@ let graphiql_expected = {|<div class="spec value" id="val-graphiql">
 |}
 
 let sql_pool_expected = {|<div class="spec value" id="val-sql_pool">
- <a href="#val-sql_pool" class="anchor"></a><code><span><span class="keyword">val</span> sql_pool : <span>?size:int <span class="arrow">-&gt;</span></span>
-<span>?post_connect:<span>(<span><span>(<span class="keyword">module</span> <span class="xref-unresolved">Caqti_lwt</span>.CONNECTION)</span> <span class="arrow">-&gt;</span></span> <span><span><span>(unit,&nbsp;<span class="xref-unresolved">Caqti_error</span>.t)</span> <span class="xref-unresolved">Stdlib</span>.result</span> <a href="#type-promise">promise</a></span>)</span> <span class="arrow">-&gt;</span></span> <span>string <span class="arrow">-&gt;</span></span> <a href="#type-middleware">middleware</a></span></code>
+ <a href="#val-sql_pool" class="anchor"></a><code><span><span class="keyword">val</span> sql_pool : <span>?size:int <span class="arrow">-&gt;</span></span> <span>?post_connect:<span>(<span><span class="xref-unresolved">Caqti_lwt</span>.connection <span class="arrow">-&gt;</span></span> <span>unit <a href="#type-promise">promise</a></span>)</span> <span class="arrow">-&gt;</span></span> <span>string <span class="arrow">-&gt;</span></span> <a href="#type-middleware">middleware</a></span></code>
 </div>
 |}
 
@@ -2383,7 +2382,7 @@ let pretty_print_signatures soup =
     "#val-all_session_fields" all_session_fields_expected ["string"; "list"];
   link_stdlib_type
     "#val-invalidate_session" invalidate_session_expected ["unit"];
-  link_stdlib_type "#val-memory_sessions" memory_sessions_expected ["float"];
+  link_stdlib_type "#val-memory_sessions" memory_sessions_expected ["float"; "unit"];
   link_stdlib_type "#val-cookie_sessions" cookie_sessions_expected ["float"];
   link_stdlib_type "#val-sql_sessions" sql_sessions_expected ["float"];
   link_stdlib_type "#val-session_id" session_id_expected ["string"];
@@ -2405,7 +2404,7 @@ let pretty_print_signatures soup =
   multiline "#val-graphql" graphql_expected graphql_replacement;
   link_stdlib_type "#val-graphiql" graphiql_expected ["string"];
 
-  link_stdlib_type "#val-sql_pool" sql_pool_expected ["int"; "string"];
+  link_stdlib_type "#val-sql_pool" sql_pool_expected ["int"; "string"; "unit"];
   multiline "#val-sql" sql_expected sql_replacement;
 
   replace "#val-log" log_expected log_replacement;
