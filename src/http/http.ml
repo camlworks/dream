@@ -687,6 +687,10 @@ let on_termination_signal () =
   ignore (Lwt_unix.on_signal Sys.sigint (fun _ -> Lwt.wakeup_later int_resolve ()));
   Lwt.pick [term_promise; int_promise]
 
+let ignore_sigpipe () =
+  if Sys.unix then
+    Sys.(set_signal sigpipe Signal_ignore)
+
 let network ~port ~socket_path =
   match socket_path with
   | None -> `Inet port
@@ -703,6 +707,8 @@ let serve
     ?key_file
     ?(builtins = true)
     user's_dream_handler =
+
+  ignore_sigpipe ();
 
   serve_with_maybe_https
     "serve"
@@ -734,9 +740,7 @@ let run
     ?adjust_terminal
     user's_dream_handler =
 
-  let () = if Sys.unix then
-    Sys.(set_signal sigpipe Signal_ignore)
-  in
+  ignore_sigpipe ();
 
   let log = Log.convenience_log in
 
