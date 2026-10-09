@@ -1,0 +1,71 @@
+(cram
+ (deps
+  %{bin:hello}
+  %{bin:middleware}
+  %{bin:router}
+  %{bin:counter}
+  %{bin:promise}
+  %{bin:echo-server}
+  %{bin:template}
+  %{bin:debug}
+  %{bin:error}
+  %{bin:log}
+  %{bin:session}
+  %{bin:cookie}
+  %{bin:form}
+  %{bin:json}
+  %{bin:static}
+  %{bin:upload}
+  %{bin:sql}
+  %{bin:graphql}
+  %{bin:stream}
+  %{bin:websocket}
+  %{bin:https}
+  %{bin:query}
+  %{bin:flash}
+  %{bin:content_security_policy}
+  %{bin:one_binary}
+  %{bin:multipart_dump}
+  %{bin:upload_stream}
+  %{bin:template-files}
+  %{bin:template-logic}
+  %{bin:template_stream}
+  %{bin:tyxml}
+  %{bin:bash})
+  (setup_scripts common.sh)
+  (shell bash))
+
+(env
+ (_
+  (binaries
+   ../../example/1-hello/hello.exe
+   ../../example/2-middleware/middleware.exe
+   ../../example/3-router/router.exe
+   ../../example/4-counter/counter.exe
+   ../../example/5-promise/promise.exe
+   (../../example/6-echo/echo.exe as echo-server)
+   ../../example/7-template/template.exe
+   ../../example/8-debug/debug.exe
+   ../../example/9-error/error.exe
+   ../../example/a-log/log.exe
+   ../../example/b-session/session.exe
+   ../../example/c-cookie/cookie.exe
+   ../../example/d-form/form.exe
+   ../../example/e-json/json.exe
+   ../../example/f-static/static.exe
+   ../../example/g-upload/upload.exe
+   ../../example/h-sql/sql.exe
+   ../../example/i-graphql/graphql.exe
+   ../../example/j-stream/stream.exe
+   ../../example/k-websocket/websocket.exe
+   ../../example/l-https/https.exe
+   ../../example/w-query/query.exe
+   ../../example/w-flash/flash.exe
+   ../../example/w-content-security-policy/content_security_policy.exe
+   ../../example/w-one-binary/one_binary.exe
+   ../../example/w-multipart-dump/multipart_dump.exe
+   ../../example/w-upload-stream/upload_stream.exe
+   (../../example/w-template-files/server.exe as template-files)
+   (../../example/w-template-logic/template.exe as template-logic)
+   ../../example/w-template-stream/template_stream.exe
+   ../../example/w-tyxml/tyxml.exe)))

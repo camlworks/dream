@@ -1,2 +1,2 @@
-(lang dune 2.7)
+(lang dune 3.22)
 (name dream)

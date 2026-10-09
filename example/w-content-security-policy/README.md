@@ -3,20 +3,15 @@
 <br>
 
 The [`Content-Security-Policy`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy)
-(CSP) header is used to control where your Web pages can be embedded, and what
-content they can be made to load. This example uses the CSP
-[`frame-ancestors`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors)
-directive to prevent a page from being loaded inside a frame, which can help
-prevent
-[clickjacking](https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html).
-In addition, it tells the browser to send CSP violation reports back to the
-server:
+(CSP) header controls what content your pages are allowed to load. This example
+uses [`img-src 'none'`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/img-src)
+to forbid images, and has the browser report each violation back to the server:
 
 ```ocaml
 let home =
   <html>
   <body>
-    <iframe src="/nested"></iframe>
+    <img src="/blocked.png">
   </body>
   </html>
 
@@ -26,14 +21,17 @@ let () =
   @@ Dream.router [
 
     Dream.get "/" (fun _ ->
-      Dream.html home);
-
-    Dream.get "/nested" (fun _ ->
       Dream.html
-        ~headers:["Content-Security-Policy",
-          "frame-ancestors 'none'; " ^
-          "report-uri /violation"]
-        "You should not be able to see this inside a frame!");
+        ~headers:[
+          "Content-Security-Policy",
+            "img-src 'none'; " ^
+            "report-to csp-endpoint";
+          "Reporting-Endpoints", "csp-endpoint=\"/violation\""]
+        home);
+
+    Dream.get "/blocked.png" (fun _ ->
+        Dream.html
+          "You should not be able to see this!");
 
     Dream.post "/violation" (fun request ->
       let%lwt report = Dream.body request in
@@ -49,24 +47,32 @@ let () =
 
 <br>
 
-Visit [http://localhost:8080](http://localhost:8080), and your browser should
-refuse to show `/nested` inside the frame on the home page. In addition, the
-server log will show something like
+Visit [http://localhost:8080](http://localhost:8080) which contains a
+single `<img>` pointing at `/blocked.png`. Due to `img-src 'none'`, the browser refuses to load it and posts a violation report to `/violation`. The server log will show
+something like
 
 ```
-09.06.21 09:54:35.971                 ERROR REQ 3 {
-  "csp-report": {
-    "document-uri": "http://localhost:8080/",
-    "referrer": "",
-    "violated-directive": "frame-ancestors",
-    "effective-directive": "frame-ancestors",
-    "original-policy": "frame-ancestors 'none'; report-uri /violation",
-    "disposition": "enforce",
-    "blocked-uri": "http://localhost:8080/",
-    "status-code": 200,
-    "script-sample": ""
-  }
+ERROR REQ 2 [
+ {
+  "age": 6,
+  "type": "csp-violation",
+  "url": "http://localhost:8080/",
+  "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:157.0) Gecko/20100101 Firefox/157.0",
+  "body": {
+ "documentURL": "http://localhost:8080/",
+ "blockedURL": "http://localhost:8080/blocked.png",
+ "referrer": null,
+ "effectiveDirective": "img-src",
+ "originalPolicy": "img-src 'none'; report-to csp-endpoint",
+ "sourceFile": null,
+ "sample": null,
+ "disposition": "enforce",
+ "statusCode": 200,
+ "lineNumber": null,
+ "columnNumber": null
 }
+ }
+]
 ```
 
 <br>
@@ -93,6 +99,7 @@ app develops. When enabling CSP, also consider
 
 - [`Content-Security-Policy`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) on MDN
 - [`Strict-Transport-Security`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security) on MDN
+- [`Report-To` / Reporting API](https://developer.mozilla.org/en-US/docs/Web/API/Reporting_API) on MDN
 - OWASP [*Content Security Policy Cheat Sheet*](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html)
 - OWASP [*Clickjacking Defense Cheat Sheet*](https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html)
 - OWASP [*HTTP Strict Transport Security Cheat Sheet*](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html)
