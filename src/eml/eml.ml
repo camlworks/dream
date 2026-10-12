@@ -64,11 +64,6 @@ type 'a with_location = {
   what : 'a;
 }
 
-type start_file_token = [
-  (* Token for the start of file. Will be replaced with code creating buffer pool *)
-  | `Start_file
-]
-
 type code_block_token = [
   (* A block of OCaml code. These start at the beginning of the input file, and
      continue until a line that starts with '<'. They occur again whenever the
@@ -104,7 +99,6 @@ type template_token = [
 ]
 
 type token = [
-  | start_file_token
   | code_block_token
   | options_token
   | newline_token
@@ -117,8 +111,6 @@ sig
 end =
 struct
   let show = function
-    | `Start_file ->
-      "Start of file"
     | `Code_block {line; column; what = code} ->
       Printf.sprintf "(%i, %i) Code_block\n%s" (line + 1) column code
     | `Options (options, indent) ->
@@ -627,14 +619,13 @@ struct
 
   let scan ?(syntax = `OCaml) stream =
     stream
-    |> at_code_block syntax [`Start_file] ""
+    |> at_code_block syntax [] ""
     |> List.rev
 end
 
 
 
 type template = [
-  | start_file_token
   | code_block_token
   | `Template of (string * int) * template_token list list
 ]
@@ -676,8 +667,6 @@ struct
            at the start of every template, carrying indentation information. So,
            it should be removed at the next opportunity. *)
         template_level ("", 0) accumulator [] [] tokens
-      | (`Start_file as token)::tokens ->
-        top_level (token::accumulator) tokens
       | (`Code_block _ as token)::tokens ->
         top_level (token::accumulator) tokens
       | [] ->
@@ -692,8 +681,6 @@ struct
         top_level ((`Template (options, List.rev template))::accumulator) tokens
       | `Newline::tokens ->
         template_level options accumulator ((List.rev line)::template) [] tokens
-      | (`Start_file as token)::tokens ->
-        top_level (token::accumulator) tokens
       | (#template_token as token)::tokens ->
         template_level options accumulator template (token::line) tokens
 
@@ -707,7 +694,7 @@ struct
     templates
     |> List.map (function
       | `Template (options, template) -> `Template (options, f options template)
-      | (`Code_block _) | `Start_file as token -> token)
+      | `Code_block _ as token -> token)
 
 
 
@@ -840,7 +827,7 @@ end
 module Generate :
 sig
   val generate :
-    reason:bool -> buffer_size:int -> pool_size:int -> string -> (string -> unit) -> template list -> unit
+    reason:bool -> string -> (string -> unit) -> template list -> unit
 end =
 struct
   type output = {
@@ -851,43 +838,6 @@ struct
     format : string -> unit;
     format_end : unit -> unit;
   }
-
-  let buffer_pool buffer_size pool_size = 
-Printf.sprintf {|let ___EML_BUFFER_SIZE = %d
-let ___EML_POOL_SIZE = %d
-let ___eml_pool = ref (List.init ___EML_POOL_SIZE (fun _ -> Buffer.create ___EML_BUFFER_SIZE))
-let ___eml_get_buffer pool =
-  match !pool with
-  | buf :: bufs ->
-    pool := bufs;
-    Buffer.clear buf;
-    buf
-  | [] -> Buffer.create ___EML_BUFFER_SIZE
-let ___eml_return_buffer pool buf =
-  pool := buf :: !pool;
-  Buffer.contents buf
-
-|} buffer_size pool_size
-
-  let buffer_pool_reason buffer_size pool_size =
-Printf.sprintf {|let ___EML_BUFFER_SIZE = %d;
-let ___EML_POOL_SIZE = %d;
-let ___eml_pool = ref(List.init(___EML_POOL_SIZE, _ => Buffer.create(___EML_BUFFER_SIZE)));
-let ___eml_get_buffer = pool => {
-  switch (pool^) {
-  | [buf, ...bufs] =>
-    pool := bufs;
-    Buffer.clear(buf);
-    buf;
-  | [] => Buffer.create(___EML_BUFFER_SIZE)
-  };
-};
-let ___eml_return_buffer = (pool, buf) => {
-  pool := [buf, ...pool^];
-  Buffer.contents(buf);
-};
-
-|} buffer_size pool_size
 
   let string print = {
     print;
@@ -1002,9 +952,8 @@ let ___eml_return_buffer = (pool, buf) => {
         output.format_end ();
     end
 
-  let generate ~reason ~buffer_size ~pool_size location print templates =
+  let generate ~reason location print templates =
     templates |> List.iter begin function
-      | `Start_file -> print @@ (if reason then buffer_pool_reason else buffer_pool) buffer_size pool_size
       | `Code_block {line; what; _} ->
         Printf.ksprintf print "#%i \"%s\"\n" (line + 1) location;
         print what
@@ -1029,6 +978,45 @@ end
 
 
 
+let buffer_pool buffer_size pool_size =
+Printf.sprintf {|let ___EML_BUFFER_SIZE = %d
+let ___EML_POOL_SIZE = %d
+let ___eml_pool = ref (List.init ___EML_POOL_SIZE (fun _ -> Buffer.create ___EML_BUFFER_SIZE))
+let ___eml_get_buffer pool =
+  match !pool with
+  | buf :: bufs ->
+    pool := bufs;
+    Buffer.clear buf;
+    buf
+  | [] -> Buffer.create ___EML_BUFFER_SIZE
+let ___eml_return_buffer pool buf =
+  pool := buf :: !pool;
+  Buffer.contents buf
+
+|} buffer_size pool_size
+
+let buffer_pool_reason buffer_size pool_size =
+Printf.sprintf {|let ___EML_BUFFER_SIZE = %d;
+let ___EML_POOL_SIZE = %d;
+let ___eml_pool = ref(List.init(___EML_POOL_SIZE, _ => Buffer.create(___EML_BUFFER_SIZE)));
+let ___eml_get_buffer = pool => {
+  switch (pool^) {
+  | [buf, ...bufs] =>
+    pool := bufs;
+    Buffer.clear(buf);
+    buf;
+  | [] => Buffer.create(___EML_BUFFER_SIZE)
+  };
+};
+let ___eml_return_buffer = (pool, buf) => {
+  pool := [buf, ...pool^];
+  Buffer.contents(buf);
+};
+
+|} buffer_size pool_size
+
+
+
 let process_file (input_file, location, syntax, std_out, buffer_size, pool_size) =
   let reason, extension = match syntax with
   | `OCaml -> (false, ".ml")
@@ -1048,6 +1036,7 @@ let process_file (input_file, location, syntax, std_out, buffer_size, pool_size)
      it automatically on process exit, anyway. *)
   let input_channel = open_in input_file in
   let output_channel = if std_out then stdout else open_out output_file in
+  let print = output_string output_channel in
 
   let input_stream = Location.stream (fun () ->
     try Some (input_char input_channel)
@@ -1056,11 +1045,19 @@ let process_file (input_file, location, syntax, std_out, buffer_size, pool_size)
 
   Location.reset ();
 
-  input_stream
-  |> Tokenizer.scan ~syntax
-  |> Transform.delimit
-  |> Transform.unindent
-  (* |> Transform.empty_lines *)
-  |> Transform.coalesce
-  |> Transform.trim
-  |> Generate.generate ~reason ~buffer_size ~pool_size location (output_string output_channel)
+  let templates =
+    input_stream
+    |> Tokenizer.scan ~syntax
+    |> Transform.delimit
+    |> Transform.unindent
+    (* |> Transform.empty_lines *)
+    |> Transform.coalesce
+    |> Transform.trim
+  in
+
+  (* Emit the buffer pool after tokenizing succeeded but before any generated code *)
+  print (if reason   
+         then buffer_pool_reason buffer_size pool_size
+         else buffer_pool buffer_size pool_size);
+
+  Generate.generate ~reason location print templates
