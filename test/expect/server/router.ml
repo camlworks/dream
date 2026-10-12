@@ -169,6 +169,28 @@ let%expect_test _ =
   [%expect {| Response: 404 Not Found |}]
 
 let%expect_test _ =
+  let show_location location =
+    let request = Dream.request ~target:"/prefix/start" "" in
+    let response =
+      request
+      |> Dream.test ~prefix:"/prefix"
+        (Dream.router [
+          Dream.get "/start" (fun request -> Dream.redirect request location);
+        ])
+    in
+    match Dream.header response "Location" with
+    | Some location -> Printf.printf "%s\n" location
+    | None -> Printf.printf "No Location header\n"
+  in
+  show_location "/next?x=1#top";
+  show_location "/prefix/already-prefixed";
+  show_location "https://example.com/next";
+  [%expect {|
+    /prefix/next?x=1#top
+    /prefix/already-prefixed
+    https://example.com/next |}]
+
+let%expect_test _ =
   show "/" @@ Dream.router [
     Dream.get "/" (fun _ -> Dream.respond "foo");
   ];
