@@ -693,7 +693,7 @@ let get_port port =
   | None ->
     (try int_of_string (Sys.getenv "DREAM_PORT") with Not_found -> default_port)
 
-let ignore_sigpipe () =
+let ignore_sigpipe_signal () =
   if Sys.unix then
     Sys.(set_signal sigpipe Signal_ignore)
 
@@ -712,10 +712,11 @@ let serve
     ?certificate_file
     ?key_file
     ?(builtins = true)
+    ?(ignore_sigpipe = true)
     user's_dream_handler =
 
   let port = get_port port in
-  ignore_sigpipe ();
+  if ignore_sigpipe then ignore_sigpipe_signal ();
 
   serve_with_maybe_https
     "serve"
@@ -745,10 +746,11 @@ let run
     ?(builtins = true)
     ?(greeting = true)
     ?adjust_terminal
+    ?(ignore_sigpipe = true)
     user's_dream_handler =
 
   let port = get_port port in
-  ignore_sigpipe ();
+  if ignore_sigpipe then ignore_sigpipe_signal ();
 
   let log = Log.convenience_log in
 

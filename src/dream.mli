@@ -2128,6 +2128,7 @@ val run :
   ?builtins:bool ->
   ?greeting:bool ->
   ?adjust_terminal:bool ->
+  ?ignore_sigpipe:bool ->
     handler -> unit
 (** Runs the Web application represented by the {!handler}, by default at
     {{:http://localhost:8080} http://localhost:8080}.
@@ -2170,13 +2171,18 @@ val run :
     - [~builtins:false] disables {!section-builtin}.
 
     The remaining arguments can be used to gradually disable convenience
-    features of [Dream.run]. Once both are disabled, you may want to switch to
+    features of [Dream.run]. If these are disabled, you may as well switch to
     using {!Dream.serve}.
 
     - [~greeting:false] disables the start-up log message that prints a link to
       the Web application.
     - [~adjust_terminal:false] disables adjusting the terminal to disable echo
-      and line wrapping. *)
+      and line wrapping.
+    - [~ignore_sigpipe:false] does not set the process-wide [SIGPIPE]
+      handler. By default, Dream ignores [SIGPIPE] so that writing a response
+      to a client that has already disconnected does not terminate the program.
+      Set it to [false] if the program wants to own [SIGPIPE] handling,
+      for example because it relies on the default behavior for other pipes. *)
 
 val serve :
   ?interface:string ->
@@ -2188,6 +2194,7 @@ val serve :
   ?certificate_file:string ->
   ?key_file:string ->
   ?builtins:bool ->
+  ?ignore_sigpipe:bool ->
     handler -> unit promise
 (** Like {!Dream.run}, but returns a promise that does not resolve until the
     server stops listening, instead of calling
