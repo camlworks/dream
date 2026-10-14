@@ -843,10 +843,10 @@ struct
     print;
 
     init = (fun () ->
-      print "let ___eml_buffer = Buffer.create 4096 in\n");
+      print "let ___eml_buffer = ___eml_get_buffer ___eml_pool in\n");
 
     finish = (fun () ->
-      print "(Buffer.contents ___eml_buffer)\n");
+      print "(___eml_return_buffer ___eml_pool ___eml_buffer)\n");
 
     text =
       Printf.ksprintf print "(Buffer.add_string ___eml_buffer %S);\n";
@@ -862,10 +862,10 @@ struct
     print;
 
     init = (fun () ->
-      print "let ___eml_buffer = Buffer.create(4096);\n");
+      print "let ___eml_buffer = ___eml_get_buffer(___eml_pool);\n");
 
     finish = (fun () ->
-      print "Buffer.contents(___eml_buffer)\n");
+      print "___eml_return_buffer(___eml_pool, ___eml_buffer)\n");
 
     text =
       Printf.ksprintf print "Buffer.add_string(___eml_buffer, %S);\n";
@@ -978,7 +978,46 @@ end
 
 
 
-let process_file (input_file, location, syntax, std_out) =
+let buffer_pool buffer_size pool_size =
+Printf.sprintf {|let ___EML_BUFFER_SIZE = %d
+let ___EML_POOL_SIZE = %d
+let ___eml_pool = ref (List.init ___EML_POOL_SIZE (fun _ -> Buffer.create ___EML_BUFFER_SIZE))
+let ___eml_get_buffer pool =
+  match !pool with
+  | buf :: bufs ->
+    pool := bufs;
+    Buffer.clear buf;
+    buf
+  | [] -> Buffer.create ___EML_BUFFER_SIZE
+let ___eml_return_buffer pool buf =
+  pool := buf :: !pool;
+  Buffer.contents buf
+
+|} buffer_size pool_size
+
+let buffer_pool_reason buffer_size pool_size =
+Printf.sprintf {|let ___EML_BUFFER_SIZE = %d;
+let ___EML_POOL_SIZE = %d;
+let ___eml_pool = ref(List.init(___EML_POOL_SIZE, _ => Buffer.create(___EML_BUFFER_SIZE)));
+let ___eml_get_buffer = pool => {
+  switch (pool^) {
+  | [buf, ...bufs] =>
+    pool := bufs;
+    Buffer.clear(buf);
+    buf;
+  | [] => Buffer.create(___EML_BUFFER_SIZE)
+  };
+};
+let ___eml_return_buffer = (pool, buf) => {
+  pool := [buf, ...pool^];
+  Buffer.contents(buf);
+};
+
+|} buffer_size pool_size
+
+
+
+let process_file (input_file, location, syntax, std_out, buffer_size, pool_size) =
   let reason, extension = match syntax with
   | `OCaml -> (false, ".ml")
   | `Reason -> (true, ".re")
@@ -997,6 +1036,7 @@ let process_file (input_file, location, syntax, std_out) =
      it automatically on process exit, anyway. *)
   let input_channel = open_in input_file in
   let output_channel = if std_out then stdout else open_out output_file in
+  let print = output_string output_channel in
 
   let input_stream = Location.stream (fun () ->
     try Some (input_char input_channel)
@@ -1005,11 +1045,19 @@ let process_file (input_file, location, syntax, std_out) =
 
   Location.reset ();
 
-  input_stream
-  |> Tokenizer.scan ~syntax
-  |> Transform.delimit
-  |> Transform.unindent
-  (* |> Transform.empty_lines *)
-  |> Transform.coalesce
-  |> Transform.trim
-  |> Generate.generate ~reason location (output_string output_channel)
+  let templates =
+    input_stream
+    |> Tokenizer.scan ~syntax
+    |> Transform.delimit
+    |> Transform.unindent
+    (* |> Transform.empty_lines *)
+    |> Transform.coalesce
+    |> Transform.trim
+  in
+
+  (* Emit the buffer pool after tokenizing succeeded but before any generated code *)
+  print (if reason   
+         then buffer_pool_reason buffer_size pool_size
+         else buffer_pool buffer_size pool_size);
+
+  Generate.generate ~reason location print templates
