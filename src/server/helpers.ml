@@ -77,7 +77,9 @@ let json ?status ?code ?headers body =
   Message.set_header response "Content-Type" Formats.application_json;
   Lwt.return response
 
-(* TODO Actually use the request and extract the site prefix. *)
+(* The site prefix is applied to [Location] headers by [Site_prefix.with_site_prefix],
+   so it doesn't need to be handled here.
+   TODO request is still accepted for API compatibility. Remove? *)
 let redirect ?status ?code ?headers _request location =
   let status = (status :> Status.redirection option) in
   let status =
