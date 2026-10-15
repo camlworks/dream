@@ -158,8 +158,9 @@ jobs:
     - run: cd example/w-mirage && opam exec -- make depends
     - run: cd example/w-mirage && ls duniverse
     - run: cp -r ../repo-copy example/w-mirage/duniverse/dream
-    - run: cd example/w-mirage/duniverse && rm -rf $(OPAMCOLOR=never opam list --installed --short) ocaml-cstruct bytes ocaml-ipaddr mirage-tcpip
+    # `dune` is not the package but the actual dune file. Don't remove it
+    - run: cd example/w-mirage/duniverse && rm -rf $(OPAMCOLOR=never opam list --installed --short | grep -vx dune) ocaml-cstruct bytes ocaml-ipaddr mirage-tcpip
     - run: cd example/w-mirage && mv config.ml.backup config.ml
     - run: cd example/w-mirage && sed -i -e 's/(libraries/(libraries dream-mirage/' dune.build
-    - run: cd example/w-mirage && opam exec -- dune build ./main.exe
+    - run: cd example/w-mirage && opam exec -- dune build
     - run: file example/w-mirage/_build/default/main.exe
