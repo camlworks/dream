@@ -461,8 +461,10 @@ module Make
       If you use [~code], be sure the number follows the pattern [3xx], or most
       browsers and other clients won't actually perform a redirect.
 
-      The {!type-request} is used for retrieving the site prefix, if the string is
-      an absolute path. Most applications don't have a site prefix. *)
+      If {!with_site_prefix} is in use, it prepends the site prefix to a
+      root-relative [Location] (one beginning with [/]). Absolute URLs and
+      relative references are left unchanged. Most applications don't have a
+      site prefix. *)
 
   val empty : ?headers:(string * string) list -> status -> response promise
   (** Same as {!Dream.val-response} with the empty string for a body. *)
@@ -1826,7 +1828,21 @@ module Make
       This is for applications that are not running at the root ([/]) of their
       domain. The default is ["/"], for no prefix. After [with_site_prefix],
       routing is done relative to the prefix, and the prefix is also necessary for
-      emitting secure cookies. *)
+      emitting secure cookies.
+
+      The middleware is a translation layer between externally visible, prefixed
+      URLs and the application's internal, unprefixed world. On the way out, the
+      prefix is added to root-relative [Location] response headers, i.e. those
+      beginning with [/]. "Root-relative" means relative to the application
+      root, so the prefix is added even if the path happens to begin with the
+      same string as the prefix. This includes locations produced by
+      {!Dream.redirect}, as well as headers set directly, for example on a
+      [201 Created] response. Absolute URLs and relative references are left
+      unchanged.
+
+      URLs inside a response body, such as [<a href=/foo>] in rendered HTML, are
+      not rewritten. Generate those with the prefix already included, so that
+      they resolve correctly on clients. *)
   (* TODO Clarify that this isn't included with the built-ins, but is something on
       topic that one might want to use. *)
 

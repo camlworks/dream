@@ -2,7 +2,7 @@ let render_home tasks =
   <html>
   <body>
 %   tasks |> List.iter begin fun (name, complete) ->
-      <p>Task <%s name %>:
+      <p>Task <a href="/<%s name %>"><%s name %></a>:
 %       if complete then begin
           complete!
 %       end

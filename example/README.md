@@ -154,7 +154,7 @@ if something is missing!
 
 # Roadmap
 
-These examples will be trickled in during the alpha releases.
+These examples will be trickled in during future releases.
 
 Ideas:
 

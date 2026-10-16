@@ -10,4 +10,5 @@ let () =
     Request.tests;
     Headers.tests;
     Logger.tests;
+    Log.tests;
   ]

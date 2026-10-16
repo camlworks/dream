@@ -169,6 +169,85 @@ let%expect_test _ =
   [%expect {| Response: 404 Not Found |}]
 
 let%expect_test _ =
+  let location_of handler =
+    let request = Dream.request ~target:"/prefix/start" "" in
+    let response =
+      request
+      |> Dream.test ~prefix:"/prefix"
+        (Dream.router [Dream.get "/start" handler])
+    in
+    match Dream.header response "Location" with
+    | Some location -> Printf.printf "%s\n" location
+    | None -> Printf.printf "No Location header\n"
+  in
+  let redirect location =
+    location_of (fun request -> Dream.redirect request location)
+  in
+
+  (* Absolute-path references are relative to the application root, so they are
+     prefixed. The rest of the reference is preserved byte-for-byte. *)
+  redirect "/";
+  redirect "/next?x=1#top";
+  redirect "/foo%2Fbar?x=%2F#f";
+  (* A path that happens to start with the prefix string is still relative to
+     the application root, so it gets the prefix too. *)
+  redirect "/prefix";
+  redirect "/prefix/";
+  redirect "/prefix/already-prefixed?x=1";
+  (* Absolute and relative references already resolve correctly or point
+     outside the application, so they are left alone. *)
+  redirect "https://example.com/next";
+  redirect "//example.com/next";
+  redirect "mailto:alice@example.com";
+  redirect "next";
+  redirect "../next";
+  redirect "?x=1";
+  redirect "#top";
+
+  (* A [Location] header set directly, e.g. on a [201 Created] response, is also
+     translated, not just the ones produced by [Dream.redirect]. *)
+  location_of (fun _ ->
+    Dream.respond ~status:`Created ~headers:["Location", "/thing"] "");
+
+  [%expect {|
+    /prefix/
+    /prefix/next?x=1#top
+    /prefix/foo%2Fbar?x=%2F#f
+    /prefix/prefix
+    /prefix/prefix/
+    /prefix/prefix/already-prefixed?x=1
+    https://example.com/next
+    //example.com/next
+    mailto:alice@example.com
+    next
+    ../next
+    ?x=1
+    #top
+    /prefix/thing |}]
+
+let%expect_test _ =
+  (* A root or empty site prefix must leave [Location] values untouched. In
+     particular, ["/next"] must not become ["//next"]. *)
+  let location_of prefix =
+    let request = Dream.request ~target:"/start" "" in
+    let response =
+      request
+      |> Dream.test ~prefix
+        (Dream.router [
+          Dream.get "/start" (fun request -> Dream.redirect request "/next");
+        ])
+    in
+    match Dream.header response "Location" with
+    | Some location -> Printf.printf "%S -> %s\n" prefix location
+    | None -> Printf.printf "%S -> No Location header\n" prefix
+  in
+  location_of "/";
+  location_of "";
+  [%expect {|
+    "/" -> /next
+    "" -> /next |}]
+
+let%expect_test _ =
   show "/" @@ Dream.router [
     Dream.get "/" (fun _ -> Dream.respond "foo");
   ];
@@ -224,6 +303,17 @@ let%expect_test _ =
   [%expect {|
     Response: 200 OK
     foo |}]
+
+let%expect_test _ =
+  show "/photos/s%C3%B6dermalm_pride/" @@ Dream.router [
+    Dream.get "/photos/s%C3%B6dermalm_pride/" (fun _ ->
+      Dream.respond "encoded");
+    Dream.get "/photos/södermalm_pride/" (fun _ ->
+      Dream.respond "decoded");
+  ];
+  [%expect {|
+    Response: 200 OK
+    decoded |}]
 
 (* Router matches long paths, does not match prefixes, etc. *)
 

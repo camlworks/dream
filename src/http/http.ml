@@ -687,6 +687,16 @@ let on_termination_signal () =
   ignore (Lwt_unix.on_signal Sys.sigint (fun _ -> Lwt.wakeup_later int_resolve ()));
   Lwt.pick [term_promise; int_promise]
 
+let get_port port =
+  match port with
+  | Some p -> p
+  | None ->
+    (try int_of_string (Sys.getenv "DREAM_PORT") with Not_found -> default_port)
+
+let ignore_sigpipe_signal () =
+  if Sys.unix then
+    Sys.(set_signal sigpipe Signal_ignore)
+
 let network ~port ~socket_path =
   match socket_path with
   | None -> `Inet port
@@ -694,7 +704,7 @@ let network ~port ~socket_path =
 
 let serve
     ?(interface = default_interface)
-    ?(port = default_port)
+    ?port
     ?socket_path
     ?stop
     ?(error_handler = Error_handler.default)
@@ -702,7 +712,11 @@ let serve
     ?certificate_file
     ?key_file
     ?(builtins = true)
+    ?(ignore_sigpipe = true)
     user's_dream_handler =
+
+  let port = get_port port in
+  if ignore_sigpipe then ignore_sigpipe_signal ();
 
   serve_with_maybe_https
     "serve"
@@ -722,7 +736,7 @@ let serve
 
 let run
     ?(interface = default_interface)
-    ?(port = default_port)
+    ?port
     ?socket_path
     ?stop
     ?(error_handler = Error_handler.default)
@@ -732,11 +746,11 @@ let run
     ?(builtins = true)
     ?(greeting = true)
     ?adjust_terminal
+    ?(ignore_sigpipe = true)
     user's_dream_handler =
 
-  let () = if Sys.unix then
-    Sys.(set_signal sigpipe Signal_ignore)
-  in
+  let port = get_port port in
+  if ignore_sigpipe then ignore_sigpipe_signal ();
 
   let log = Log.convenience_log in
 

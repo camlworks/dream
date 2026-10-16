@@ -18,21 +18,6 @@ directory into a file `assets.ml`:
   (run ocaml-crunch -m plain assets -o %{target}))))
 </b></code></pre>
 
-crunch comes from the opam repository, so we also add it in
-[`one_binary.opam`](https://github.com/camlworks/dream/blob/master/example/w-one-binary/esy.json):
-
-<pre><code>opam-version: "2.0"
-
-depends: [
-  <b>"crunch"</b>
-  "ocaml" {>= "4.08.0"}
-  "dream"
-  "dune" {>= "2.0.0"}
-]
-</code></pre>
-
-<br>
-
 The generated `assets.ml` has a signature like this:
 
 ```ocaml
@@ -91,7 +76,7 @@ gives the source link and license information for the image.
 
 Copy the binary out for deployment with
 
-<pre><code><b>$ npx esy cp '#{self.target_dir}/default/one_binary.exe' .
+<pre><code><b>$ cp _build/default/one_binary.exe .
 </b></code></pre>
 
 It will continue to serve the camel no matter where it is moved to! The
@@ -101,11 +86,11 @@ It will continue to serve the camel no matter where it is moved to! The
 
 If you'd like to inspect the generated `assets.ml` yourself, run
 
-<pre><code><b>$ npx esy less '#{self.target_dir}/default/assets.ml'
+<pre><code><b>$ less _build/default/assets.ml
 </b></code></pre>
 
 To add more files, just add them to the `assets/` directory and re-run
-`npx esy run`. Dune and crunch will pick them up automatically.
+`dune exec --root . ./one-binary.exe`. Dune and crunch will pick them up automatically.
 
 <br>
 

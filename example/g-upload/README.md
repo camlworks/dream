@@ -69,7 +69,7 @@ This example uses
 [`Dream.multipart`](https://camlworks.github.io/dream/#val-multipart) (named
 after `Content-Type: multipart/form-data`).
 [`Dream.multipart`](https://camlworks.github.io/dream/#val-multipart) receives
-entire files into strings. Size limits will be added in one of the early alphas.
+entire files into strings. Size limits will be added in a future release.
 However, this is only good for rare, small uploads, such as user avatars, or for
 prototyping.
 

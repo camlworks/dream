@@ -329,20 +329,26 @@ let sub_log ?level:level_ name =
         log ~tags format_and_arguments))
   in
 
-  let level =
-    List.find Option.is_some [
-      Option.map to_logs_level level_;
-      List.assoc_opt name !custom_log_levels;
-      Some !level
-    ] in
+  let source_level =
+    match level_ with
+    | Some level ->
+      let level = to_logs_level level in
+      (* Set custom_log_levels only if we have an actual override so that loggers
+         without override still receive the default from initialization *)
+      custom_log_levels :=
+        (name, level)::(List.remove_assoc name !custom_log_levels);
+      Some level
+    | None ->
+      List.assoc_opt name !custom_log_levels
+  in
 
   (* Create the actual Logs source, and then wrap all the interesting
      functions. *)
   let src = Logs.Src.create name in
   let (module Log) = Logs.src_log src in
-  Logs.Src.set_level src level;
-  custom_log_levels :=
-    (name, Option.get level)::(List.remove_assoc name !custom_log_levels);
+  (* Logs and Dream interpret None differently. None here means no override,
+     in Logs it means "never report". So we only set the level if it is Some *)
+  Option.iter (fun level -> Logs.Src.set_level src (Some level)) source_level;
   sources := (name, src) :: (List.remove_assoc name !sources);
 
   {

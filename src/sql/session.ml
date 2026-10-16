@@ -16,9 +16,6 @@ let (|>?) =
 
 module type DB = Caqti_lwt.CONNECTION
 
-module R = Caqti_request
-module T = Caqti_type
-
 let serialize_payload payload =
   payload
   |> List.map (fun (name, value) -> name, `String value)
@@ -27,8 +24,8 @@ let serialize_payload payload =
 
 let insert =
   let query =
-    let open Caqti_request.Infix in
-    (T.(t4 string string float string) ->. T.unit) {|
+    let open Caqti.Templater in
+    static T.(t4 string string float string -->. unit) {|
       INSERT INTO dream_session (id, label, expires_at, payload)
       VALUES ($1, $2, $3, $4)
     |} in
@@ -41,8 +38,8 @@ let insert =
 
 let find_opt =
   let query =
-    let open Caqti_request.Infix in
-    (T.string ->? T.(t3 string float string))
+    let open Caqti.Templater in
+    static T.(string -->? t3 string float string)
       "SELECT label, expires_at, payload FROM dream_session WHERE id = $1" in
 
   fun (module Db : DB) id ->
@@ -69,8 +66,8 @@ let find_opt =
 
 let refresh =
   let query =
-    let open Caqti_request.Infix in
-    (T.(t2 float string) ->. T.unit)
+    let open Caqti.Templater in
+    static T.(t2 float string -->. unit)
       "UPDATE dream_session SET expires_at = $1 WHERE id = $2" in
 
   fun (module Db : DB) (session : Session.session) ->
@@ -79,8 +76,8 @@ let refresh =
 
 let update =
   let query =
-    let open Caqti_request.Infix in
-    (T.(t2 string string) ->. T.unit)
+    let open Caqti.Templater in
+    static T.(t2 string string -->. unit)
       "UPDATE dream_session SET payload = $1 WHERE id = $2" in
 
   fun (module Db : DB) (session : Session.session) ->
@@ -90,8 +87,9 @@ let update =
 
 let remove =
   let query =
-    let open Caqti_request.Infix in
-    (T.string ->. T.unit) "DELETE FROM dream_session WHERE id = $1"  in
+    let open Caqti.Templater in
+    static T.(string -->. unit)
+      "DELETE FROM dream_session WHERE id = $1" in
 
   fun (module Db : DB) id ->
     let%lwt result = Db.exec query id in
@@ -115,7 +113,7 @@ let rec create db expires_at attempt =
   (* Assume that any exception is a PRIMARY KEY collision (extremely unlikely)
      and try a couple more times. *)
   match%lwt insert db session with
-  | exception Caqti_error.Exn _ when attempt <= 3 ->
+  | exception Caqti.Error.Exn _ when attempt <= 3 ->
     create db expires_at (attempt + 1)
   | () ->
     Lwt.return session

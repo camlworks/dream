@@ -32,6 +32,16 @@ let with_site_prefix prefix =
     |> Formats.from_path
     |> Formats.drop_trailing_slash
   in
+  let prefix_path = Formats.to_path prefix in
+  let prefix_location_header response =
+    match Message.header response "Location" with
+    | Some location
+      when prefix <> [] (* prefix "/" is treated as no prefix *)
+        && String.starts_with ~prefix:"/" location (* absolute path *)
+        && not (String.starts_with ~prefix:"//" location) -> (* not scheme-relative path *)
+      Message.set_header response "Location" (prefix_path ^ location)
+    | _ -> ()
+  in
   fun next_handler request ->
     match match_site_prefix prefix (Router.path request) with
     | None ->
@@ -43,3 +53,6 @@ let with_site_prefix prefix =
       Router.set_prefix request (List.rev prefix);
       Router.set_path request path;
       next_handler request
+      |> Lwt.map (fun response ->
+        prefix_location_header response;
+        response)

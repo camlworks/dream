@@ -3,7 +3,6 @@
  (libraries
   base
   eml
-  ppx_expect.common
   ppx_inline_test.config
   ppx_expect.config_types
  )

@@ -476,8 +476,10 @@ val redirect :
     If you use [~code], be sure the number follows the pattern [3xx], or most
     browsers and other clients won't actually perform a redirect.
 
-    The {!type-request} is used for retrieving the site prefix, if the string is
-    an absolute path. Most applications don't have a site prefix. *)
+    If {!with_site_prefix} is in use, it prepends the site prefix to a
+    root-relative [Location] (one beginning with [/]). Absolute URLs and
+    relative references are left unchanged. Most applications don't have a site
+    prefix. *)
 
 val empty :
   ?headers:(string * string) list ->
@@ -1392,6 +1394,13 @@ val router : route list -> handler
     request's prefix to be extended by it. It is mainly useful for “mounting”
     {!Dream.static} as a subsite.
 
+    Route paths are matched against the decoded request path. In route
+    literals, write decoded characters such as ["/photos/södermalm/"], not the
+    percent-encoded wire form such as ["/photos/s%C3%B6dermalm/"]. The original
+    target, returned by {!Dream.target} and printed by the logger, remains
+    percent-encoded so it can be recorded without interpreting arbitrary client
+    input.
+
     It can also be used as an escape hatch to convert a handler, which may
     include its own router, into a subsite. However, it is better to compose
     sites with routes and {!Dream.scope} rather than opaque handlers and [**],
@@ -2122,6 +2131,7 @@ val run :
   ?builtins:bool ->
   ?greeting:bool ->
   ?adjust_terminal:bool ->
+  ?ignore_sigpipe:bool ->
     handler -> unit
 (** Runs the Web application represented by the {!handler}, by default at
     {{:http://localhost:8080} http://localhost:8080}.
@@ -2132,7 +2142,8 @@ val run :
 
     - [~interface] is the network interface to listen on. Defaults to
       ["localhost"]. Use ["0.0.0.0"] to listen on all interfaces.
-    - [~port] is the port to listen on. Defaults to [8080].
+    - [~port] is the port to listen on. If not set, defaults to the value of the
+      environment variable [DREAM_PORT] and, if neither are set, falls back to [8080].
     - If [~socket_path] is specified, Dream will listen on a Unix domain socket
       at the given path, and ignore [~interface] and [~port].
     - [~stop] is a promise that causes the server to stop accepting new
@@ -2163,13 +2174,18 @@ val run :
     - [~builtins:false] disables {!section-builtin}.
 
     The remaining arguments can be used to gradually disable convenience
-    features of [Dream.run]. Once both are disabled, you may want to switch to
+    features of [Dream.run]. If these are disabled, you may as well switch to
     using {!Dream.serve}.
 
     - [~greeting:false] disables the start-up log message that prints a link to
       the Web application.
     - [~adjust_terminal:false] disables adjusting the terminal to disable echo
-      and line wrapping. *)
+      and line wrapping.
+    - [~ignore_sigpipe:false] does not set the process-wide [SIGPIPE]
+      handler. By default, Dream ignores [SIGPIPE] so that writing a response
+      to a client that has already disconnected does not terminate the program.
+      Set it to [false] if the program wants to own [SIGPIPE] handling,
+      for example because it relies on the default behavior for other pipes. *)
 
 val serve :
   ?interface:string ->
@@ -2181,6 +2197,7 @@ val serve :
   ?certificate_file:string ->
   ?key_file:string ->
   ?builtins:bool ->
+  ?ignore_sigpipe:bool ->
     handler -> unit promise
 (** Like {!Dream.run}, but returns a promise that does not resolve until the
     server stops listening, instead of calling
@@ -2223,7 +2240,21 @@ val with_site_prefix : string -> middleware
     This is for applications that are not running at the root ([/]) of their
     domain. The default is ["/"], for no prefix. After [with_site_prefix],
     routing is done relative to the prefix, and the prefix is also necessary for
-    emitting secure cookies. *)
+    emitting secure cookies.
+
+    The middleware is a translation layer between externally visible, prefixed
+    URLs and the application's internal, unprefixed world. On the way out, the
+    prefix is added to root-relative [Location] response headers, i.e. those
+    beginning with [/]. "Root-relative" means relative to the application
+    root, so the prefix is added even if the path happens to begin with the
+    same string as the prefix. This includes locations produced by
+    {!Dream.redirect}, as well as headers set directly, for example on a
+    [201 Created] response. Absolute URLs and relative references are left
+    unchanged.
+
+    URLs inside a response body, such as [<a href=/foo>] in rendered HTML, are
+    not rewritten. Generate those with the prefix already included, so that they
+    resolve correctly on clients. *)
 (* TODO Clarify that this isn't included with the built-ins, but is something on
    topic that one might want to use. *)
 

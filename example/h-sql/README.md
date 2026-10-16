@@ -9,32 +9,55 @@ a library for talking to SQL databases:
 
 ```ocaml
 module type DB = Caqti_lwt.CONNECTION
-module T = Caqti_type
 
 let list_comments =
   let query =
-    let open Caqti_request.Infix in
-    (T.unit ->* T.(t2 int string))
-    "SELECT id, text FROM comment" in
+    let open Caqti.Templater in
+    static T.(unit -->* t2 int string)
+      "SELECT id, text FROM comment" in
   fun (module Db : DB) ->
     let%lwt comments_or_error = Db.collect_list query () in
     Caqti_lwt.or_fail comments_or_error
 
 let add_comment =
   let query =
-    let open Caqti_request.Infix in
-    (T.string ->. T.unit)
-    "INSERT INTO comment (text) VALUES ($1)" in
+    let open Caqti.Templater in
+    static T.(string -->. unit)
+      "INSERT INTO comment (text) VALUES ($1)" in
   fun text (module Db : DB) ->
     let%lwt unit_or_error = Db.exec query text in
     Caqti_lwt.or_fail unit_or_error
+
+let create_tables (module Db : DB) =
+  let open Caqti.Templater in
+
+  let create_comment =
+    static T.(unit -->. unit)
+      "CREATE TABLE IF NOT EXISTS comment ( \
+        id INTEGER PRIMARY KEY AUTOINCREMENT, \
+        text TEXT NOT NULL)" in
+
+  let create_session =
+    static T.(unit -->. unit)
+      "CREATE TABLE IF NOT EXISTS dream_session ( \
+        id TEXT PRIMARY KEY, \
+        label TEXT NOT NULL, \
+        expires_at REAL NOT NULL, \
+        payload TEXT NOT NULL)" in
+
+  let%lwt comment_result = Db.exec create_comment () in
+  let%lwt () = Caqti_lwt.or_fail comment_result in
+  let%lwt session_result = Db.exec create_session () in
+  let%lwt () = Caqti_lwt.or_fail session_result in
+  Lwt.return (Ok ())
 
 let render comments request =
   <html>
   <body>
 
 %   comments |> List.iter (fun (_id, comment) ->
-      <p><%s comment %></p><% ); %>
+      <p><%s comment %></p>
+%   );
 
     <form method="POST" action="/">
       <%s! Dream.csrf_tag request %>
@@ -45,9 +68,17 @@ let render comments request =
   </html>
 
 let () =
+  let db_uri = "sqlite3:db.sqlite" in
+
+  Lwt_main.run begin
+    let%lwt init_result =
+      Caqti_lwt_unix.with_connection (Uri.of_string db_uri) create_tables in
+    Caqti_lwt.or_fail init_result
+  end;
+
   Dream.run
   @@ Dream.logger
-  @@ Dream.sql_pool "sqlite3:db.sqlite"
+  @@ Dream.sql_pool db_uri
   @@ Dream.sql_sessions
   @@ Dream.router [
 
@@ -87,21 +118,9 @@ Both the comments and the sessions survive server restarts.
 
 <br>
 
-`db.sqlite` was initialized with this schema, using the `sqlite3` command:
-
-```sql
-CREATE TABLE comment (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  text TEXT NOT NULL
-);
-
-CREATE TABLE dream_session (
-  id TEXT PRIMARY KEY,
-  label TEXT NOT NULL,
-  expires_at REAL NOT NULL,
-  payload TEXT NOT NULL
-);
-```
+Dream does not handle the creation or migration of databases, even for `Dream.sql_sessions`, as this depends on your specific needs and setup.
+For this example, the `comment` and `dream_session` tables are created by `create_tables` which runs once before `Dream.run`.
+`Dream.sql_pool`'s `~post_connect` option could also be used for creating the DB but is not ideal: `post_connect` runs only after the first connection is established and may run concurrently if the pool size is larger than 1. `Caqti` reused connections but closes them by default after 100 uses so `post_connect` may run multiple times even when the pool size is 1.
 
 We also had to make an addition to our
 [`dune`](https://github.com/camlworks/dream/blob/master/example/h-sql/dune)
@@ -122,7 +141,7 @@ file:
 [`sql.opam`](https://github.com/camlworks/dream/blob/master/example/h-sql/esy.json):
 
 <pre>depends: [
-  <b>"caqti-driver-sqlite3" {>= "1.7.0"}</b>
+  <b>"caqti-driver-sqlite3"</b>
   "ocaml" {>= "4.08.0"}
   "dream"
   "dune" {>= "2.0.0"}
@@ -134,17 +153,18 @@ file:
 Pass multiple arguments with `(?, ?, ..)`.  See [Caqti utop](https://ocaml.org/p/caqti/latest#running-under-utop).
 
 Tips.
-- `->.` returns a unit and uses `Db.exec`.
-- `->!` returns a single row and uses `Db.find`.
-- `->*` returns a list of rows and uses `Db.collect_list`.
+- `-->.` returns a unit and uses `Db.exec`.
+- `-->!` returns a single row and uses `Db.find`.
+- `-->?` returns zero or one row and uses `Db.find_opt`.
+- `-->*` returns a list of rows and uses `Db.collect_list`.
 
 Here is another example. We expect a single integer to be returned, which is the id of the created row. see [RETURNING sql tutorial](https://www.sqlitetutorial.net/sqlite-returning/).
 ```ocaml
 let add_session =
   let query =
-    let open Caqti_request.Infix in
-    ( T.(t4 string string float string) ->! T.int )
-    ("INSERT INTO dream_session(id, label, expires_at, payload) VALUES (?, ?, ?, ?) RETURNING id") in
+    let open Caqti.Templater in
+    static T.(t4 string string float string -->! int)
+      "INSERT INTO dream_session(id, label, expires_at, payload) VALUES (?, ?, ?, ?) RETURNING id" in
   fun (id, label, expires_at, payload) (module Db : DB) ->
     let%lwt unit_or_error = Db.find query (id, label, expires_at, payload) in
     Caqti_lwt.or_fail unit_or_error
@@ -152,11 +172,11 @@ let add_session =
 
 See
 
-- [`Caqti_response`](https://ocaml.org/p/caqti/latest/doc/Caqti_connection_sig/module-type-S/index.html)
+- [`Caqti.Connection.S`](https://ocaml.org/p/caqti/latest/doc/caqti/Caqti/Connection/module-type-S/index.html)
   for Caqti's statement runners. These are the fields of the module `Db` in the example.
-- [`Caqti_request`](https://ocaml.org/p/caqti/latest/doc/Caqti_request/Infix/index.html#indep)
-  sets up prepared statements.
-- [`Caqti_type`](https://ocaml.org/p/caqti/latest/doc/Caqti_type/index.html) is
+- [`Caqti.Templater`](https://ocaml.org/p/caqti/latest/doc/caqti/Caqti/Templater/index.html)
+  sets up request templates with prepared statements.
+- [`Caqti.Template.Row_type`](https://ocaml.org/p/caqti/latest/doc/caqti/Caqti/Template/Row_type/index.html) is
   used to specify the types of statement arguments and results.
 
 <br>

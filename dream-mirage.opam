@@ -44,16 +44,16 @@ bug-reports: "https://github.com/camlworks/dream/issues"
 dev-repo: "git+https://github.com/camlworks/dream.git"
 
 author: "Anton Bachin <antonbachin@yahoo.com>"
-maintainer: "Anton Bachin <antonbachin@yahoo.com>"
+maintainer: ["Sebastian Willenbrink <sebastian.willenbrink@mailbox.org>" "Yawar Amin <yawar.amin@gmail.com>" "Anton Bachin <antonbachin@yahoo.com>"]
 
 depends: [
   "bigarray-compat"
   "bigstringaf"
   "digestif" {>= "1.0.0"}
-  "dream"
-  "dream-httpaf"
-  "dream-pure"
-  "dune" {>= "2.7.0"}
+  "dream" {= version}
+  "dream-httpaf" {= version}
+  "dream-pure" {= version}
+  "dune" {>= "3.22.0"}
   "duration"
   "emile" {>= "1.1"}
   "ke" {>= "0.4"}  # paf.
