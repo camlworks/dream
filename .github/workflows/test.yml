@@ -22,6 +22,10 @@ jobs:
         include:
         - os: macos-latest
           ocaml: 4.14.x
+          openssl: '3'
+        - os: macos-latest
+          ocaml: 4.14.x
+          openssl: '4'
         - os: windows-latest
           ocaml: 4.14.x
 
@@ -56,6 +60,11 @@ jobs:
     # As the tests don't run on Windows anyway right now we just disable those dependencies
     - run: opam exec -- make deps-no-test
       if: runner.os == 'Windows'
+
+    # `ssl` finds OpenSSL through PKG_CONFIG_PATH. Prepend openssl@3/4 so that we can determine which is used
+    - name: Build against OpenSSL ${{ matrix.openssl }}
+      if: runner.os == 'macOS'
+      run: echo "PKG_CONFIG_PATH=$(brew --prefix openssl@${{ matrix.openssl }})/lib/pkgconfig:$PKG_CONFIG_PATH" >> "$GITHUB_ENV"
 
     - run: opam exec -- make deps
       if: runner.os != 'Windows'
