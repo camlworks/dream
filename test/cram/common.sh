@@ -1,4 +1,5 @@
-export DREAM_PORT=$((10000 + RANDOM % 55000))
+# Use the PID to determine the port to ensure uniqueness
+export DREAM_PORT=$((10000 + $$ % 20000))
 
 curl_cmd() {
   # Retry until the server accepts connections.
