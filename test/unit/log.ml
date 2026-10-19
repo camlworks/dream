@@ -58,4 +58,40 @@ let tests = "log", [
     |> Alcotest.(check bool) "info suppressed" false
   end;
 
+  "custom log records success" -: begin fun () ->
+    let called = ref false in
+    let log = {
+      Dream.error = (fun _ -> ());
+      warning = (fun _ -> ());
+      info = (fun _ -> called := true);
+      debug = (fun _ -> ());
+    } in
+    let handler _request = Dream.respond "" in
+    Dream.request ""
+    |> Dream.logger ~log handler
+    |> Lwt_main.run
+    |> ignore;
+    !called
+    |> Alcotest.(check bool) "info logged" true
+  end;
+
+  "custom log records server error" -: begin fun () ->
+    let called = ref false in
+    let log = {
+      Dream.error = (fun _ -> called := true);
+      warning = (fun _ -> ());
+      info = (fun _ -> ());
+      debug = (fun _ -> ());
+    } in
+    let handler _request =
+      Dream.respond ~status:`Internal_Server_Error ""
+    in
+    Dream.request ""
+    |> Dream.logger ~log handler
+    |> Lwt_main.run
+    |> ignore;
+    !called
+    |> Alcotest.(check bool) "error logged" true
+  end;
+
 ]
