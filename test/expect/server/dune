@@ -7,6 +7,7 @@
   dream.server
   lwt
   lwt.unix
+  str
   ppx_inline_test.config
   ppx_expect.config_types
  )
