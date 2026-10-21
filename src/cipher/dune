@@ -2,7 +2,6 @@
  (public_name dream.cipher)
  (name dream__cipher)
  (libraries
-  cstruct
   digestif
   dream-pure
   mirage-crypto
