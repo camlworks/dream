@@ -76,6 +76,7 @@ depends: [
   "ocaml" {>= "4.08.0"}
   "ptime" {>= "0.8.1"}  # Ptime.v.
   "ssl" {>= "0.5.8"}  # Ssl.get_negotiated_alpn_protocol.
+  "stringext"
   "uri" {>= "4.2.0"}
   "yojson"  # ...
 
