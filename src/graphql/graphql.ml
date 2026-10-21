@@ -323,6 +323,39 @@ let graphql make_context schema = fun request ->
 
 
 
+(* Literal (non-regexp) global substring replacement, used to fill in the
+   placeholders in the bundled GraphiQL page. This is plain find-and-replace, so
+   it avoids a dependency on Str; unlike Str.global_replace it also gives no
+   special meaning to backslashes in the replacement text. *)
+let replace_all ~pattern ~replacement string =
+  let pattern_length = String.length pattern in
+  let length = String.length string in
+  if pattern_length = 0 then
+    string
+  else begin
+    let buffer = Buffer.create length in
+    let rec matches_at index offset =
+      offset >= pattern_length
+      || index + offset < length
+         && string.[index + offset] = pattern.[offset]
+         && matches_at index (offset + 1)
+    in
+    let rec loop index =
+      if index >= length then
+        ()
+      else if matches_at index 0 then begin
+        Buffer.add_string buffer replacement;
+        loop (index + pattern_length)
+      end
+      else begin
+        Buffer.add_char buffer string.[index];
+        loop (index + 1)
+      end
+    in
+    loop 0;
+    Buffer.contents buffer
+  end
+
 let graphiql ?(default_query = "") graphql_endpoint =
   begin match String.index_opt graphql_endpoint '"' with
   | None -> ()
@@ -338,8 +371,8 @@ let graphiql ?(default_query = "") graphql_endpoint =
   let html =
     lazy begin
       Dream__graphiql.content
-      |> Str.(global_replace (regexp (quote "%%ENDPOINT%%")) graphql_endpoint)
-      |> Str.(global_replace (regexp (quote "%%DEFAULT_QUERY%%")) default_query)
+      |> replace_all ~pattern:"%%ENDPOINT%%" ~replacement:graphql_endpoint
+      |> replace_all ~pattern:"%%DEFAULT_QUERY%%" ~replacement:default_query
     end
   in
 
