@@ -16,10 +16,11 @@ let%expect_test _ =
   decode "/";
   decode "/?";
   decode "/abc/def";
-  (* TODO A very questionable interpretation of // as leading a hostname when we
-     know this is a target. There seems to be no way to work around this using
-     the interface of the Uri library. *)
+  (* A leading "//" is part of the target path, not an authority (issue #248);
+     runs of leading slashes must be preserved verbatim. *)
   decode "//abc/def";
+  decode "///abc/def";
+  decode "////abc/def";
   decode "/abc/def/";
   decode "/abc/def?";
   decode "/abc/def/?";
@@ -34,7 +35,9 @@ let%expect_test _ =
     "/" ""
     "/" ""
     "/abc/def" ""
-    "/def" ""
+    "//abc/def" ""
+    "///abc/def" ""
+    "////abc/def" ""
     "/abc/def/" ""
     "/abc/def" ""
     "/abc/def/" ""

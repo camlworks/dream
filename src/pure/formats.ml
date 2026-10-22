@@ -166,13 +166,30 @@ let from_form_urlencoded string =
 
 
 let split_target string =
-  let uri = Uri.of_string string in
-  let query =
-    match Uri.verbatim_query uri with
-    | Some query -> query
-    | None -> ""
+  (* Drop the fragment (everything from the first '#'), then split the path and
+     query at the first '?'. The path is decoded per segment the way [Uri.path]
+     would, but without running the whole target through [Uri.of_string], which
+     misreads a leading "//" as introducing a host (issue #248) and so drops
+     path components. *)
+  let string =
+    match String.index_opt string '#' with
+    | Some i -> String.sub string 0 i
+    | None -> string
   in
-  Uri.path uri, query
+  let path, query =
+    match String.index_opt string '?' with
+    | Some i ->
+      String.sub string 0 i,
+      String.sub string (i + 1) (String.length string - i - 1)
+    | None -> string, ""
+  in
+  let path =
+    String.split_on_char '/' path
+    |> List.map (fun segment ->
+      Uri.pct_encode ~component:`Path (Uri.pct_decode segment))
+    |> String.concat "/"
+  in
+  path, query
 
 let from_path =
   (* Not tail-recursive. *)
