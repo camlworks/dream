@@ -108,3 +108,48 @@ let%expect_test _ =
     None
     None
     None |}]
+
+
+
+(* Decryption tries the main secret and then each of [~old_secrets] in turn (key
+   rotation), and must carry [associated_data] through to every attempt.
+   Regression test for https://github.com/camlworks/dream/issues/432: a payload
+   encrypted with associated data under an old secret used to fail once a new
+   main secret was tried first, because the recursive call dropped
+   [associated_data] — so rotating the key broke every existing cookie, session,
+   and CSRF token. *)
+
+(* Run set_secret purely for its side effect of attaching the secrets to a fresh
+   request. *)
+let request_with_secrets ?old_secrets secret =
+  let request = Dream.request "" in
+  let _ : Dream.response Lwt.t =
+    Dream.set_secret ?old_secrets secret
+      (fun _ -> Lwt.return (Dream.response "")) request
+  in
+  request
+
+let decrypt_result = function
+  | None -> print_endline "None"
+  | Some plaintext -> Printf.printf "%S\n" plaintext
+
+let%expect_test _ =
+  (* Encrypt with associated data under the pre-rotation secret. *)
+  let ciphertext =
+    Dream.encrypt ~associated_data:"bar" (request_with_secrets secret_2) "foo" in
+  (* Post-rotation: new main secret, the old one kept for decryption. The main
+     secret fails, so decryption must fall back to the old secret and still
+     carry the associated data. *)
+  let rotated = request_with_secrets ~old_secrets:[secret_2] secret_1 in
+  decrypt_result (Dream.decrypt ~associated_data:"bar" rotated ciphertext);
+  (* Control: rotation without associated data already worked. *)
+  let plain =
+    Dream.encrypt (request_with_secrets secret_2) "foo" in
+  decrypt_result (Dream.decrypt rotated plain);
+  (* Without the old secret, the ciphertext is correctly rejected. *)
+  let no_rotation = request_with_secrets secret_1 in
+  decrypt_result (Dream.decrypt ~associated_data:"bar" no_rotation ciphertext);
+  [%expect {|
+    "foo"
+    "foo"
+    None |}]

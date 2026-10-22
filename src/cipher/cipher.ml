@@ -43,7 +43,7 @@ let rec decrypt
   | secret::secrets ->
     match Cipher.decrypt ?associated_data ~secret ciphertext with
     | Some _ as plaintext -> plaintext
-    | None -> decrypt cipher secrets ciphertext
+    | None -> decrypt cipher ?associated_data secrets ciphertext
 
 (* Key is good for ~2.5 years if every request e.g. generates one new signed
    cookie, and the installation is doing 1000 requests per second. *)
