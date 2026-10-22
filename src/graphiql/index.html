@@ -42,6 +42,11 @@
         React.createElement(GraphiQL, {
           fetcher: fetcher,
           defaultQuery: defaultQuery,
+          // Disable persistence: with storage null, GraphiQL does not cache the
+          // query (or anything else) in localStorage, so each load reflects the
+          // server-provided default_query instead of a stale cached query. See
+          // https://github.com/camlworks/dream/issues/269.
+          storage: null,
           defaultSecondaryEditorOpen: true,
         }),
         document.getElementById("graphiql")
