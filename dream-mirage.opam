@@ -55,7 +55,6 @@ depends: [
   "dream-pure" {= version}
   "dune" {>= "3.22.0"}
   "duration"
-  "emile" {>= "1.1"}
   "ke" {>= "0.4"}  # paf.
   "letsencrypt" {>= "0.3.0"}
   "lwt"
