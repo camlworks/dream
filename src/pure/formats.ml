@@ -165,12 +165,15 @@ let from_form_urlencoded string =
 
 
 
-let split_target string =
-  (* Drop the fragment (everything from the first '#'), then split the path and
-     query at the first '?'. The path is decoded per segment the way [Uri.path]
-     would, but without running the whole target through [Uri.of_string], which
-     misreads a leading "//" as introducing a host (issue #248) and so drops
-     path components. *)
+let split_origin_form string =
+  (* [string] is an origin-form target (RFC 9112 §3.2.1): an absolute path,
+     optionally followed by a query, and with no authority. Drop the fragment
+     (everything from the first '#'), then split the path and query at the first
+     '?'. The path is decoded per segment, reproducing [Uri.path] without running
+     the whole target through [Uri.of_string], which misreads a leading "//" as
+     introducing a host (issue #248) and so drops path components. Decoding per
+     pre-split segment also preserves a standalone "%2F" segment, which
+     [Uri.path] would otherwise collapse to a bare '/'. *)
   let string =
     match String.index_opt string '#' with
     | Some i -> String.sub string 0 i
@@ -190,6 +193,24 @@ let split_target string =
     |> String.concat "/"
   in
   path, query
+
+let split_target string =
+  (* Only origin-form targets (the common case) begin with '/', and they are the
+     only form affected by the leading-"//" bug (issue #248), so handle them
+     directly. Absolute-form (proxied requests, e.g. "http://host/path"),
+     authority-form, and asterisk-form legitimately carry an authority or are not
+     a path at all; defer those to [Uri.of_string], which parses the authority
+     correctly. *)
+  if String.length string > 0 && string.[0] = '/' then
+    split_origin_form string
+  else
+    let uri = Uri.of_string string in
+    let query =
+      match Uri.verbatim_query uri with
+      | Some query -> query
+      | None -> ""
+    in
+    Uri.path uri, query
 
 let from_path =
   (* Not tail-recursive. *)
