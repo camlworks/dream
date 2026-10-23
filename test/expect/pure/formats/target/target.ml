@@ -16,10 +16,18 @@ let%expect_test _ =
   decode "/";
   decode "/?";
   decode "/abc/def";
-  (* TODO A very questionable interpretation of // as leading a hostname when we
-     know this is a target. There seems to be no way to work around this using
-     the interface of the Uri library. *)
+  (* A leading "//" is part of the target path, not an authority (issue #248);
+     runs of leading slashes must be preserved verbatim. *)
   decode "//abc/def";
+  decode "///abc/def";
+  decode "////abc/def";
+  (* A standalone "%2F" segment is an encoded slash and must be preserved, not
+     collapsed to a bare '/' the way [Uri.path] does. *)
+  decode "/abc/%2F/def";
+  (* Absolute-form targets (RFC 9112 §3.2.2), as sent to proxies, carry a real
+     authority that must be stripped, leaving just the path and query. *)
+  decode "http://host/abc/def";
+  decode "http://host/abc/def?a=b";
   decode "/abc/def/";
   decode "/abc/def?";
   decode "/abc/def/?";
@@ -34,7 +42,12 @@ let%expect_test _ =
     "/" ""
     "/" ""
     "/abc/def" ""
-    "/def" ""
+    "//abc/def" ""
+    "///abc/def" ""
+    "////abc/def" ""
+    "/abc/%2F/def" ""
+    "/abc/def" ""
+    "/abc/def" "a=b"
     "/abc/def/" ""
     "/abc/def" ""
     "/abc/def/" ""
