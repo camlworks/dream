@@ -1532,7 +1532,17 @@ val static :
 
     The default loader is {!Dream.from_filesystem}. See example
     {{:https://github.com/camlworks/dream/tree/master/example/w-one-binary#folders-and-files}
-    [w-one-binary]} for a loader that serves files from memory instead. *)
+    [w-one-binary]} for a loader that serves files from memory instead.
+
+    If the loader's response carries an [ETag:] or [Last-Modified:] header (as
+    {!Dream.from_filesystem} does), {!Dream.static} performs conditional-request
+    handling: a request with a matching [If-None-Match:] (or, in its absence, a
+    matching [If-Modified-Since:]) is answered with [304 Not Modified] and no
+    body. [If-None-Match:] is compared weakly and takes precedence over
+    [If-Modified-Since:], per
+    {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. A
+    custom loader can opt into the same handling simply by setting those
+    headers. *)
 
 val from_filesystem : string -> string -> handler
 (** [Dream.from_filesystem local_directory path request] responds with a file
@@ -1547,7 +1557,14 @@ val from_filesystem : string -> string -> handler
     ]}
 
     {!Dream.from_filesystem} calls {!Dream.mime_lookup} to guess a
-    [Content-Type:] based on the file's extension. *)
+    [Content-Type:] based on the file's extension.
+
+    The response also carries an [ETag:] (a strong validator derived from the
+    file's contents) and a [Last-Modified:] header (the file's modification
+    time), which {!Dream.static} uses to answer conditional requests with [304
+    Not Modified]. No [Cache-Control:] is emitted: whether assets are
+    fingerprinted and thus immutable is application-specific, so freshness
+    lifetimes are left to the application to add. *)
 
 val mime_lookup : string -> (string * string) list
 (** Returns a [Content-Type:] header based on the given filename. This is mostly
