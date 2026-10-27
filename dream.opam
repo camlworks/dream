@@ -72,7 +72,7 @@ depends: [
   "mirage-crypto-rng" {>= "1.2.0"}
   "multipart_form" {>= "0.4.0"}
   "multipart_form-lwt"
-  "ocaml" {>= "4.08.0"}
+  "ocaml" {>= "4.13.0"}  # String.starts_with in src/server/site_prefix.ml.
   "ptime" {>= "0.8.1"}  # Ptime.v.
   "ssl" {>= "0.5.8"}  # Ssl.get_negotiated_alpn_protocol.
   "stringext"
