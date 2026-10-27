@@ -254,6 +254,19 @@ let param request name =
     try List.assoc name params
     with _ -> missing_param request name
 
+(* Turn a response produced by a GET handler into the response for the
+   corresponding HEAD request: same status and headers, including an accurate
+   Content-Length, but with no body (RFC 9110 Section 9.3.2).
+   [set_content_length_headers] fills Content-Length from the already-computed
+   body when available; it is skipped for chunked responses, which must not
+   carry Content-Length. The body on the wire is additionally suppressed by
+   httpun/h2, which frame any HEAD response as fixed-length zero. *)
+let head_response response =
+  if Message.header response "Transfer-Encoding" <> Some "chunked" then
+    Message.set_content_length_headers response;
+  let headers = Message.all_headers response in
+  Helpers.empty ~headers (Message.status response)
+
 let router routes =
   let routes = List.flatten routes in
 
@@ -261,49 +274,6 @@ let router routes =
 
     (* TODO Probably unnecessary (because it's better to just convert this to a
        trie), but the method can be checked before descending down the route. *)
-
-    let rec try_routes bindings prefix path routes ok fail =
-      match routes with
-      | [] -> fail ()
-      | (pattern, node)::routes ->
-        try_route bindings prefix path pattern node ok (fun () ->
-          try_routes bindings prefix path routes ok fail)
-
-    and try_route bindings prefix path pattern node ok fail =
-      match pattern, path with
-      | [], _ ->
-        try_node bindings prefix path node false ok fail
-      | _,  [] -> fail ()
-      | Literal  s :: pattern, s' :: path when s = s' ->
-        try_route bindings            (s'::prefix) path pattern node ok fail
-      | Literal  _ :: _,       _                      -> fail ()
-      | Param    _ :: _,       s' :: _ when s' = ""   -> fail ()
-      | Param    s :: pattern, s' :: path ->
-        try_route ((s, s')::bindings) (s'::prefix) path pattern node ok fail
-      | Wildcard _ :: _,       _ ->
-        try_node bindings prefix path node true ok fail
-
-    and try_node bindings prefix path node is_wildcard ok fail =
-      match node with
-      | Handler (method_, handler)
-          when method_matches method_ (Message.method_ request) ->
-        Message.set_field request params_field bindings;
-        if is_wildcard then begin
-          (* prefix was built in reverse order *)
-          set_wildcard_prefix request prefix;
-          set_path request path;
-          ok handler request
-        end
-        else
-          if path = [] then
-            ok handler request
-          else
-            fail ()
-
-      | Handler _ -> fail ()
-      | Scope routes -> try_routes bindings prefix path routes ok fail
-
-    in
 
     let params =
       match Message.field request params_field with
@@ -316,12 +286,77 @@ let router routes =
     let prefix = internal_wildcard_prefix request in
     let path = path request in
 
-    (* match match_site_prefix next_prefix path with
-    | None -> next_handler request
-    | Some path -> *)
-      (* TODO The initial bindings and prefix should be taken from the request
-         context when there is indirect nested router support. *)
-    try_routes
-      params prefix path routes
-      (fun handler request -> handler request)
-      (fun () -> Helpers.not_found request)
+    (* Match the routes against [match_method] (normally the request's own
+       method, but a HEAD request also retries against GET below). It is a
+       parameter rather than read from the request so the retry does not have to
+       mutate the request before it knows a GET route exists. *)
+    let dispatch match_method ok fail =
+      let rec try_routes bindings prefix path routes ok fail =
+        match routes with
+        | [] -> fail ()
+        | (pattern, node)::routes ->
+          try_route bindings prefix path pattern node ok (fun () ->
+            try_routes bindings prefix path routes ok fail)
+
+      and try_route bindings prefix path pattern node ok fail =
+        match pattern, path with
+        | [], _ ->
+          try_node bindings prefix path node false ok fail
+        | _,  [] -> fail ()
+        | Literal  s :: pattern, s' :: path when s = s' ->
+          try_route bindings            (s'::prefix) path pattern node ok fail
+        | Literal  _ :: _,       _                      -> fail ()
+        | Param    _ :: _,       s' :: _ when s' = ""   -> fail ()
+        | Param    s :: pattern, s' :: path ->
+          try_route ((s, s')::bindings) (s'::prefix) path pattern node ok fail
+        | Wildcard _ :: _,       _ ->
+          try_node bindings prefix path node true ok fail
+
+      and try_node bindings prefix path node is_wildcard ok fail =
+        match node with
+        | Handler (method_, handler) when method_matches method_ match_method ->
+          Message.set_field request params_field bindings;
+          if is_wildcard then begin
+            (* prefix was built in reverse order *)
+            set_wildcard_prefix request prefix;
+            set_path request path;
+            ok handler request
+          end
+          else
+            if path = [] then
+              ok handler request
+            else
+              fail ()
+
+        | Handler _ -> fail ()
+        | Scope routes -> try_routes bindings prefix path routes ok fail
+
+      in
+
+      (* match match_site_prefix next_prefix path with
+      | None -> next_handler request
+      | Some path -> *)
+        (* TODO The initial bindings and prefix should be taken from the request
+           context when there is indirect nested router support. *)
+      try_routes params prefix path routes ok fail
+    in
+
+    let found handler request = handler request in
+    let not_found () = Helpers.not_found request in
+
+    (* A HEAD request with no matching HEAD route falls back to the matching GET
+       route, as in RFC 9110 Section 9.3.2 (and Go, Flask, Rails, Express). An
+       explicit [Dream.head] route still takes precedence, because it is tried
+       first. The GET handler runs with the method rewritten to GET, and its
+       body is stripped by [head_response]. *)
+    match Message.method_ request with
+    | `HEAD ->
+      dispatch `HEAD found (fun () ->
+        dispatch `GET
+          (fun handler request ->
+            Message.set_method_ request `GET;
+            let%lwt response = handler request in
+            head_response response)
+          not_found)
+    | method_ ->
+      dispatch method_ found not_found
