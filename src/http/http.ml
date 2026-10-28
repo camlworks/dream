@@ -87,7 +87,7 @@ let wrap_handler
     let headers =
       Httpun.Headers.to_list httpaf_request.headers in
 
-    let body =
+    let request_body =
       Httpun.Reqd.request_body conn in
     (* TODO Review per-chunk allocations. *)
     (* TODO Should the stream be auto-closed? It doesn't even have a closed
@@ -95,12 +95,12 @@ let wrap_handler
        behavior is. *)
     let read ~data ~flush:_ ~ping:_ ~pong:_ ~close ~exn:_ =
       Httpun.Body.Reader.schedule_read
-        body
+        request_body
         ~on_eof:(fun () -> close 1000)
         ~on_read:(fun buffer ~off ~len -> data buffer off len true false)
     in
     let close _code =
-      Httpun.Body.Reader.close body in
+      Httpun.Body.Reader.close request_body in
     let body =
       Stream.reader ~read ~close ~abort:close in
     let body =
@@ -136,6 +136,10 @@ let wrap_handler
            2. Upon failure to establish a WebSocket, the function is called to
               transmit the resulting error response. *)
         let forward_response response =
+          if Body_size_limit.exceeded request then begin
+            Httpun.Body.Reader.close request_body;
+            Message.set_header response "Connection" "close"
+          end;
           Message.set_content_length_headers response;
 
           let headers =
@@ -267,7 +271,12 @@ let wrap_handler_h2
           let body =
             H2.Reqd.respond_with_streaming conn h2_response in
 
-          Adapt.forward_body_h2 response body;
+          (* Reset the request stream after scheduling the 413 response headers,
+             so the peer stops sending the rejected body. *)
+          if Body_size_limit.exceeded request then
+            H2.Reqd.report_exn conn Body_size_limit.Payload_too_large
+          else
+            Adapt.forward_body_h2 response body;
 
           Lwt.return_unit
         in

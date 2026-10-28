@@ -1,3 +1,4 @@
+module Body_size_limit = Dream__server.Body_size_limit
 module Catch = Dream__server.Catch
 module Error_template = Dream__server.Error_template
 module Method = Dream_pure.Method
@@ -27,18 +28,18 @@ let wrap_handler_httpaf _user's_error_handler user's_dream_handler =
     let target  = httpaf_request.target in
     let _version = (httpaf_request.version.major, httpaf_request.version.minor) in
     let headers = H1.Headers.to_list httpaf_request.headers in
-    let body    = H1.Reqd.request_body reqd in
+    let request_body = H1.Reqd.request_body reqd in
 
     let read ~data ~flush:_ ~ping:_ ~pong:_ ~close ~exn:_ =
       H1.Body.Reader.schedule_read
-        body
+        request_body
         ~on_eof:(fun () -> close 1000)
         ~on_read:(fun buffer ~off ~len -> data buffer off len true false)
     in
     let close _close =
-      H1.Body.Reader.close body in
+      H1.Body.Reader.close request_body in
     let abort _close =
-      H1.Body.Reader.close body in
+      H1.Body.Reader.close request_body in
     let body =
       Stream.reader ~read ~close ~abort in
 
@@ -72,6 +73,10 @@ let wrap_handler_httpaf _user's_error_handler user's_dream_handler =
            2. Upon failure to establish a WebSocket, the function is called to
               transmit the resulting error response. *)
         let forward_response response =
+          if Body_size_limit.exceeded request then begin
+            H1.Body.Reader.close request_body;
+            Message.set_header response "Connection" "close"
+          end;
           Message.set_content_length_headers response;
 
           let headers =

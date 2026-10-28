@@ -16,6 +16,17 @@ module Stream = Dream_pure.Stream
    [Dream.body], [Dream.read], and anything built on them. *)
 exception Payload_too_large
 
+(* Marks a request whose body exceeded the size limit. Adapters use this to
+   stop reading the body and to choose the protocol-specific response. *)
+let exceeded_field =
+  Message.new_field
+    ~name:"dream.body_size_limit.exceeded"
+    ~show_value:string_of_bool
+    ()
+
+let exceeded request =
+  Message.field request exceeded_field = Some true
+
 (* Wraps a request body stream's reader so that it counts the bytes read, and
    raises [Payload_too_large] through [~exn] as soon as the running total would
    exceed [max_length]. The overflowing chunk is not forwarded, so a reader that
@@ -52,6 +63,7 @@ let body_size_limit max_length =
 
   fun next_handler request ->
     let too_large () =
+      Message.set_field request exceeded_field true;
       Helpers.respond ~status:`Payload_Too_Large ""
     in
     match declared_length request with
