@@ -5,6 +5,7 @@
 
 
 
+module Body_size_limit = Dream__server.Body_size_limit
 module Catch = Dream__server.Catch
 module Helpers = Dream__server.Helpers
 module Log = Dream__server.Log
@@ -441,10 +442,18 @@ let serve_with_details
     ~certificate_file
     ~key_file
     ~builtins
+    ?max_body_size
     user's_dream_handler =
 
   (* TODO DOC *)
   (* https://letsencrypt.org/docs/certificates-for-localhost/ *)
+
+  let user's_dream_handler =
+    match max_body_size with
+    | None -> user's_dream_handler
+    | Some max_body_size ->
+      Body_size_limit.body_size_limit max_body_size user's_dream_handler
+  in
 
   let user's_dream_handler =
     if builtins then
@@ -537,6 +546,7 @@ let serve_with_maybe_https
     ?certificate_file ?key_file
     ?certificate_string ?key_string
     ~builtins
+    ?max_body_size
     user's_dream_handler =
 
   try%lwt
@@ -562,6 +572,7 @@ let serve_with_maybe_https
         ~certificate_file:""
         ~key_file:""
         ~builtins
+        ?max_body_size
         user's_dream_handler
 
     | `OpenSSL | `OCaml_TLS as tls_library ->
@@ -627,6 +638,7 @@ let serve_with_maybe_https
           ~certificate_file
           ~key_file
           ~builtins
+          ?max_body_size
           user's_dream_handler
 
       | `Memory (certificate_string, key_string, verbose_or_silent) ->
@@ -655,6 +667,7 @@ let serve_with_maybe_https
           ~certificate_file
           ~key_file
           ~builtins
+          ?max_body_size
           user's_dream_handler
 
         end
@@ -673,6 +686,7 @@ let serve_with_maybe_https
 
 let default_interface = "localhost"
 let default_port = 8080
+let default_max_body_size = 10 * 1024 * 1024
 
 (* Lazy option default to avoid side effects. *)
 let option_or opt default = match opt with
@@ -712,6 +726,7 @@ let serve
     ?certificate_file
     ?key_file
     ?(builtins = true)
+    ?(max_body_size = Some default_max_body_size)
     ?(ignore_sigpipe = true)
     user's_dream_handler =
 
@@ -730,6 +745,7 @@ let serve
     ?certificate_string:None
     ?key_string:None
     ~builtins
+    ?max_body_size
     user's_dream_handler
 
 
@@ -744,6 +760,7 @@ let run
     ?certificate_file
     ?key_file
     ?(builtins = true)
+    ?(max_body_size = Some default_max_body_size)
     ?(greeting = true)
     ?adjust_terminal
     ?(ignore_sigpipe = true)
@@ -791,5 +808,6 @@ let run
       ?certificate_file ?key_file
       ?certificate_string:None ?key_string:None
       ~builtins
+      ?max_body_size
       user's_dream_handler
   end
