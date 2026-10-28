@@ -689,6 +689,20 @@ val body : 'a message -> string promise
 val set_body : 'a message -> string -> unit
 (** Replaces the body. *)
 
+val body_size_limit : int -> middleware
+(** Rejects requests whose body is larger than the given number of bytes,
+    responding with [413 Payload Too Large].
+
+    For streamed requests, the limit is enforced as the body is
+    read so a handler that doesn't read the body will not trigger the limit. Once the limit is reached, the body is closed and discarded.
+
+    Raises [Invalid_argument] if the limit is negative.
+
+    {!Dream.body_size_limit} is installed by {!Dream.run} or {!Dream.serve}
+    to enforce the server-wide limit configured with [~max_body_size].
+    If multiple {!Dream.body_size_limit}s are used,
+    the lowest limit among them is enforced. *)
+
 
 
 (** {1 Streams} *)
@@ -2140,6 +2154,7 @@ val run :
   ?certificate_file:string ->
   ?key_file:string ->
   ?builtins:bool ->
+  ?max_body_size:int option ->
   ?greeting:bool ->
   ?adjust_terminal:bool ->
   ?ignore_sigpipe:bool ->
@@ -2183,6 +2198,11 @@ val run :
       you are using [~tls], don't provide [~certificate_file] and [~key_file],
       and [~interface] is not ["localhost"].
     - [~builtins:false] disables {!section-builtin}.
+    - [~max_body_size] sets a server-wide request body size limit.
+      See {!Dream.body_size_limit} for more details.
+      Defaults to 10 MiB. Pass [~max_body_size:None] to disable the limit.
+      This is applied independently of [~builtins], so setting a limit with
+      [~builtins:false] still enforces it.
 
     The remaining arguments can be used to gradually disable convenience
     features of [Dream.run]. If these are disabled, you may as well switch to
@@ -2208,6 +2228,7 @@ val serve :
   ?certificate_file:string ->
   ?key_file:string ->
   ?builtins:bool ->
+  ?max_body_size:int option ->
   ?ignore_sigpipe:bool ->
     handler -> unit promise
 (** Like {!Dream.run}, but returns a promise that does not resolve until the

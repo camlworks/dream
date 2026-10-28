@@ -5,6 +5,7 @@
 
 
 
+module Body_size_limit = Dream__server.Body_size_limit
 module Catch = Dream__server.Catch
 module Cipher = Dream__cipher.Cipher
 module Cookie = Dream__server.Cookie
@@ -146,6 +147,7 @@ let all_cookies = Cookie.all_cookies
 
 let body = Message.body
 let set_body = Message.set_body
+let body_size_limit = Body_size_limit.body_size_limit
 
 
 
