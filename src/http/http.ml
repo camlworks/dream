@@ -273,6 +273,8 @@ let wrap_handler_h2
 
           (* Reset the request stream after scheduling the 413 response headers,
              so the peer stops sending the rejected body. *)
+          (* TODO: Replace [report_exn] with a public h2 single-stream reset API
+             using Cancel or EnhanceYourCalm once h2 provides one. *)
           if Body_size_limit.exceeded request then
             H2.Reqd.report_exn conn Body_size_limit.Payload_too_large
           else
