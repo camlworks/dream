@@ -6,21 +6,19 @@
 let () =
   ignore Initialize.require
 
-(* Run [target] through [Dream.trailing_slash policy] in front of a router that
-   has a handler at each of [/one] and [/two/], and print the resulting status,
-   any [Location] header, and the body of whichever handler ran. *)
-let show ?status ?(method_ = `GET) policy target =
-  let app =
-    Dream.trailing_slash ?status policy
-    @@ Dream.router [
-      Dream.get "/one" (fun _ -> Dream.respond "one");
-      Dream.get "/two/" (fun _ -> Dream.respond "two");
-    ]
-  in
-  let response =
-    Dream.request ~method_ ~target ""
-    |> Dream.test app
-  in
+let router =
+  Dream.router [
+    Dream.get "/" (fun _ -> Dream.respond "root");
+    Dream.get "/one" (fun _ -> Dream.respond "one");
+    Dream.get "/two/" (fun _ -> Dream.respond "two");
+    Dream.options "*" (fun request ->
+      let path = Dream__server.Router.path request |> String.concat "/" in
+      Dream.respond ("options-star:" ^ path));
+  ]
+
+(* Print the resulting status, any [Location] header, and the body of whichever
+   handler ran. *)
+let print_response target response =
   let status = Dream.status response in
   Printf.printf "%s -> %i %s"
     target (Dream.status_to_int status) (Dream.status_to_string status);
@@ -35,6 +33,16 @@ let show ?status ?(method_ = `GET) policy target =
     |> Lwt_main.run
   in
   if body <> "" then Printf.printf "%s\n" body
+
+(* Run [target] through [Dream.trailing_slash policy] in front of a router and
+   print the resulting status, any [Location] header, and the response body. *)
+let show ?status ?(method_ = `GET) policy target =
+  let app = Dream.trailing_slash ?status policy @@ router in
+  let response =
+    Dream.request ~method_ ~target ""
+    |> Dream.test app
+  in
+  print_response target response
 
 (* Strict: /one and /two/ are matched only in their declared form. *)
 let%expect_test _ =
@@ -105,8 +113,25 @@ let%expect_test _ =
 let%expect_test _ =
   show `Redirect_drop "/";
   show `Drop "/";
+  show `Append "/";
   show `Redirect_append "/";
   [%expect {|
-    / -> 404 Not Found
-    / -> 404 Not Found
-    / -> 404 Not Found |}]
+    / -> 200 OK
+    root
+    / -> 200 OK
+    root
+    / -> 200 OK
+    root
+    / -> 200 OK
+    root |}]
+
+(* The asterisk-form target used with OPTIONS is not a path, so policies that
+   would otherwise rewrite or redirect it pass it through unchanged. *)
+let%expect_test _ =
+  show ~method_:`OPTIONS `Append "*";
+  show ~method_:`OPTIONS `Redirect_append "*";
+  [%expect {|
+    * -> 200 OK
+    options-star:*
+    * -> 200 OK
+    options-star:* |}]

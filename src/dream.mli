@@ -1508,12 +1508,10 @@ val trailing_slash :
 
     The policies are:
     - [`Strict] leaves [/foo] and [/foo/] as distinct paths.
-    - [`Drop] rewrites [/foo/] to [/foo] internally, then runs the handler.
-    - [`Append] rewrites [/foo] to [/foo/] internally, then runs the handler.
-    - [`Redirect_drop] redirects [/foo/] to [/foo] with [301 Moved
-      Permanently].
-    - [`Redirect_append] redirects [/foo] to [/foo/] with [301 Moved
-      Permanently].
+    - [`Drop] rewrites [/foo/] to [/foo] internally, then runs the next handler.
+    - [`Append] rewrites [/foo] to [/foo/] internally, then runs the next handler.
+    - [`Redirect_drop] redirects [/foo/] to [/foo].
+    - [`Redirect_append] redirects [/foo] to [/foo/].
 
     {[
       let () =
@@ -1535,11 +1533,10 @@ val trailing_slash :
     to preserve the request method and body (e.g. for a [POST]). It is ignored
     by [`Strict], [`Drop], and [`Append].
 
-    The root path [/] is never modified. Place this middleware inside
-    this middleware inside {!with_site_prefix} so that redirect locations get
-    the site prefix. The [`Drop] and [`Append] policies assume the application
-    declares its routes in the matching canonical form (without or with the
-    trailing slash, respectively). *)
+    The root path [/] and the asterisk-form target [*] are never modified. The
+    [`Drop] and [`Append] policies assume the application declares its routes in
+    the matching canonical form (without or with the trailing slash,
+    respectively). *)
 
 
 

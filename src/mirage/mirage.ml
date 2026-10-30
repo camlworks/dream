@@ -174,6 +174,7 @@ module Make (Stack : Tcpip.Stack.V4V6) = struct
 
   include Dream__server.Catch
   include Dream__server.Site_prefix
+  include Dream__server.Trailing_slash
 
   let error_template =
     Error_handler.customize
