@@ -38,10 +38,10 @@ let show ?status ?(method_ = `GET) policy target =
 
 (* Strict: /one and /two/ are matched only in their declared form. *)
 let%expect_test _ =
-  show Dream.Strict "/one";
-  show Dream.Strict "/one/";
-  show Dream.Strict "/two/";
-  show Dream.Strict "/two";
+  show `Strict "/one";
+  show `Strict "/one/";
+  show `Strict "/two/";
+  show `Strict "/two";
   [%expect {|
     /one -> 200 OK
     one
@@ -53,8 +53,8 @@ let%expect_test _ =
 (* Drop: a trailing slash is stripped before routing; routes are declared
    without one, so /one and /one/ both reach the handler with 200. *)
 let%expect_test _ =
-  show Dream.Drop "/one";
-  show Dream.Drop "/one/";
+  show `Drop "/one";
+  show `Drop "/one/";
   [%expect {|
     /one -> 200 OK
     one
@@ -64,8 +64,8 @@ let%expect_test _ =
 (* Append: a trailing slash is added before routing; routes are declared with
    one, so /two and /two/ both reach the handler with 200. *)
 let%expect_test _ =
-  show Dream.Append "/two";
-  show Dream.Append "/two/";
+  show `Append "/two";
+  show `Append "/two/";
   [%expect {|
     /two -> 200 OK
     two
@@ -75,9 +75,9 @@ let%expect_test _ =
 (* Redirect_drop: the slashed form 301s to the slash-less canonical URL, which
    then serves 200. The query string is preserved. *)
 let%expect_test _ =
-  show Dream.Redirect_drop "/one";
-  show Dream.Redirect_drop "/one/";
-  show Dream.Redirect_drop "/one/?a=1&b=2";
+  show `Redirect_drop "/one";
+  show `Redirect_drop "/one/";
+  show `Redirect_drop "/one/?a=1&b=2";
   [%expect {|
     /one -> 200 OK
     one
@@ -86,8 +86,8 @@ let%expect_test _ =
 
 (* Redirect_append: the slash-less form 301s to the slashed canonical URL. *)
 let%expect_test _ =
-  show Dream.Redirect_append "/two/";
-  show Dream.Redirect_append "/two";
+  show `Redirect_append "/two/";
+  show `Redirect_append "/two";
   [%expect {|
     /two/ -> 200 OK
     two
@@ -95,17 +95,17 @@ let%expect_test _ =
 
 (* ~status overrides the redirect code; 308 preserves the method. *)
 let%expect_test _ =
-  show ~status:`Permanent_Redirect Dream.Redirect_drop "/one/";
-  show ~status:`Permanent_Redirect ~method_:`POST Dream.Redirect_drop "/one/";
+  show ~status:`Permanent_Redirect `Redirect_drop "/one/";
+  show ~status:`Permanent_Redirect ~method_:`POST `Redirect_drop "/one/";
   [%expect {|
     /one/ -> 308 Permanent Redirect  Location: /one
     /one/ -> 308 Permanent Redirect  Location: /one |}]
 
 (* The root path is never rewritten or redirected under any policy. *)
 let%expect_test _ =
-  show Dream.Redirect_drop "/";
-  show Dream.Drop "/";
-  show Dream.Redirect_append "/";
+  show `Redirect_drop "/";
+  show `Drop "/";
+  show `Redirect_append "/";
   [%expect {|
     / -> 404 Not Found
     / -> 404 Not Found

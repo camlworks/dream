@@ -239,12 +239,6 @@ let param = Router.param
 let scope = Router.scope
 let no_route = Router.no_route
 
-type trailing_slash = Trailing_slash.trailing_slash =
-  | Strict
-  | Drop
-  | Append
-  | Redirect_drop
-  | Redirect_append
 let trailing_slash = Trailing_slash.trailing_slash
 
 
