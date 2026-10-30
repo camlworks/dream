@@ -178,8 +178,14 @@ let path the_request =
   match Message.field the_request path_field with
   | Some path -> path
   | None ->
-    Message.(Formats.(
-      the_request |> target |> split_target |> fst |> from_path))
+    let path =
+      Message.(Formats.(
+        the_request |> target |> split_target |> fst |> from_path))
+    in
+    (* HTTP treats an empty path as equivalent to [/]. *)
+    match path with
+    | [] -> [""]
+    | _ -> path
 
 (* TODO Move site_prefix into this file and remove with_path from the API. *)
 let set_path request path =

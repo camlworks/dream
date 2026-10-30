@@ -533,6 +533,31 @@ let%expect_test _ =
     /abc/def /ghi |}]
 *)
 
+(* The empty path "" is normalized to "/", both with and without prefix *)
+
+let%expect_test _ =
+  show ~prefix:"/" "" @@ Dream.router [
+    Dream.get "/" (fun _ -> Dream.respond "root");
+  ];
+  show ~prefix:"/" "/" @@ Dream.router [
+    Dream.get "/" (fun _ -> Dream.respond "root");
+  ];
+  show ~prefix:"/app" "/app" @@ Dream.router [
+    Dream.get "/" (fun _ -> Dream.respond "root");
+  ];
+  show ~prefix:"/app" "/app/" @@ Dream.router [
+    Dream.get "/" (fun _ -> Dream.respond "root");
+  ];
+  [%expect {|
+    Response: 200 OK
+    root
+    Response: 200 OK
+    root
+    Response: 200 OK
+    root
+    Response: 200 OK
+    root |}]
+
 (* Site and wildcard prefixes are tracked independently. *)
 
 let%expect_test _ =

@@ -2251,7 +2251,8 @@ val with_site_prefix : string -> middleware
     This is for applications that are not running at the root ([/]) of their
     domain. The default is ["/"], for no site prefix. After [with_site_prefix],
     routing is done relative to the prefix, and the site prefix is also used as
-    the default cookie path.
+    the default cookie path. A request for the prefix itself, with or without a
+    trailing slash, is treated as the application root ([/]).
 
     The middleware is a translation layer between externally visible, prefixed
     URLs and the application's internal, unprefixed world. On the way out, the

@@ -48,6 +48,16 @@ let with_site_prefix prefix =
       Message.response ~status:`Bad_Gateway Stream.empty Stream.null
       |> Lwt.return
     | Some path ->
+      (* Stripping a non-empty prefix from a request for the site root leaves
+         [[]] for [/app] but [[""]] for [/app/]. Normalize the former to the
+         root path so that both forms route to ["/"] for consistency with the
+         default behavior.
+         https://www.rfc-editor.org/rfc/rfc9110.html#section-4.2.3-4.2 *)
+      let path =
+        match prefix, path with
+        | _::_, [] -> [""]
+        | _ -> path
+      in
       (* TODO This doesn't need to be recomputed on each request - can cache the
          result in the app. *)
       Router.set_site_prefix request prefix;
