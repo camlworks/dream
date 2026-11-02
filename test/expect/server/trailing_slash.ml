@@ -135,3 +135,25 @@ let%expect_test _ =
     options-star:*
     * -> 200 OK
     options-star:* |}]
+
+(* Inside a wildcard route, the path the middleware sees is relative to the
+   route's prefix. Redirects put the prefix back, and [`Drop] rewrites only the
+   relative path. *)
+let%expect_test _ =
+  let app policy =
+    Dream.router [
+      Dream.get "/static/**" @@ Dream.trailing_slash policy @@ fun request ->
+        Dream.respond (String.concat "/" (Dream__server.Router.path request));
+    ]
+  in
+  let show policy target =
+    Dream.request ~target "" |> Dream.test (app policy) |> print_response target
+  in
+  show `Redirect_drop "/static/a/b/?x=1";
+  show `Redirect_append "/static/a/b";
+  show `Drop "/static/a/b/";
+  [%expect {|
+    /static/a/b/?x=1 -> 301 Moved Permanently  Location: /static/a/b?x=1
+    /static/a/b -> 301 Moved Permanently  Location: /static/a/b/
+    /static/a/b/ -> 200 OK
+    a/b |}]

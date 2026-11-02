@@ -35,6 +35,7 @@ val param : Message.request -> string -> string
 val path : Message.request -> string list
 val site_prefix : Message.request -> string
 val wildcard_prefix : Message.request -> string
+val wildcard_prefix_path : Message.request -> string list
 val full_prefix : Message.request -> string
 
 val set_path : Message.request -> string list -> unit

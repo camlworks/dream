@@ -16,7 +16,9 @@ let has_trailing_slash path =
   | "" :: _ -> true
   | _ -> false
 
-(* Build a redirect to the canonical form, preserving the query string. *)
+(* Build a redirect to the canonical form, preserving the query string. Inside
+   a wildcard route, [Router.path] is only the part after the route's prefix,
+   so the prefix is put back in front. *)
 let redirect_to_canonical ?status request canonical_path =
   let status =
     match status with
@@ -25,7 +27,8 @@ let redirect_to_canonical ?status request canonical_path =
   in
   let _path, query = Formats.split_target (Message.target request) in
   let location =
-    let path = Formats.to_path canonical_path in
+    let prefix = Router.wildcard_prefix_path request in
+    let path = Formats.to_path (prefix @ canonical_path) in
     if query = "" then path else path ^ "?" ^ query
   in
   Helpers.redirect ~status request location
