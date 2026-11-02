@@ -693,15 +693,20 @@ val body_size_limit : int -> middleware
 (** Rejects requests whose body is larger than the given number of bytes,
     responding with [413 Payload Too Large].
 
-    For streamed requests, the limit is enforced as the body is
-    read so a handler that doesn't read the body will not trigger the limit. Once the limit is reached, the body is closed and discarded.
+    If the request declares a [Content-Length:] larger than the limit, it is
+    rejected immediately, before the handler runs, even if the handler would
+    not have read the body. Otherwise, the limit is enforced as the body is
+    read, so a handler that doesn't read a streamed body will not trigger it.
+    Once the limit is reached, the body is closed and discarded, and the
+    connection is closed (HTTP/1.1) or the request stream ends (HTTP/2) so that
+    the client stops sending.
 
     Raises [Invalid_argument] if the limit is negative.
 
-    {!Dream.body_size_limit} is installed by {!Dream.run} or {!Dream.serve}
-    to enforce the server-wide limit configured with [~max_body_size].
-    If multiple {!Dream.body_size_limit}s are used,
-    the lowest limit among them is enforced. *)
+    {!Dream.run} and {!Dream.serve} install this middleware to enforce the
+    server-wide limit configured with [~max_body_size], 10 MiB by default.
+    If several {!Dream.body_size_limit}s apply to a request, the lowest limit
+    among them is enforced. *)
 
 
 
