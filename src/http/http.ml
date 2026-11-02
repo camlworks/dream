@@ -696,7 +696,11 @@ let serve_with_maybe_https
 
 let default_interface = "localhost"
 let default_port = 8080
-let default_max_body_size = 10 * 1024 * 1024
+let default_max_body_size = Body_size_limit.default_max_body_size
+
+(* [max_int] means no limit: skip the middleware rather than count bytes. *)
+let body_size_limit_option max_body_size =
+  if max_body_size = max_int then None else Some max_body_size
 
 (* Lazy option default to avoid side effects. *)
 let option_or opt default = match opt with
@@ -736,7 +740,7 @@ let serve
     ?certificate_file
     ?key_file
     ?(builtins = true)
-    ?(max_body_size = Some default_max_body_size)
+    ?(max_body_size = default_max_body_size)
     ?(ignore_sigpipe = true)
     user's_dream_handler =
 
@@ -755,7 +759,7 @@ let serve
     ?certificate_string:None
     ?key_string:None
     ~builtins
-    ?max_body_size
+    ?max_body_size:(body_size_limit_option max_body_size)
     user's_dream_handler
 
 
@@ -770,7 +774,7 @@ let run
     ?certificate_file
     ?key_file
     ?(builtins = true)
-    ?(max_body_size = Some default_max_body_size)
+    ?(max_body_size = default_max_body_size)
     ?(greeting = true)
     ?adjust_terminal
     ?(ignore_sigpipe = true)
@@ -818,6 +822,6 @@ let run
       ?certificate_file ?key_file
       ?certificate_string:None ?key_string:None
       ~builtins
-      ?max_body_size
+      ?max_body_size:(body_size_limit_option max_body_size)
       user's_dream_handler
   end

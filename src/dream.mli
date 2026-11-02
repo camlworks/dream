@@ -2159,7 +2159,7 @@ val run :
   ?certificate_file:string ->
   ?key_file:string ->
   ?builtins:bool ->
-  ?max_body_size:int option ->
+  ?max_body_size:int ->
   ?greeting:bool ->
   ?adjust_terminal:bool ->
   ?ignore_sigpipe:bool ->
@@ -2205,7 +2205,7 @@ val run :
     - [~builtins:false] disables {!section-builtin}.
     - [~max_body_size] sets a server-wide request body size limit.
       See {!Dream.body_size_limit} for more details.
-      Defaults to 10 MiB. Pass [~max_body_size:None] to disable the limit.
+      Defaults to 10 MiB. Pass [~max_body_size:max_int] to disable the limit.
       This is applied independently of [~builtins], so setting a limit with
       [~builtins:false] still enforces it.
 
@@ -2233,7 +2233,7 @@ val serve :
   ?certificate_file:string ->
   ?key_file:string ->
   ?builtins:bool ->
-  ?max_body_size:int option ->
+  ?max_body_size:int ->
   ?ignore_sigpipe:bool ->
     handler -> unit promise
 (** Like {!Dream.run}, but returns a promise that does not resolve until the

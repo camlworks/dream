@@ -16,6 +16,10 @@ module Stream = Dream_pure.Stream
    [Dream.body], [Dream.read], and anything built on them. *)
 exception Payload_too_large
 
+(* Default server-wide limit applied by [Dream.run], [Dream.serve], and the
+   Mirage [http] and [https] functions. *)
+let default_max_body_size = 10 * 1024 * 1024
+
 (* Marks a request whose body exceeded the size limit. Adapters use this to
    stop reading the body and to choose the protocol-specific response. *)
 let exceeded_field =
