@@ -70,8 +70,7 @@ let body_size_limit max_length =
   fun next_handler request ->
     let too_large () =
       (* TODO: Remove this marker once httpun/h1/h2 enforce request body
-         limits at the transport level and h2 exposes a proper single-stream
-         reset API (https://github.com/anmonteiro/ocaml-h2/issues/279). *)
+         limits at the transport level. *)
       Message.set_field request exceeded_field true;
       Helpers.respond ~status:`Payload_Too_Large ""
     in

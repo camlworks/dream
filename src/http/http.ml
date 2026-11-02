@@ -271,15 +271,13 @@ let wrap_handler_h2
           let body =
             H2.Reqd.respond_with_streaming conn h2_response in
 
-          (* Reset the request stream after scheduling the 413 response headers,
-             so the peer stops sending the rejected body. *)
-          (* TODO: Replace [report_exn] with a public h2 single-stream reset API
-             using Cancel or EnhanceYourCalm once h2 provides one. See
-             https://github.com/anmonteiro/ocaml-h2/issues/279. *)
+          (* Stop reading a rejected body, then send the 413 as a complete
+             response. h2 stops accepting the rest of the request body once the
+             response is complete, so the peer is not left uploading, and the
+             client sees a clean 413 rather than a stream error. *)
           if Body_size_limit.exceeded request then
-            H2.Reqd.report_exn conn Body_size_limit.Payload_too_large
-          else
-            Adapt.forward_body_h2 response body;
+            H2.Body.Reader.close (H2.Reqd.request_body conn);
+          Adapt.forward_body_h2 response body;
 
           Lwt.return_unit
         in
