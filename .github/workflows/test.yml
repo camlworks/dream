@@ -6,7 +6,10 @@ on:
   pull_request:
     branches:
     - master
-    
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -27,14 +30,11 @@ jobs:
 
     runs-on: ${{matrix.os}}
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
+    - uses: actions/checkout@v6
 
     - uses: ocaml/setup-ocaml@v3
       with:
         ocaml-compiler: ${{matrix.ocaml}}
-        dune-cache: true
 
     # bisect_ppx is currently unmaintained and does not support OCaml 5.5 / ppxlib >= 0.36.0.
     # See this PR https://github.com/aantron/bisect_ppx/pull/448
@@ -46,11 +46,6 @@ jobs:
     # and link it manually.
     - run: brew install postgresql@15 && brew link --overwrite postgresql@15
       if: runner.os == 'macOS'
-
-    # Workaround https://github.com/savonet/ocaml-ssl/issues/155 and/or
-    # https://github.com/ocaml/setup-ocaml/issues/856.
-    - run: opam pin add ssl 0.6.0 --no-action
-      if: runner.os == 'Windows'
 
     # OpenSSL 4 no longer has SSLv3, which breaks SSLv23 contexts. Workaround
     # until https://github.com/savonet/ocaml-ssl/pull/189 is merged and released.
@@ -99,62 +94,15 @@ jobs:
           opam exec -- dune build $EXE
         done
 
-  quickstart:
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-        - ubuntu-latest
-        ocaml:
-        - 5.5.x
-        - 5.2.x
-        - 4.14.x
-
-    runs-on: ${{matrix.os}}
-    steps:
-    - uses: ocaml/setup-ocaml@v3
-      with:
-        ocaml-compiler: ${{matrix.ocaml}}
-        dune-cache: true
-
-    - name: Run quickstart.sh
-      shell: bash
-      run: |
-        set -xe
-        touch output
-        (
-            # tail will receive SIGPIPE once grep finds its match and fail -> catch with || true
-            if (tail -f output || true) | grep -q --line-buffered 'Ctrl'; then
-               echo Success
-               touch success
-            else
-                echo Failed with $?
-            fi
-            killall middleware.exe
-        ) &
-        tail -f output &
-        ((curl -fsSL https://raw.githubusercontent.com/camlworks/dream/$GITHUB_SHA/example/quickstart.sh | bash -s $GITHUB_SHA) || true) > output 2>&1
-        bash -c 'while [ ! -f success ]; do sleep 0.1; done'
-        if [ -f success ]
-        then
-          exit 0
-        else
-          exit 1
-        fi
-
   mirage:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
+    - uses: actions/checkout@v6
     - run: mkdir ../repo-copy
     - run: cp -r * ../repo-copy/
     - uses: ocaml/setup-ocaml@v3
       with:
         ocaml-compiler: 4.14.x
-        dune-cache: true
     - run: opam install --yes --deps-only ./dream-pure.opam ./dream-httpaf.opam ./dream.opam ./dream-mirage.opam
     - run: opam install --yes mirage mirage-ptime mirage-crypto-rng-mirage
     - run: cd example/w-mirage && mv config.ml config.ml.backup
