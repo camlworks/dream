@@ -120,48 +120,28 @@ into.
 
 ## Quick start
 
-You can get
-[one](https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files)
-of the first [tutorials][tutorial] and build it locally with:
-
-<pre><b>bash -c "$(curl -fsSL https://raw.githubusercontent.com/camlworks/dream/master/example/quickstart.sh)"</b></pre>
-
-### opam
-
-Create a project directory with an optional local switch:
+The easiest way to use Dream is via [opam](https://opam.ocaml.org).
+Install it and create a switch if
+you don't already have one. Then clone Dream and run the first
+[tutorial][tutorial] example, [**`1-hello`**][1-hello]:
 
 ```
-mkdir project
-cd project
-opam switch create . 5.1.0
-eval $(opam env)
+git clone https://github.com/camlworks/dream.git
+cd dream/example/1-hello
+opam install . --deps-only
+dune exec --root . ./hello.exe
 ```
 
-Install Dream:
-
-```
-opam install dream
-```
-
-After that, go to any of the [examples][tutorial], such as
-[**`2-middleware`**][2-middleware], re-create the files locally, and run it:
-
-```
-dune exec ./middleware.exe
-```
-
-[esy-example]: https://github.com/camlworks/dream/tree/master/example/w-esy#folders-and-files
-[quickstart.sh]: https://github.com/camlworks/dream/blob/master/example/quickstart.sh
-[esy]: https://esy.sh/
-[2-middleware]: https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files
+`--root .` makes the example directory the Dune project root, so dune builds
+only the example against the `dream` package installed by opam, rather than the
+Dream source in the surrounding checkout. If you're modifying Dream itself and
+want to observe the changes in the examples drop the `--root .`.
 
 ## esy
 
-Visit any of the [examples][tutorial], such as
-[**`2-middleware`**][2-middleware], and re-create the files locally. The file
-[`esy.json`](https://github.com/camlworks/dream/blob/master/example/2-middleware/esy.json)
-shows how to depend on Dream. All of the examples are installed by running `npx
-esy`, and started with `npx esy start`.
+Some examples, such as
+[**`w-esy`**](https://github.com/camlworks/dream/tree/master/example/w-esy#folders-and-files),
+show how to package a Dream application with [esy](https://esy.sh/).
 
 <br>
 
