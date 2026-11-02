@@ -741,6 +741,24 @@ module Make
   val set_body : 'a message -> string -> unit
   (** Replaces the body. *)
 
+  val body_size_limit : int -> middleware
+  (** Rejects requests whose body is larger than the given number of bytes,
+      responding with [413 Payload Too Large].
+
+      If the request declares a [Content-Length:] larger than the limit, it is
+      rejected immediately, before the handler runs, even if the handler would
+      not have read the body. Otherwise, the limit is enforced as the body is
+      read, so a handler that doesn't read a streamed body will not trigger it.
+      Once the limit is reached, the body is closed and discarded, and the
+      connection is closed so that the client stops sending.
+
+      Raises [Invalid_argument] if the limit is negative.
+
+      {!http} and {!https} install this middleware to enforce the server-wide
+      limit configured with [~max_body_size], 10 MiB by default. If several
+      {!body_size_limit}s apply to a request, the lowest limit among them is
+      enforced. *)
+
   (** {2 Low-level streaming} *)
 
   type buffer =
@@ -2111,6 +2129,7 @@ module Make
     ?stop:Lwt_switch.t ->
     port:int ->
     ?prefix:string ->
+    ?max_body_size:int ->
     Stack.TCP.t ->
     ?cfg:Tls.Config.server ->
     ?error_handler:error_handler ->
@@ -2121,9 +2140,13 @@ module Make
     ?stop:Lwt_switch.t ->
     port:int ->
     ?prefix:string ->
+    ?max_body_size:int ->
     ?protocol:[`H2 | `HTTP_1_1] ->
     Stack.TCP.t ->
     ?error_handler:error_handler ->
     handler ->
     unit Lwt.t
+  (** [~max_body_size] sets a server-wide request body size limit for {!http}
+      and {!https}. See {!body_size_limit}. Defaults to 10 MiB. Pass
+      [~max_body_size:max_int] to disable the limit. *)
 end
