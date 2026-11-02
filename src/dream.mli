@@ -1536,12 +1536,7 @@ val trailing_slash :
     The root path [/] and the asterisk-form target [*] are never modified. The
     [`Drop] and [`Append] policies assume the application declares its routes in
     the matching canonical form (without or with the trailing slash,
-    respectively).
-
-    Place this middleware inside {!with_site_prefix}, so that the site root
-    (e.g. [/app/]) is recognized as the root and left unmodified. It can also be
-    applied to a wildcard route ([**]); redirects then keep the route's
-    prefix. *)
+    respectively). *)
 
 
 

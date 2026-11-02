@@ -157,3 +157,26 @@ let%expect_test _ =
     /static/a/b -> 301 Moved Permanently  Location: /static/a/b/
     /static/a/b/ -> 200 OK
     a/b |}]
+
+(* [trailing_slash] may also be placed outside [with_site_prefix]. The trailing
+   slash is then part of the externally visible path, so [/app/] redirects to
+   [/app]. [with_site_prefix] maps that to the site root, where the handler for
+   [/] runs with [/app] as the site prefix. *)
+let%expect_test _ =
+  let app =
+    Dream.trailing_slash `Redirect_drop
+    @@ Dream.with_site_prefix "/app"
+    @@ Dream.router [
+      Dream.get "/" (fun request ->
+        Dream.respond ("root in " ^ Dream.site_prefix request));
+    ]
+  in
+  let show target =
+    Dream.request ~target "" |> Dream.test app |> print_response target
+  in
+  show "/app/";
+  show "/app";
+  [%expect {|
+    /app/ -> 301 Moved Permanently  Location: /app
+    /app -> 200 OK
+    root in /app |}]
