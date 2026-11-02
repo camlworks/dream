@@ -52,6 +52,12 @@ let limit_reader max_length stream =
 (* The declared length, if the request carries a single well-formed
    [Content-Length] header. httpun already rejects duplicate or malformed
    [Content-Length] values before the request reaches the application. *)
+(* TODO: A request with both [Content-Length] and [Transfer-Encoding] still
+   reaches here, although [Transfer-Encoding] overrides [Content-Length] (RFC
+   9112, section 6.3). Rely on the transport rejecting such requests once
+   https://github.com/anmonteiro/httpun/pull/164 and
+   https://github.com/robur-coop/ocaml-h1/pull/21 are released. See also
+   https://github.com/camlworks/dream/issues/184. *)
 let declared_length request =
   match Message.header request "Content-Length" with
   | None -> None
@@ -65,7 +71,7 @@ let body_size_limit max_length =
     let too_large () =
       (* TODO: Remove this marker once httpun/h1/h2 enforce request body
          limits at the transport level and h2 exposes a proper single-stream
-         reset API. *)
+         reset API (https://github.com/anmonteiro/ocaml-h2/issues/279). *)
       Message.set_field request exceeded_field true;
       Helpers.respond ~status:`Payload_Too_Large ""
     in
