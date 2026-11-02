@@ -179,6 +179,7 @@ module Make (Stack : Tcpip.Stack.V4V6) = struct
 
   include Dream__server.Catch
   include Dream__server.Site_prefix
+  include Dream__server.Body_size_limit
 
   let error_template =
     Error_handler.customize
@@ -401,6 +402,11 @@ module Make (Stack : Tcpip.Stack.V4V6) = struct
       Dream__server.Site_prefix.with_site_prefix prefix;
     ]
 
+  (* [max_int] means no limit: skip the middleware rather than count bytes. *)
+  let apply_body_size_limit max_body_size handler =
+    if max_body_size = max_int then handler
+    else Body_size_limit.body_size_limit max_body_size handler
+
   let localhost_certificate =
     let crts = Rresult.R.failwith_error_msg
       (X509.Certificate.decode_pem_multiple Dream__certificate.localhost_certificate) in
@@ -408,7 +414,8 @@ module Make (Stack : Tcpip.Stack.V4V6) = struct
       (X509.Private_key.decode_pem Dream__certificate.localhost_certificate_key) in
     `Single (crts, key)
 
-  let https ?stop ~port ?(prefix= "") stack
+  let https ?stop ~port ?(prefix= "")
+    ?(max_body_size = Body_size_limit.default_max_body_size) stack
     ?(cfg= Tls.Config.server ~certificates:localhost_certificate () |> Result.get_ok)
     ?error_handler:(user's_error_handler : error_handler = Error_handler.default) (user's_dream_handler : Message.handler) =
     initialize ~setup_outputs:ignore ;
@@ -421,6 +428,8 @@ module Make (Stack : Tcpip.Stack.V4V6) = struct
         TCP.close flow >>= fun () ->
         Lwt.return (R.error_msgf "%a" TLS.pp_write_error err)
     in
+    let user's_dream_handler =
+      apply_body_size_limit max_body_size user's_dream_handler in
     let user's_dream_handler =
       built_in_middleware prefix user's_error_handler user's_dream_handler in
     let handler = handler user's_error_handler user's_dream_handler in
@@ -438,13 +447,17 @@ module Make (Stack : Tcpip.Stack.V4V6) = struct
     let injection (_, flow) = R.T flow in
     { Alpn.alpn; peer; injection; }
 
-  let http ?stop ~port ?(prefix= "") ?(protocol= `HTTP_1_1) stack
+  let http ?stop ~port ?(prefix= "")
+    ?(max_body_size = Body_size_limit.default_max_body_size)
+    ?(protocol= `HTTP_1_1) stack
     ?error_handler:(user's_error_handler= Error_handler.default)
     user's_dream_handler =
     initialize ~setup_outputs:ignore ;
     let accept t = accept t >>? fun flow ->
       let edn = TCP.dst flow in
       Lwt.return_ok (edn, flow) in
+    let user's_dream_handler =
+      apply_body_size_limit max_body_size user's_dream_handler in
     let user's_dream_handler =
       built_in_middleware prefix user's_error_handler user's_dream_handler in
     let handler = handler user's_error_handler user's_dream_handler in
