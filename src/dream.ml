@@ -32,6 +32,7 @@ module Static = Dream__unix.Static
 module Status = Dream_pure.Status
 module Stream = Dream_pure.Stream
 module Tag = Dream__server.Tag
+module Trailing_slash = Dream__server.Trailing_slash
 module Upload = Dream__server.Upload
 
 
@@ -239,6 +240,8 @@ let not_found = Helpers.not_found
 let param = Router.param
 let scope = Router.scope
 let no_route = Router.no_route
+
+let trailing_slash = Trailing_slash.trailing_slash
 
 
 
