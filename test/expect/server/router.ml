@@ -408,6 +408,51 @@ let%expect_test _ =
     Response: 200 OK
     foo |}]
 
+(* A HEAD request with no HEAD route falls back to the matching GET route, and
+   the body is stripped (RFC 9110 Section 9.3.2). *)
+let%expect_test _ =
+  show ~method_:`HEAD "/abc" @@ Dream.router [
+    Dream.get "/abc" (fun _ -> Dream.respond "foo");
+  ];
+  [%expect {|
+    Response: 200 OK |}]
+
+(* The stripped HEAD response still carries Content-Length equal to the length
+   of the body the GET request would have returned. *)
+let%expect_test _ =
+  let response =
+    show_response ~method_:`HEAD "/abc" @@ Dream.router [
+      Dream.get "/abc" (fun _ -> Dream.respond "foobar");
+    ]
+  in
+  Printf.printf "Content-Length: %s\n"
+    (match Dream.header response "Content-Length" with
+     | Some value -> value
+     | None -> "(absent)");
+  [%expect {|
+    Response: 200 OK
+    Content-Length: 6 |}]
+
+(* An explicit HEAD route takes precedence over the GET fallback, regardless of
+   route order, and its body is not stripped. *)
+let%expect_test _ =
+  show ~method_:`HEAD "/abc" @@ Dream.router [
+    Dream.get "/abc" (fun _ -> Dream.respond "from-get");
+    Dream.head "/abc" (fun _ -> Dream.respond "from-head");
+  ];
+  [%expect {|
+    Response: 200 OK
+    from-head |}]
+
+(* The fallback does not invent routes: HEAD still 404s when there is no GET
+   route for the path either. *)
+let%expect_test _ =
+  show ~method_:`HEAD "/abc" @@ Dream.router [
+    Dream.get "/def" (fun _ -> Dream.respond "foo");
+  ];
+  [%expect {|
+    Response: 404 Not Found |}]
+
 let%expect_test _ =
   show ~method_:`CONNECT "/abc" @@ Dream.router [
     Dream.connect "/abc" (fun _ -> Dream.respond "foo");
