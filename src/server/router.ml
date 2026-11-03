@@ -206,6 +206,9 @@ let internal_wildcard_prefix request =
 let wildcard_prefix request =
   Formats.to_path (List.rev (internal_wildcard_prefix request))
 
+let wildcard_prefix_path request =
+  List.rev (internal_wildcard_prefix request)
+
 let set_wildcard_prefix request prefix =
   Message.set_field request wildcard_prefix_field prefix
 
