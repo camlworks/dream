@@ -1517,6 +1517,46 @@ val no_route : route
       ]
     ]} *)
 
+val trailing_slash :
+  ?status:[< redirection ] ->
+  [< `Strict | `Drop | `Append | `Redirect_drop | `Redirect_append ] ->
+  middleware
+(** Middleware that applies a uniform trailing-slash policy to requests,
+    so that an application need not declare both [/foo] and [/foo/] for every
+    route.
+
+    The policies are:
+    - [`Strict] leaves [/foo] and [/foo/] as distinct paths.
+    - [`Drop] rewrites [/foo/] to [/foo] internally, then runs the next handler.
+    - [`Append] rewrites [/foo] to [/foo/] internally, then runs the next handler.
+    - [`Redirect_drop] redirects [/foo/] to [/foo].
+    - [`Redirect_append] redirects [/foo] to [/foo/].
+
+    {[
+      let () =
+        Dream.run
+        @@ Dream.trailing_slash `Redirect_drop
+        @@ Dream.router [
+          Dream.get "/widget" handler;
+        ]
+    ]}
+
+    The right policy depends on the application: a content site typically wants
+    [`Redirect_drop] (or [`Redirect_append]) so that each page has one canonical
+    URL, while a JSON API may prefer the redirect-free [`Drop] or [`Append], and
+    a static-file subtree usually wants [`Strict], since [/dir] and [/dir/]
+    resolve relative links differently.
+
+    [~status] sets the redirect status for the [`Redirect_*] policies. It
+    defaults to [`Moved_Permanently] ([301]); use [`Permanent_Redirect] ([308])
+    to preserve the request method and body (e.g. for a [POST]). It is ignored
+    by [`Strict], [`Drop], and [`Append].
+
+    The root path [/] and the asterisk-form target [*] are never modified. The
+    [`Drop] and [`Append] policies assume the application declares its routes in
+    the matching canonical form (without or with the trailing slash,
+    respectively). *)
+
 
 
 (** {1 Static files} *)
