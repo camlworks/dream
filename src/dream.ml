@@ -5,6 +5,7 @@
 
 
 
+module Body_size_limit = Dream__server.Body_size_limit
 module Catch = Dream__server.Catch
 module Cipher = Dream__cipher.Cipher
 module Cookie = Dream__server.Cookie
@@ -31,6 +32,7 @@ module Static = Dream__unix.Static
 module Status = Dream_pure.Status
 module Stream = Dream_pure.Stream
 module Tag = Dream__server.Tag
+module Trailing_slash = Dream__server.Trailing_slash
 module Upload = Dream__server.Upload
 
 
@@ -146,6 +148,7 @@ let all_cookies = Cookie.all_cookies
 
 let body = Message.body
 let set_body = Message.set_body
+let body_size_limit = Body_size_limit.body_size_limit
 
 
 
@@ -237,6 +240,8 @@ let not_found = Helpers.not_found
 let param = Router.param
 let scope = Router.scope
 let no_route = Router.no_route
+
+let trailing_slash = Trailing_slash.trailing_slash
 
 
 

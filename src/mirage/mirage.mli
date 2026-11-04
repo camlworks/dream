@@ -741,6 +741,24 @@ module Make
   val set_body : 'a message -> string -> unit
   (** Replaces the body. *)
 
+  val body_size_limit : int -> middleware
+  (** Rejects requests whose body is larger than the given number of bytes,
+      responding with [413 Payload Too Large].
+
+      If the request declares a [Content-Length:] larger than the limit, it is
+      rejected immediately, before the handler runs, even if the handler would
+      not have read the body. Otherwise, the limit is enforced as the body is
+      read, so a handler that doesn't read a streamed body will not trigger it.
+      Once the limit is reached, the body is closed and discarded, and the
+      connection is closed so that the client stops sending.
+
+      Raises [Invalid_argument] if the limit is negative.
+
+      {!http} and {!https} install this middleware to enforce the server-wide
+      limit configured with [~max_body_size], 10 MiB by default. If several
+      {!body_size_limit}s apply to a request, the lowest limit among them is
+      enforced. *)
+
   (** {2 Low-level streaming} *)
 
   type buffer =
@@ -1396,6 +1414,48 @@ module Make
             Dream.no_route;
         ]
       ]} *)
+
+  val trailing_slash :
+    ?status:[< redirection ] ->
+    [< `Strict | `Drop | `Append | `Redirect_drop | `Redirect_append ] ->
+    middleware
+  (** Middleware that applies a uniform trailing-slash policy to requests, so
+      that an application need not declare both [/foo] and [/foo/] for every
+      route.
+
+      The policies are:
+      - [`Strict] leaves [/foo] and [/foo/] as distinct paths.
+      - [`Drop] rewrites [/foo/] to [/foo] internally, then runs the next
+        handler.
+      - [`Append] rewrites [/foo] to [/foo/] internally, then runs the next
+        handler.
+      - [`Redirect_drop] redirects [/foo/] to [/foo].
+      - [`Redirect_append] redirects [/foo] to [/foo/].
+
+      {[
+        let () =
+          Dream.run
+          @@ Dream.trailing_slash `Redirect_drop
+          @@ Dream.router [
+            Dream.get "/widget" handler;
+          ]
+      ]}
+
+      The right policy depends on the application: a content site typically
+      wants [`Redirect_drop] (or [`Redirect_append]) so that each page has one
+      canonical URL, while a JSON API may prefer the redirect-free [`Drop] or
+      [`Append], and a static-file subtree usually wants [`Strict], since
+      [/dir] and [/dir/] resolve relative links differently.
+
+      [~status] sets the redirect status for the [`Redirect_*] policies. It
+      defaults to [`Moved_Permanently] ([301]); use [`Permanent_Redirect] ([308])
+      to preserve the request method and body (e.g. for a [POST]). It is ignored
+      by [`Strict], [`Drop], and [`Append].
+
+      The root path [/] and the asterisk-form target [*] are never modified.
+      The [`Drop] and [`Append] policies assume the application declares its
+      routes in the matching canonical form (without or with the trailing
+      slash, respectively). *)
 
   (** {1 Static files} *)
 
@@ -2069,6 +2129,7 @@ module Make
     ?stop:Lwt_switch.t ->
     port:int ->
     ?prefix:string ->
+    ?max_body_size:int ->
     Stack.TCP.t ->
     ?cfg:Tls.Config.server ->
     ?error_handler:error_handler ->
@@ -2079,9 +2140,13 @@ module Make
     ?stop:Lwt_switch.t ->
     port:int ->
     ?prefix:string ->
+    ?max_body_size:int ->
     ?protocol:[`H2 | `HTTP_1_1] ->
     Stack.TCP.t ->
     ?error_handler:error_handler ->
     handler ->
     unit Lwt.t
+  (** [~max_body_size] sets a server-wide request body size limit for {!http}
+      and {!https}. See {!body_size_limit}. Defaults to 10 MiB. Pass
+      [~max_body_size:max_int] to disable the limit. *)
 end

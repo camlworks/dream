@@ -689,6 +689,25 @@ val body : 'a message -> string promise
 val set_body : 'a message -> string -> unit
 (** Replaces the body. *)
 
+val body_size_limit : int -> middleware
+(** Rejects requests whose body is larger than the given number of bytes,
+    responding with [413 Payload Too Large].
+
+    If the request declares a [Content-Length:] larger than the limit, it is
+    rejected immediately, before the handler runs, even if the handler would
+    not have read the body. Otherwise, the limit is enforced as the body is
+    read, so a handler that doesn't read a streamed body will not trigger it.
+    Once the limit is reached, the body is closed and discarded, and the
+    connection is closed (HTTP/1.1) or the request stream ends (HTTP/2) so that
+    the client stops sending.
+
+    Raises [Invalid_argument] if the limit is negative.
+
+    {!Dream.run} and {!Dream.serve} install this middleware to enforce the
+    server-wide limit configured with [~max_body_size], 10 MiB by default.
+    If several {!Dream.body_size_limit}s apply to a request, the lowest limit
+    among them is enforced. *)
+
 
 
 (** {1 Streams} *)
@@ -1498,6 +1517,46 @@ val no_route : route
       ]
     ]} *)
 
+val trailing_slash :
+  ?status:[< redirection ] ->
+  [< `Strict | `Drop | `Append | `Redirect_drop | `Redirect_append ] ->
+  middleware
+(** Middleware that applies a uniform trailing-slash policy to requests,
+    so that an application need not declare both [/foo] and [/foo/] for every
+    route.
+
+    The policies are:
+    - [`Strict] leaves [/foo] and [/foo/] as distinct paths.
+    - [`Drop] rewrites [/foo/] to [/foo] internally, then runs the next handler.
+    - [`Append] rewrites [/foo] to [/foo/] internally, then runs the next handler.
+    - [`Redirect_drop] redirects [/foo/] to [/foo].
+    - [`Redirect_append] redirects [/foo] to [/foo/].
+
+    {[
+      let () =
+        Dream.run
+        @@ Dream.trailing_slash `Redirect_drop
+        @@ Dream.router [
+          Dream.get "/widget" handler;
+        ]
+    ]}
+
+    The right policy depends on the application: a content site typically wants
+    [`Redirect_drop] (or [`Redirect_append]) so that each page has one canonical
+    URL, while a JSON API may prefer the redirect-free [`Drop] or [`Append], and
+    a static-file subtree usually wants [`Strict], since [/dir] and [/dir/]
+    resolve relative links differently.
+
+    [~status] sets the redirect status for the [`Redirect_*] policies. It
+    defaults to [`Moved_Permanently] ([301]); use [`Permanent_Redirect] ([308])
+    to preserve the request method and body (e.g. for a [POST]). It is ignored
+    by [`Strict], [`Drop], and [`Append].
+
+    The root path [/] and the asterisk-form target [*] are never modified. The
+    [`Drop] and [`Append] policies assume the application declares its routes in
+    the matching canonical form (without or with the trailing slash,
+    respectively). *)
+
 
 
 (** {1 Static files} *)
@@ -2140,6 +2199,7 @@ val run :
   ?certificate_file:string ->
   ?key_file:string ->
   ?builtins:bool ->
+  ?max_body_size:int ->
   ?greeting:bool ->
   ?adjust_terminal:bool ->
   ?ignore_sigpipe:bool ->
@@ -2183,6 +2243,11 @@ val run :
       you are using [~tls], don't provide [~certificate_file] and [~key_file],
       and [~interface] is not ["localhost"].
     - [~builtins:false] disables {!section-builtin}.
+    - [~max_body_size] sets a server-wide request body size limit.
+      See {!Dream.body_size_limit} for more details.
+      Defaults to 10 MiB. Pass [~max_body_size:max_int] to disable the limit.
+      This is applied independently of [~builtins], so setting a limit with
+      [~builtins:false] still enforces it.
 
     The remaining arguments can be used to gradually disable convenience
     features of [Dream.run]. If these are disabled, you may as well switch to
@@ -2208,6 +2273,7 @@ val serve :
   ?certificate_file:string ->
   ?key_file:string ->
   ?builtins:bool ->
+  ?max_body_size:int ->
   ?ignore_sigpipe:bool ->
     handler -> unit promise
 (** Like {!Dream.run}, but returns a promise that does not resolve until the
