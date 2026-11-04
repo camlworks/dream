@@ -1,11 +1,21 @@
 {
   "name": "dream-graphiql",
   "private": true,
+  "scripts": {
+    "build": "node build.mjs"
+  },
   "dependencies": {
-    "graphiql": "^2.4.1",
-    "graphql": "^16.6.0",
-    "inliner": "aantron/inliner#fork",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@graphiql/toolkit": "1.0.0",
+    "graphiql": "6.0.0",
+    "graphql": "17.0.2",
+    "graphql-ws": "6.4.1",
+    "monaco-editor": "0.57.0",
+    "monaco-graphql": "2.0.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "inline-source": "8.0.3"
   }
 }
