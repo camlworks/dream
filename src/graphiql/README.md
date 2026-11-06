@@ -1,19 +1,17 @@
-# GraphiQL bundle
+# GraphiQL page
 
-Dream serves a vendored build of
-[GraphiQL](https://github.com/graphql/graphiql) from `Dream.graphiql`. The
-front-end dependencies are pinned in [`package.json`](package.json), and the
-resulting single-file page is checked in as [`index.bundle.html`](index.bundle.html).
-This is later compiled into `dream__graphiql.ml` by `dune`.
+Dream serves [GraphiQL](https://github.com/graphql/graphiql) from
+`Dream.graphiql` using a small HTML shell. GraphiQL, React, and their
+dependencies are loaded from [esm.sh](https://esm.sh) at runtime. The import map
+in [`index.html`](index.html) pins exact versions and includes Subresource
+Integrity hashes for every module and stylesheet.
 
-`index.js` is the entry point. It reads the `%%ENDPOINT%%` and `%%DEFAULT_QUERY%%`
-placeholders substituted by `src/graphql/graphql.ml`.
+`index.html` contains the `%%ENDPOINT%%` and `%%DEFAULT_QUERY%%` placeholders
+substituted by `src/graphql/graphql.ml`.
 
 ## Updating
 
-Change the versions in `package.json` (or run `npm install --save-exact
-package@version`). To update the lockfile and rebuild `index.bundle.html` run:
-
-```sh
-make update
-```
+Update the URLs and integrity hashes together. The import map follows the
+[upstream GraphiQL CDN example](https://github.com/graphql/graphiql/tree/main/examples/graphiql-cdn).
+Changing a URL without changing its SRI hash makes the browser reject the
+module.
