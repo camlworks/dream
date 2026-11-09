@@ -129,6 +129,7 @@
 
       const endpoint = "%%ENDPOINT%%";
       const defaultQuery = "%%DEFAULT_QUERY%%";
+      const serverId = "%%SERVER_ID%%";
 
       const wsSchema = location.protocol === "https:" ? "wss:" : "ws:";
       const wsEndpoint = wsSchema + "//" + window.location.host + endpoint;
@@ -141,10 +142,36 @@
         subscriptionClient: createClient({url: wsEndpoint}),
       });
 
+      // Scope GraphiQL's origin-wide editor state by server secret, endpoint,
+      // and default query, so different examples and configurations do not share
+      // stale cached queries. See https://github.com/camlworks/dream/issues/269.
+      const localStorage = window.localStorage;
+      const storagePrefix =
+        "dream-graphiql:" +
+        encodeURIComponent(serverId) +
+        ":" +
+        encodeURIComponent(endpoint) +
+        ":" +
+        encodeURIComponent(defaultQuery) +
+        ":";
+      const storageKeys = () =>
+        Object.keys(localStorage).filter(key => key.startsWith(storagePrefix));
+
+      const storage = {
+        getItem: key => localStorage.getItem(storagePrefix + key),
+        setItem: (key, value) => localStorage.setItem(storagePrefix + key, value),
+        removeItem: key => localStorage.removeItem(storagePrefix + key),
+        clear: () => storageKeys().forEach(key => localStorage.removeItem(key)),
+        get length() {
+          return storageKeys().length;
+        },
+      };
+
       ReactDOM.createRoot(document.getElementById("graphiql")).render(
         React.createElement(GraphiQL, {
           transport,
           defaultQuery,
+          storage,
           defaultEditorToolsVisibility: true,
         })
       );

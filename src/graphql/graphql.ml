@@ -5,6 +5,7 @@
 
 
 
+module Cipher = Dream__cipher.Cipher
 module Helpers = Dream__server.Helpers
 module Log = Dream__server.Log
 module Message = Dream_pure.Message
@@ -343,5 +344,8 @@ let graphiql ?(default_query = "") graphql_endpoint =
     end
   in
 
-  fun _request ->
-    Helpers.html (Lazy.force html)
+  fun request ->
+    let server_id = Cipher.server_id request in
+    Lazy.force html
+    |> Stringext.replace_all ~pattern:"%%SERVER_ID%%" ~with_:server_id
+    |> Helpers.html

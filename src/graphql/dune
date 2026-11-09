@@ -2,6 +2,7 @@
  (public_name dream.graphql)
  (name dream__graphql)
  (libraries
+  dream.cipher
   dream.graphiql
   dream-pure
   dream.server

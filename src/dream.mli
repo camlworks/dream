@@ -1789,6 +1789,12 @@ val graphiql : ?default_query:string -> string -> handler
     content of a JavaScript string, between its quotes, so it must be escaped
     manually.
 
+    GraphiQL keeps the query, tabs, and other editor state in browser local
+    storage. The cache is scoped to the server secret, the endpoint, and
+    [~default_query], so different servers or configurations do not reuse
+    each other's state. If {!Dream.set_secret} is not used, the cache will be
+    reset on server restarts.
+
     The page loads its JavaScript and CSS from {{:https://esm.sh} esm.sh} at
     runtime and trusts esm.sh to serve the transitive modules without integrity
     checks.
