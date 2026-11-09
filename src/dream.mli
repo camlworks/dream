@@ -1782,13 +1782,16 @@ val graphiql : ?default_query:string -> string -> handler
 (** Serves
     {{:https://github.com/graphql/graphiql/tree/main/packages/graphiql#readme}
     GraphiQL}, a GraphQL query editor. The string gives the GraphQL endpoint
-    that the editor will work with. Note that it loads its JavaScript and CSS from
-    a CDN at runtime and therefore needs network access.
+    that the editor will work with.
 
     [~default_query] sets the query that appears upon the first visit to the
     endpoint. It is empty by default. The string is pasted literally into the
     content of a JavaScript string, between its quotes, so it must be escaped
     manually.
+
+    The page loads its JavaScript and CSS from {{:https://esm.sh} esm.sh} at
+    runtime and trusts esm.sh to serve the transitive modules without integrity
+    checks.
 
     Use {!Dream.no_route} to disable GraphiQL conditionally outside of
     development. *)
