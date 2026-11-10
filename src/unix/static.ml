@@ -32,7 +32,7 @@ let mime_lookup filename =
    The file is already fully read into memory, so hashing it is cheap relative to
    the read. *)
 let etag content =
-  Printf.sprintf "\"%s\"" Digestif.SHA1.(to_hex (digest_string content))
+  Printf.sprintf "\"%s\"" Digestif.SHA256.(to_hex (digest_string content))
 
 let from_filesystem local_root path _ =
   let file = Filename.concat local_root path in

@@ -12,13 +12,13 @@ Last-Modified date (normalized here, since it reflects the file's mtime).
   $ curl_cmd /static/hello -D - -o /dev/null \
   >   | grep -iE '^(etag|last-modified):' \
   >   | sed -E 's/(last-modified:) .*/\1 <date>/I'
-  ETag: "1d229271928d3f9e2bb0375bd6ce5db6c6d348d9"
+  ETag: "66a045b452102c59d840ec097d59d9467e13a3f34f6494e539ffd32c1bb35f18"
   Last-Modified: <date>
 
 A conditional request whose If-None-Match matches the current ETag is answered
 with 304 Not Modified and no body.
   $ curl_cmd /static/hello \
-  >   -H 'If-None-Match: "1d229271928d3f9e2bb0375bd6ce5db6c6d348d9"' \
+  >   -H 'If-None-Match: "66a045b452102c59d840ec097d59d9467e13a3f34f6494e539ffd32c1bb35f18"' \
   >   -w 'HTTP %{http_code}\n'
   HTTP 304
 
