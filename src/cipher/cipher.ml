@@ -139,15 +139,6 @@ let decryption_secrets request =
   | Some secrets -> secrets
   | None -> Lazy.force fallback_secrets
 
-(* A stable, non-reversible identifier for the server's current secret. It
-   changes across restarts unless the application uses Dream.set_secret. *)
-let server_id request =
-  Digestif.SHA256.hmac_string
-    ~key:(encryption_secret request)
-    "dream.server-id"
-  |> Digestif.SHA256.to_raw_string
-  |> Dream_pure.Formats.to_base64url
-
 let encrypt ?associated_data request plaintext =
   encrypt
     (module AEAD_AES_256_GCM)

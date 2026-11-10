@@ -153,27 +153,3 @@ let%expect_test _ =
     "foo"
     "foo"
     None |}]
-
-
-
-(* The server identifier is derived from the current secret. It must be stable
-   for a configured secret and for the implicit per-process fallback secret, but
-   differ between configured secrets. *)
-let server_id ?old_secrets secret =
-  Dream__cipher.Cipher.server_id (request_with_secrets ?old_secrets secret)
-
-let%expect_test _ =
-  Printf.printf "%B\n%!" (server_id secret_1 = server_id secret_1);
-  Printf.printf "%B\n%!" (server_id secret_1 = server_id secret_2);
-  Printf.printf "%B\n%!"
-    (server_id ~old_secrets:[secret_2] secret_1 = server_id secret_1);
-  let request_1 = Dream.request "" in
-  let request_2 = Dream.request "" in
-  Printf.printf "%B\n%!"
-    (Dream__cipher.Cipher.server_id request_1
-      = Dream__cipher.Cipher.server_id request_2);
-  [%expect {|
-    true
-    false
-    true
-    true |}]

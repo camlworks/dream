@@ -129,7 +129,6 @@
 
       const endpoint = "%%ENDPOINT%%";
       const defaultQuery = "%%DEFAULT_QUERY%%";
-      const serverId = "%%SERVER_ID%%";
 
       const wsSchema = location.protocol === "https:" ? "wss:" : "ws:";
       const wsEndpoint = wsSchema + "//" + window.location.host + endpoint;
@@ -142,14 +141,12 @@
         subscriptionClient: createClient({url: wsEndpoint}),
       });
 
-      // Scope GraphiQL's origin-wide editor state by server secret, endpoint,
-      // and default query, so different examples and configurations do not share
-      // stale cached queries. See https://github.com/camlworks/dream/issues/269.
+      // Scope GraphiQL's origin-wide editor state by endpoint and default
+      // query, so different examples and configurations do not share stale
+      // cached queries. See https://github.com/camlworks/dream/issues/269.
       const localStorage = window.localStorage;
       const storagePrefix =
         "dream-graphiql:" +
-        encodeURIComponent(serverId) +
-        ":" +
         encodeURIComponent(endpoint) +
         ":" +
         encodeURIComponent(defaultQuery) +

@@ -25,8 +25,8 @@ The Monaco worker entry points are imported directly from exact
 `monaco-editor` and `monaco-graphql` versions, but they and the worker scripts
 they load are not covered by the import-map SRI hashes either.
 
-`index.html` contains the `%%ENDPOINT%%`, `%%DEFAULT_QUERY%%`, and
-`%%SERVER_ID%%` placeholders substituted by `src/graphql/graphql.ml`.
+`index.html` contains the `%%ENDPOINT%%` and `%%DEFAULT_QUERY%%` placeholders
+substituted by `src/graphql/graphql.ml`.
 
 ## Updating
 
