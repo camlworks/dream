@@ -48,45 +48,56 @@ let from_cookie s =
    specially. This might not be important, however, if user agents treat cookies
    as opaque, because then only Dream has to deal with its own cookies. *)
 
+(* HTTP-date in IMF-fixdate form, e.g. [Sun, 06 Nov 1994 08:49:37 GMT]. This is
+   the format of [Expires] in [Set-Cookie:] (RFC 6265 §4.1.1) and of HTTP header
+   dates such as [Last-Modified:] (RFC 9110 §5.6.7). Returns [None] if [seconds]
+   is not representable as a date. *)
+let to_http_date seconds =
+  match Ptime.of_float_s seconds with
+  | None -> None
+  | Some time ->
+    let weekday =
+      match Ptime.weekday time with
+      | `Sun -> "Sun" | `Mon -> "Mon" | `Tue -> "Tue" | `Wed -> "Wed"
+      | `Thu -> "Thu" | `Fri -> "Fri" | `Sat -> "Sat"
+    in
+    let ((y, m, d), ((hh, mm, ss), _tz_offset_s)) = Ptime.to_date_time time in
+    let month =
+      match m with
+      | 1 -> "Jan" | 2 -> "Feb" | 3 -> "Mar" | 4 -> "Apr" | 5 -> "May"
+      | 6 -> "Jun" | 7 -> "Jul" | 8 -> "Aug" | 9 -> "Sep" | 10 -> "Oct"
+      | 11 -> "Nov" | 12 -> "Dec"
+      | _ -> assert false
+    in
+    (* [Ptime.to_date_time] docs give range 0..60 for [ss], accounting for
+       leap seconds. However, RFC 6265 §5.1.1 states:
+
+       5.  Abort these steps and fail to parse the cookie-date if:
+
+         *  the second-value is greater than 59.
+
+         (Note that leap seconds cannot be represented in this syntax.)
+
+       See https://tools.ietf.org/html/rfc6265#section-5.1.1.
+
+       Even though [Ptime.to_date_time] time does not return leap seconds, in
+       case I misunderstood the gmtime API, of system differences, or future
+       refactoring, make sure no leap seconds creep into the output. *)
+    let seconds =
+      if ss < 60 then ss else 59 [@coverage off]
+    in
+    Some (Printf.sprintf "%s, %02i %s %i %02i:%02i:%02i GMT"
+      weekday d month y hh mm seconds)
+
+
+
 let to_set_cookie
     ?expires ?max_age ?domain ?path ?secure ?http_only ?same_site name value =
 
   let expires =
-    match Option.bind expires Ptime.of_float_s with
+    match Option.bind expires to_http_date with
     | None -> ""
-    | Some time ->
-      let weekday =
-        match Ptime.weekday time with
-        | `Sun -> "Sun" | `Mon -> "Mon" | `Tue -> "Tue" | `Wed -> "Wed"
-        | `Thu -> "Thu" | `Fri -> "Fri" | `Sat -> "Sat"
-      in
-      let ((y, m, d), ((hh, mm, ss), _tz_offset_s)) = Ptime.to_date_time time in
-      let month =
-        match m with
-        | 1 -> "Jan" | 2 -> "Feb" | 3 -> "Mar" | 4 -> "Apr" | 5 -> "May"
-        | 6 -> "Jun" | 7 -> "Jul" | 8 -> "Aug" | 9 -> "Sep" | 10 -> "Oct"
-        | 11 -> "Nov" | 12 -> "Dec"
-        | _ -> assert false
-      in
-      (* [Ptime.to_date_time] docs give range 0..60 for [ss], accounting for
-         leap seconds. However, RFC 6265 §5.1.1 states:
-
-         5.  Abort these steps and fail to parse the cookie-date if:
-
-           *  the second-value is greater than 59.
-
-           (Note that leap seconds cannot be represented in this syntax.)
-
-         See https://tools.ietf.org/html/rfc6265#section-5.1.1.
-
-         Even though [Ptime.to_date_time] time does not return leap seconds, in
-         case I misunderstood the gmtime API, of system differences, or future
-         refactoring, make sure no leap seconds creep into the output. *)
-      let seconds =
-        if ss < 60 then ss else 59 [@coverage off]
-      in
-      Printf.sprintf "; Expires=%s, %02i %s %i %02i:%02i:%02i GMT"
-        weekday d month y hh mm seconds
+    | Some date -> "; Expires=" ^ date
   in
 
   let max_age =

@@ -24,6 +24,8 @@ val drop_trailing_slash : string list -> string list
 val text_html : string
 val application_json : string
 
+val to_http_date : float -> string option
+
 val to_set_cookie :
   ?expires:float ->
   ?max_age:float ->
