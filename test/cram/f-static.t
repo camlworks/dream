@@ -39,3 +39,7 @@ An older If-Modified-Since serves the full 200 response.
   >   -H 'If-Modified-Since: Wed, 01 Jan 2020 00:00:00 GMT' -w 'HTTP %{http_code}\n'
   Hello
   HTTP 200
+
+A HEAD request to a static route returns the same headers without a body.
+  $ curl_cmd /static/hello --head -o /dev/null -w 'HTTP %{http_code} body=%{size_download} content-length=%header{content-length}\n'
+  HTTP 200 body=0 content-length=6

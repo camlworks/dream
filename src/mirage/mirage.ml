@@ -508,7 +508,9 @@ module Make (Stack : Tcpip.Stack.V4V6) = struct
 
   let static ~loader local_root = fun request ->
 
-    if not @@ Method.methods_equal (Message.method_ request) `GET then
+    let method_ = Message.method_ request in
+    if not (Method.methods_equal method_ `GET
+            || Method.methods_equal method_ `HEAD) then
       Message.response ~status:`Not_Found Stream.empty Stream.null
       |> Lwt.return
 
