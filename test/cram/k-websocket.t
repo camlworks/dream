@@ -20,3 +20,7 @@
   
   $ node websocket_client.js
   Good-bye!
+
+A HEAD request to a WebSocket route is rejected rather than upgraded.
+  $ curl_cmd /websocket --head -o /dev/null -w 'HTTP %{http_code}\n'
+  HTTP 400
