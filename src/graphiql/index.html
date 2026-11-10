@@ -144,12 +144,20 @@
       // Scope GraphiQL's origin-wide editor state by endpoint and default
       // query, so different examples and configurations do not share stale
       // cached queries. See https://github.com/camlworks/dream/issues/269.
+      const hashString = value => {
+        let hash = 0;
+        for (const char of value) {
+          hash = (hash << 5) - hash + char.codePointAt(0);
+          hash |= 0; // Constrain to a 32-bit integer.
+        }
+        return (hash >>> 0).toString(36);
+      };
       const localStorage = window.localStorage;
       const storagePrefix =
         "dream-graphiql:" +
-        encodeURIComponent(endpoint) +
+        hashString(endpoint) +
         ":" +
-        encodeURIComponent(defaultQuery) +
+        hashString(defaultQuery) +
         ":";
       const storageKeys = () =>
         Object.keys(localStorage).filter(key => key.startsWith(storagePrefix));
