@@ -5,6 +5,7 @@
 
 
 
+module Conditional = Dream__server.Conditional
 module Formats = Dream_pure.Formats
 module Message = Dream_pure.Message
 module Method = Dream_pure.Method
@@ -26,32 +27,6 @@ let mime_lookup filename =
   in
   ["Content-Type", content_type]
 
-(* HTTP-date (IMF-fixdate) formatting, RFC 9110 §5.6.7, e.g.
-   [Sun, 06 Nov 1994 08:49:37 GMT]. Built from [Unix.gmtime] rather than pulling
-   in [ptime] as a dependency of this sub-library. Mirrors the date formatting in
-   [Dream_pure.Formats.to_set_cookie]. *)
-let http_date seconds =
-  let tm = Unix.gmtime seconds in
-  let weekday =
-    match tm.Unix.tm_wday with
-    | 0 -> "Sun" | 1 -> "Mon" | 2 -> "Tue" | 3 -> "Wed"
-    | 4 -> "Thu" | 5 -> "Fri" | 6 -> "Sat"
-    | _ -> assert false
-  in
-  let month =
-    match tm.Unix.tm_mon with
-    | 0 -> "Jan" | 1 -> "Feb" | 2 -> "Mar" | 3 -> "Apr" | 4 -> "May"
-    | 5 -> "Jun" | 6 -> "Jul" | 7 -> "Aug" | 8 -> "Sep" | 9 -> "Oct"
-    | 10 -> "Nov" | 11 -> "Dec"
-    | _ -> assert false
-  in
-  let d = tm.Unix.tm_mday in
-  let y = tm.Unix.tm_year + 1900 in
-  let hh = tm.Unix.tm_hour in
-  let mm = tm.Unix.tm_min in
-  let ss = tm.Unix.tm_sec in
-  Printf.sprintf "%s, %02d %s %04d %02d:%02d:%02d GMT" weekday d month y hh mm ss
-
 (* A strong ETag derived from the file's contents, so that a redeploy that
    rewrites a file without changing it (same bytes, new mtime) still validates.
    The file is already fully read into memory, so hashing it is cheap relative to
@@ -66,11 +41,13 @@ let from_filesystem local_root path _ =
       let%lwt stats = Lwt_unix.stat file in
       Lwt_io.(with_file ~mode:Input file) (fun channel ->
         let%lwt content = Lwt_io.read channel in
+        let last_modified =
+          match Formats.to_http_date stats.Unix.st_mtime with
+          | Some date -> ["Last-Modified", date]
+          | None -> []
+        in
         let headers =
-          mime_lookup path @ [
-            "ETag", etag content;
-            "Last-Modified", http_date stats.Unix.st_mtime;
-          ]
+          mime_lookup path @ ["ETag", etag content] @ last_modified
         in
         Message.response
           ~headers (Stream.string content) Stream.null
@@ -111,57 +88,6 @@ let validate_path request =
     else
       None
 
-(* Weak comparison of an [If-None-Match] entity-tag list against our tag, per
-   RFC 9110 §8.8.3.2 / §13.1.2. [*] matches any current representation, and the
-   weakness prefix [W/] is ignored when comparing. *)
-let strip_weak tag =
-  if String.length tag >= 2 && tag.[0] = 'W' && tag.[1] = '/' then
-    String.sub tag 2 (String.length tag - 2)
-  else
-    tag
-
-let if_none_match request etag =
-  let matches tag = strip_weak (String.trim tag) = strip_weak etag in
-  match Message.header request "If-None-Match" with
-  | None -> false
-  | Some value ->
-    let value = String.trim value in
-    value = "*" || List.exists matches (String.split_on_char ',' value)
-
-(* [If-Modified-Since] is only consulted when there is no [If-None-Match]
-   (RFC 9110 §13.1.3). We generate [Last-Modified] ourselves, so a conservative
-   exact-match against the value we would send covers the usual case where the
-   client echoes it back; a mismatch simply falls through to a normal [200],
-   which is always safe. *)
-let if_modified_since request last_modified =
-  match Message.header request "If-Modified-Since" with
-  | None -> false
-  | Some value -> String.trim value = last_modified
-
-(* Turn a fresh (validated) response into a [304 Not Modified]: no body, and only
-   the headers a 304 is allowed to carry (RFC 9110 §15.4.5). *)
-let not_modified response =
-  let allowed =
-    ["etag"; "last-modified"; "cache-control"; "expires"; "vary"; "date"]
-  in
-  let is_allowed (name, _) = List.mem (String.lowercase_ascii name) allowed in
-  let headers = List.filter is_allowed (Message.all_headers response) in
-  Message.response ~status:`Not_Modified ~headers Stream.empty Stream.null
-
-(* Precedence follows the request, not the response: [If-Modified-Since] is
-   consulted only when the request has no [If-None-Match] (RFC 9110 §13.1.3), so
-   dispatch on which request header is present rather than on which validator the
-   response happens to carry. *)
-let is_fresh request response =
-  if Message.has_header request "If-None-Match" then
-    match Message.header response "ETag" with
-    | Some etag -> if_none_match request etag
-    | None -> false
-  else
-    match Message.header response "Last-Modified" with
-    | Some last_modified -> if_modified_since request last_modified
-    | None -> false
-
 let static ?(loader = from_filesystem) local_root = fun request ->
 
   if not @@ Method.methods_equal (Message.method_ request) `GET then
@@ -187,7 +113,4 @@ let static ?(loader = from_filesystem) local_root = fun request ->
         | _ ->
           ()
       end;
-      if Message.status response = `OK && is_fresh request response then
-        Lwt.return (not_modified response)
-      else
-        Lwt.return response
+      Conditional.respond request response

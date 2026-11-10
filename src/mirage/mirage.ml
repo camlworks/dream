@@ -529,7 +529,7 @@ module Make (Stack : Tcpip.Stack.V4V6) = struct
           | _ ->
             ()
         end;
-        Lwt.return response
+        Dream__server.Conditional.respond request response
 
 end
 
