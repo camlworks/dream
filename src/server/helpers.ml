@@ -115,6 +115,25 @@ let stream ?status ?code ?headers ?(close = true) callback =
 let empty ?headers status =
   respond ?headers ~status ""
 
+(* Convert a response in place into the equivalent HEAD response: keep its
+   status, headers, and per-message fields, but replace the body with an empty
+   one, as required by RFC 9110 Section 9.3.2. Content-Length is preserved or
+   derived from the body when it is already available; streamed bodies have no
+   known length. The original client stream is closed so any streaming producer
+   stops instead of writing to a stream that is no longer consumed. *)
+let head_response response =
+  Message.set_content_length_headers response;
+  let old_client_stream = Message.client_stream response in
+  Message.set_body response "";
+  Message.close old_client_stream
+
+let suppress_body_for_head request response =
+  match Message.method_ request with
+  | `HEAD ->
+    let%lwt () = head_response response in
+    Lwt.return response
+  | _ -> Lwt.return response
+
 let not_found _ =
   respond ~status:`Not_Found ""
 

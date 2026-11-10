@@ -125,6 +125,7 @@ let wrap_handler
       Lwt.catch begin fun () ->
         (* Do the big call. *)
         let%lwt response = user's_dream_handler request in
+        let%lwt response = Helpers.suppress_body_for_head request response in
 
         (* Extract the Dream response's headers. *)
 
@@ -256,6 +257,7 @@ let wrap_handler_h2
       Lwt.catch begin fun () ->
         (* Do the big call. *)
         let%lwt response = user's_dream_handler request in
+        let%lwt response = Helpers.suppress_body_for_head request response in
 
         (* Extract the Dream response's headers. *)
 
