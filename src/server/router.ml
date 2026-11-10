@@ -263,19 +263,6 @@ let param request name =
     try List.assoc name params
     with _ -> missing_param request name
 
-(* Turn a response produced by a GET handler into the response for the
-   corresponding HEAD request: same status and headers, including an accurate
-   Content-Length, but with no body (RFC 9110 Section 9.3.2).
-   [set_content_length_headers] fills Content-Length from the already-computed
-   body when available; it is skipped for chunked responses, which must not
-   carry Content-Length. The body on the wire is additionally suppressed by
-   httpun/h2, which frame any HEAD response as fixed-length zero. *)
-let head_response response =
-  if Message.header response "Transfer-Encoding" <> Some "chunked" then
-    Message.set_content_length_headers response;
-  let headers = Message.all_headers response in
-  Helpers.empty ~headers (Message.status response)
-
 let router routes =
   let routes = List.flatten routes in
 
@@ -354,18 +341,12 @@ let router routes =
     let not_found () = Helpers.not_found request in
 
     (* A HEAD request with no matching HEAD route falls back to the matching GET
-       route, as in RFC 9110 Section 9.3.2 (and Go, Flask, Rails, Express). An
+       route, as in RFC 9110 Section 9.3.2 (and Express, Flask, Rails). An
        explicit [Dream.head] route still takes precedence, because it is tried
-       first. The GET handler runs with the method rewritten to GET, and its
-       body is stripped by [head_response]. *)
+       first. The handler observes the request as HEAD; response body suppression
+       happens at the server and testing boundaries. *)
     match Message.method_ request with
     | `HEAD ->
-      dispatch `HEAD found (fun () ->
-        dispatch `GET
-          (fun handler request ->
-            Message.set_method_ request `GET;
-            let%lwt response = handler request in
-            head_response response)
-          not_found)
+      dispatch `HEAD found (fun () -> dispatch `GET found not_found)
     | method_ ->
       dispatch method_ found not_found

@@ -1308,12 +1308,17 @@ module Make
     {{:https://github.com/camlworks/dream/tree/master/example/3-router#folders-and-files}
     [3-router]} \[{{:http://dream.as/3-router} playground}\].
 
-    A [`HEAD] request that matches no {!Dream.head} route is answered by the
-    matching {!Dream.get} route, if any: the [GET] handler runs and the router
-    returns its status and headers — including an accurate [Content-Length] —
-    with an empty body, as required by
+    By default, a [`HEAD] request that matches no {!Dream.head} route is
+    answered by the matching {!Dream.get} route, if any: the [GET] handler runs
+    with the request still marked as [`HEAD], and the response body is removed
+    before it is sent by the server, as required by
     {{:https://www.rfc-editor.org/rfc/rfc9110#name-head} RFC 9110 §9.3.2}. An
     explicit {!Dream.head} route takes precedence over this fallback.
+
+    If the [GET] response already has a [Content-Length] header, or its body is
+    already available, the [HEAD] response preserves or derives the same
+    [Content-Length]. For a streamed body, no length is known, so no
+    [Content-Length] is added.
 
     {[
       let () =
