@@ -5,6 +5,7 @@
 
 
 
+module Conditional = Dream__server.Conditional
 module Formats = Dream_pure.Formats
 module Message = Dream_pure.Message
 module Method = Dream_pure.Method
@@ -26,20 +27,35 @@ let mime_lookup filename =
   in
   ["Content-Type", content_type]
 
+(* A strong ETag derived from the file's contents, so that a redeploy that
+   rewrites a file without changing it (same bytes, new mtime) still validates.
+   The file is already fully read into memory, so hashing it is cheap relative to
+   the read. *)
+let etag content =
+  Printf.sprintf "\"%s\"" Digestif.SHA256.(to_hex (digest_string content))
+
 let from_filesystem local_root path _ =
   let file = Filename.concat local_root path in
   Lwt.catch
     (fun () ->
+      let%lwt stats = Lwt_unix.stat file in
       Lwt_io.(with_file ~mode:Input file) (fun channel ->
         let%lwt content = Lwt_io.read channel in
+        let last_modified =
+          match Formats.to_http_date stats.Unix.st_mtime with
+          | Some date -> ["Last-Modified", date]
+          | None -> []
+        in
+        let headers =
+          mime_lookup path @ ["ETag", etag content] @ last_modified
+        in
         Message.response
-          ~headers:(mime_lookup path) (Stream.string content) Stream.null
+          ~headers (Stream.string content) Stream.null
         |> Lwt.return))
     (fun _exn ->
       Message.response ~status:`Not_Found Stream.empty Stream.null
       |> Lwt.return)
 
-(* TODO Add ETag handling. *)
 (* TODO Add Content-Length handling? *)
 (* TODO Support HEAD requests? *)
 
@@ -97,4 +113,4 @@ let static ?(loader = from_filesystem) local_root = fun request ->
         | _ ->
           ()
       end;
-      Lwt.return response
+      Conditional.respond request response

@@ -1495,7 +1495,16 @@ module Make
 
       The default loader is {!Dream.from_filesystem}. See example
       {{:https://github.com/camlworks/dream/tree/master/example/w-one-binary#folders-and-files}
-      [w-one-binary]} for a loader that serves files from memory instead. *)
+      [w-one-binary]} for a loader that serves files from memory instead.
+
+      If the loader's response carries an [ETag:] or [Last-Modified:] header,
+      {!Dream.static} performs conditional-request handling: a request with a
+      matching [If-None-Match:] (or, in its absence, a matching
+      [If-Modified-Since:]) is answered with [304 Not Modified] and no body.
+      [If-None-Match:] is compared weakly and takes precedence over
+      [If-Modified-Since:], per
+      {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. A
+      loader opts into this handling simply by setting those headers. *)
 
   val mime_lookup : string -> (string * string) list
   (** Returns a [Content-Type:] header based on the given filename. This is mostly
