@@ -1796,10 +1796,13 @@ val graphiql : ?default_query:string -> string -> handler
     content of a JavaScript string, between its quotes, so it must be escaped
     manually.
 
-    Dream's build of GraphiQL is found in the
-    {{:https://github.com/camlworks/dream/tree/master/src/graphiql}
-    src/graphiql} directory. If you have the need, you can use it as the
-    starting point for your own customized GraphiQL.
+    GraphiQL keeps the query, tabs, and other editor state in browser local
+    storage. The cache is scoped to the endpoint and [~default_query], so
+    different endpoints and default queries do not reuse each other's state.
+
+    The page loads its JavaScript and CSS from {{:https://esm.sh} esm.sh} at
+    runtime and trusts esm.sh to serve the transitive modules without integrity
+    checks.
 
     Use {!Dream.no_route} to disable GraphiQL conditionally outside of
     development. *)

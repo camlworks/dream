@@ -81,7 +81,6 @@ clean : clean-coverage
 	dune clean
 	dune clean --root .
 	make --no-print-directory -C docs/web clean
-	rm -rf src/graphiql/node_modules
 
 .PHONY : test-ocamlformat
 test-ocamlformat :
