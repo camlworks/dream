@@ -774,8 +774,8 @@ val read_stream :
   unit
 (** Waits for the next stream event, and calls:
 
-    - [~data] with an offset and length, if a {!type-buffer} is received, ~
-      [~flush] if a flush request is received,
+    - [~data] with an offset and length, if a {!type-buffer} is received,
+    - [~flush] if a flush request is received,
     - [~ping] if a ping is received (WebSockets only),
     - [~pong] if a pong is received (WebSockets only),
     - [~close] if the stream is closed, and
