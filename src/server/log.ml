@@ -158,13 +158,12 @@ let reporter ~now () =
     user's_callback @@ fun ?header ?tags format_and_arguments ->
       ignore header;
 
-      (* Format the current local time. For the millisecond fraction, be careful
-         of rounding 999.5+ to 1000 on output. *)
+      (* Format the current time as RFC 3339 in UTC. *)
       let time =
         let unix_time = now () in
         match Ptime.of_float_s unix_time with
         | None -> failwith "Invalid Unix time"
-        | Some time -> Ptime.to_rfc3339 ~frac_s:3 time
+        | Some time -> Ptime.to_rfc3339 ~frac_s:3 ~tz_offset_s:0 time
         in
 
       (* Format the source name column. It is the right-aligned log source name,
