@@ -64,7 +64,7 @@ I/O library](https://ocsigen.org/lwt/latest/api/Lwt_unix).
 <br>
 
 To use `let%lwt`, we need to modify our
-[`dune`](https://github.com/aantron/dream/blob/master/example/5-promise/dune)
+[`dune`](https://github.com/camlworks/dream/blob/master/example/5-promise/dune)
 file a bit to include `lwt_ppx`:
 
 <pre><code>(executable
@@ -86,6 +86,18 @@ For example, `let%lwt` is equivalent to...
   [README](https://github.com/ocsigen/lwt#readme).
 
 We will stick to `let%lwt` in the examples and keep things tidy.
+
+> [!NOTE]
+> You may be wondering if the `let%lwt`, `try%lwt`, etc. constructs are really
+> needed here. If you remove them, the example may appear to work the same way.
+> However, this is not true for two reasons:
+> Firstly, `let%lwt` awaits the computation before evaluating the next expression.
+> Just `let response = ...` causes a race condition: `inner_handler` is started but
+> not awaited and might access `successful` before or after it is incremented.
+> Secondly, we are raising a normal exception with `raise`. If the handler happened
+> to return a rejected promise instead of raising, we would have observed incorrect
+> results. Therefore, it is safer to use the Lwt constructs in Dream handlers and
+> middlewares to ensure all errors are handled correctly.
 
 <br>
 

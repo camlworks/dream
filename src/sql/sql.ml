@@ -1,5 +1,5 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
@@ -14,23 +14,10 @@ let log =
   Log.sub_log "dream.sql"
 
 (* TODO Debug metadata for the pools. *)
-let pool_field : (_, Caqti_error.t) Caqti_lwt_unix.Pool.t Message.field =
+let pool_field : (_, Caqti.Error.t) Caqti_lwt_unix.Pool.t Message.field =
   Message.new_field ()
 
-(* TODO This may not be necessary since Caqti 1.8.0. May require some messing
-   around, "Enable foreign key constraint checks for SQLite3 starting at tweaks
-   version 1.8." in CHANGES. *)
-let foreign_keys_on =
-  let open Caqti_request.Infix in
-  (Caqti_type.unit ->. Caqti_type.unit) "PRAGMA foreign_keys = ON"
-  [@ocaml.warning "-3"]
-
-let post_connect (module Db : Caqti_lwt.CONNECTION) =
-  match Caqti_driver_info.dialect_tag Db.driver_info with
-  | `Sqlite -> Db.exec foreign_keys_on ()
-  | _ -> Lwt.return (Ok ())
-
-let sql_pool ?size uri =
+let sql_pool ?size ?post_connect uri =
     let pool_cell = ref None in
     fun inner_handler request ->
 
@@ -47,9 +34,15 @@ let sql_pool ?size uri =
       log.warning (fun log -> log ~request
         "Dream.sql_pool: \
         'sqlite' is not a valid scheme; did you mean 'sqlite3'?");
+    let post_connect =
+      Option.map
+        (fun post_connect db -> Lwt.map Result.ok (post_connect db))
+        post_connect
+    in
     let pool =
-      let pool_config = Caqti_pool_config.create ?max_size:size () in
-      Caqti_lwt_unix.connect_pool ~pool_config ~post_connect parsed_uri in
+      let pool_config = Caqti.Pool.Config.create ?max_size:size () in
+      Caqti_lwt_unix.connect_pool ~pool_config ?post_connect parsed_uri
+    in
     match pool with
     | Ok pool ->
       pool_cell := Some pool;
@@ -60,7 +53,7 @@ let sql_pool ?size uri =
          debug handler. *)
       let message =
         Printf.sprintf "Dream.sql_pool: cannot create pool for '%s': %s"
-         uri (Caqti_error.show error) in
+         uri (Caqti.Error.show error) in
       log.error (fun log -> log ~request "%s" message);
       failwith message
   end
@@ -70,7 +63,7 @@ let sql_pool ?size uri =
    connections, as with caqti-driver-sqlite3, the inner call to Dream.sql cannot
    make progress and request handling deadlocks. This can occur when using SQL
    sessions, a typical scenario. See
-   https://github.com/aantron/dream/issues/332. *)
+   https://github.com/camlworks/dream/issues/332. *)
 let acquired_sql_connection : bool Lwt.key =
   Lwt.new_key ()
 

@@ -72,8 +72,6 @@ There are several examples showing Dream with Reason syntax.
 
 - [**`r-fullstack-melange`**](r-fullstack-melange#folders-and-files) &nbsp;&mdash;&nbsp;
   server *and* client written in Reason!
-- [**`w-fullstack-rescript`**](w-fullstack-rescript#folders-and-files) &nbsp;&mdash;&nbsp;
-  shares OCaml code between server and client using ReScript.
 - [**`w-fullstack-jsoo`**](w-fullstack-jsoo#folders-and-files) &nbsp;&mdash;&nbsp; shares
   OCaml code between server and client using js_of_ocaml.
 
@@ -154,7 +152,7 @@ if something is missing!
 
 # Roadmap
 
-These examples will be trickled in during the alpha releases.
+These examples will be trickled in during future releases.
 
 Ideas:
 
@@ -171,11 +169,11 @@ Basics:
 - `w-content-negotiation`
 - [**`w-query`**](w-query#folders-and-files) &nbsp;&mdash;&nbsp; done.
 - `w-scope` &nbsp;&mdash;&nbsp; for
-  [`Dream.scope`](https://aantron.github.io/dream/#val-scope).
+  [`Dream.scope`](https://camlworks.github.io/dream/#val-scope).
 - `w-subsite` &nbsp;&mdash;&nbsp; for
-  [`*` routes](https://aantron.github.io/dream/#val-router).
+  [`*` routes](https://camlworks.github.io/dream/#val-router).
 - `w-testing` &nbsp;&mdash;&nbsp; for
-  [*Testing*](https://aantron.github.io/dream/#testing).
+  [*Testing*](https://camlworks.github.io/dream/#testing).
 - `w-site-prefix` &nbsp;&mdash;&nbsp; a Web app running not at `/`.
 
 Security:
@@ -184,17 +182,17 @@ Security:
 - `w-cors`
 - `w-file-session`
 - `w-form-expired` &nbsp;&mdash;&nbsp; for other cases of
-  [`Dream.form`](https://aantron.github.io/dream/#val-form).
+  [`Dream.form`](https://camlworks.github.io/dream/#val-form).
 - `w-json-csrf` &nbsp;&mdash;&nbsp; for
-  [`Dream.csrf_token`](https://aantron.github.io/dream/#val-csrf_token) and
+  [`Dream.csrf_token`](https://camlworks.github.io/dream/#val-csrf_token) and
   `X-CSRF-Token:`.
 - `w-jwt`
 - `w-key-rotation` &nbsp;&mdash;&nbsp; for a to-be-added `~secrets` argument
-  to [`Dream.run`](https://aantron.github.io/dream/#val-run), which can specify
-  multiple decryption keys.
+  to [`Dream.run`](https://camlworks.github.io/dream/#val-run), which can
+  specify multiple decryption keys.
 - `w-upload-csrf` &nbsp;&mdash;&nbsp; for
-  [`Dream.csrf_token`](https://aantron.github.io/dream/#val-csrf_token) with
-  [`Dream.upload`](https://aantron.github.io/dream/#val-upload).
+  [`Dream.csrf_token`](https://camlworks.github.io/dream/#val-csrf_token) with
+  [`Dream.upload`](https://camlworks.github.io/dream/#val-upload).
 
 Techniques:
 

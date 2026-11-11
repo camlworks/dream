@@ -107,8 +107,8 @@ example](../9-error#folders-and-files)!
 - [**`9-error`**](../9-error#folders-and-files) handles all errors in one place, including
   displaying the debugger output.
 - [**`a-log`**](../a-log#folders-and-files) shows [log
-  levels](https://aantron.github.io/dream/#type-log_level) and
-  [sub-logs](https://aantron.github.io/dream/#type-sub_log).
+  levels](https://camlworks.github.io/dream/#type-log_level) and
+  [sub-logs](https://camlworks.github.io/dream/#type-sub_log).
 
 <br>
 

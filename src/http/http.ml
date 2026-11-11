@@ -1,10 +1,11 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
 
 
+module Body_size_limit = Dream__server.Body_size_limit
 module Catch = Dream__server.Catch
 module Helpers = Dream__server.Helpers
 module Log = Dream__server.Log
@@ -86,7 +87,7 @@ let wrap_handler
     let headers =
       Httpun.Headers.to_list httpaf_request.headers in
 
-    let body =
+    let request_body =
       Httpun.Reqd.request_body conn in
     (* TODO Review per-chunk allocations. *)
     (* TODO Should the stream be auto-closed? It doesn't even have a closed
@@ -94,12 +95,12 @@ let wrap_handler
        behavior is. *)
     let read ~data ~flush:_ ~ping:_ ~pong:_ ~close ~exn:_ =
       Httpun.Body.Reader.schedule_read
-        body
+        request_body
         ~on_eof:(fun () -> close 1000)
         ~on_read:(fun buffer ~off ~len -> data buffer off len true false)
     in
     let close _code =
-      Httpun.Body.Reader.close body in
+      Httpun.Body.Reader.close request_body in
     let body =
       Stream.reader ~read ~close ~abort:close in
     let body =
@@ -135,6 +136,10 @@ let wrap_handler
            2. Upon failure to establish a WebSocket, the function is called to
               transmit the resulting error response. *)
         let forward_response response =
+          if Body_size_limit.exceeded request then begin
+            Httpun.Body.Reader.close request_body;
+            Message.set_header response "Connection" "close"
+          end;
           Message.set_content_length_headers response;
 
           let headers =
@@ -266,6 +271,12 @@ let wrap_handler_h2
           let body =
             H2.Reqd.respond_with_streaming conn h2_response in
 
+          (* Stop reading a rejected body, then send the 413 as a complete
+             response. h2 stops accepting the rest of the request body once the
+             response is complete, so the peer is not left uploading, and the
+             client sees a clean 413 rather than a stream error. *)
+          if Body_size_limit.exceeded request then
+            H2.Body.Reader.close (H2.Reqd.request_body conn);
           Adapt.forward_body_h2 response body;
 
           Lwt.return_unit
@@ -441,10 +452,18 @@ let serve_with_details
     ~certificate_file
     ~key_file
     ~builtins
+    ?max_body_size
     user's_dream_handler =
 
   (* TODO DOC *)
   (* https://letsencrypt.org/docs/certificates-for-localhost/ *)
+
+  let user's_dream_handler =
+    match max_body_size with
+    | None -> user's_dream_handler
+    | Some max_body_size ->
+      Body_size_limit.body_size_limit max_body_size user's_dream_handler
+  in
 
   let user's_dream_handler =
     if builtins then
@@ -494,6 +513,11 @@ let serve_with_details
   let%lwt listen_address =
     match network with
     | `Unix path ->
+      (match%lwt Lwt_unix.stat path with
+      (* Only delete socket file, and ignore other files *)
+      | { Unix.st_kind = S_SOCK; _ } -> Lwt_unix.unlink path
+      | _ -> Lwt.return_unit
+      | exception Unix.Unix_error (ENOENT, _, _) -> Lwt.return_unit);%lwt
       Lwt.return (Lwt_unix.ADDR_UNIX path)
     | `Inet port ->
       let%lwt addresses =
@@ -532,6 +556,7 @@ let serve_with_maybe_https
     ?certificate_file ?key_file
     ?certificate_string ?key_string
     ~builtins
+    ?max_body_size
     user's_dream_handler =
 
   try%lwt
@@ -557,6 +582,7 @@ let serve_with_maybe_https
         ~certificate_file:""
         ~key_file:""
         ~builtins
+        ?max_body_size
         user's_dream_handler
 
     | `OpenSSL | `OCaml_TLS as tls_library ->
@@ -622,6 +648,7 @@ let serve_with_maybe_https
           ~certificate_file
           ~key_file
           ~builtins
+          ?max_body_size
           user's_dream_handler
 
       | `Memory (certificate_string, key_string, verbose_or_silent) ->
@@ -650,6 +677,7 @@ let serve_with_maybe_https
           ~certificate_file
           ~key_file
           ~builtins
+          ?max_body_size
           user's_dream_handler
 
         end
@@ -668,7 +696,34 @@ let serve_with_maybe_https
 
 let default_interface = "localhost"
 let default_port = 8080
-let never = fst (Lwt.wait ())
+let default_max_body_size = Body_size_limit.default_max_body_size
+
+(* [max_int] means no limit: skip the middleware rather than count bytes. *)
+let body_size_limit_option max_body_size =
+  if max_body_size = max_int then None else Some max_body_size
+
+(* Lazy option default to avoid side effects. *)
+let option_or opt default = match opt with
+  | Some v -> v
+  | None -> default ()
+
+(* Lazy signal handler to avoid side effects. *)
+let on_termination_signal () =
+  let term_promise, term_resolve = Lwt.wait () in
+  let int_promise, int_resolve = Lwt.wait () in
+  ignore (Lwt_unix.on_signal Sys.sigterm (fun _ -> Lwt.wakeup_later term_resolve ()));
+  ignore (Lwt_unix.on_signal Sys.sigint (fun _ -> Lwt.wakeup_later int_resolve ()));
+  Lwt.pick [term_promise; int_promise]
+
+let get_port port =
+  match port with
+  | Some p -> p
+  | None ->
+    (try int_of_string (Sys.getenv "DREAM_PORT") with Not_found -> default_port)
+
+let ignore_sigpipe_signal () =
+  if Sys.unix then
+    Sys.(set_signal sigpipe Signal_ignore)
 
 let network ~port ~socket_path =
   match socket_path with
@@ -677,21 +732,26 @@ let network ~port ~socket_path =
 
 let serve
     ?(interface = default_interface)
-    ?(port = default_port)
+    ?port
     ?socket_path
-    ?(stop = never)
+    ?stop
     ?(error_handler = Error_handler.default)
     ?(tls = false)
     ?certificate_file
     ?key_file
     ?(builtins = true)
+    ?(max_body_size = default_max_body_size)
+    ?(ignore_sigpipe = true)
     user's_dream_handler =
+
+  let port = get_port port in
+  if ignore_sigpipe then ignore_sigpipe_signal ();
 
   serve_with_maybe_https
     "serve"
     ~interface
     ~network:(network ~port ~socket_path)
-    ~stop
+    ~stop:(option_or stop on_termination_signal)
     ~error_handler
     ~tls:(if tls then `OpenSSL else `No)
     ?certificate_file
@@ -699,27 +759,29 @@ let serve
     ?certificate_string:None
     ?key_string:None
     ~builtins
+    ?max_body_size:(body_size_limit_option max_body_size)
     user's_dream_handler
 
 
 
 let run
     ?(interface = default_interface)
-    ?(port = default_port)
+    ?port
     ?socket_path
-    ?(stop = never)
+    ?stop
     ?(error_handler = Error_handler.default)
     ?(tls = false)
     ?certificate_file
     ?key_file
     ?(builtins = true)
+    ?(max_body_size = default_max_body_size)
     ?(greeting = true)
     ?adjust_terminal
+    ?(ignore_sigpipe = true)
     user's_dream_handler =
 
-  let () = if Sys.unix then
-    Sys.(set_signal sigpipe Signal_ignore)
-  in
+  let port = get_port port in
+  if ignore_sigpipe then ignore_sigpipe_signal ();
 
   let log = Log.convenience_log in
 
@@ -754,11 +816,12 @@ let run
       "run"
       ~interface
       ~network:(network ~port ~socket_path)
-      ~stop
+      ~stop:(option_or stop on_termination_signal)
       ~error_handler
       ~tls:(if tls then `OpenSSL else `No)
       ?certificate_file ?key_file
       ?certificate_string:None ?key_string:None
       ~builtins
+      ?max_body_size:(body_size_limit_option max_body_size)
       user's_dream_handler
   end

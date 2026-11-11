@@ -1,5 +1,15 @@
 name: test
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -7,10 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        # Until https://github.com/ocaml/setup-ocaml/issues/872.
-        # When fixing, search for other instances of this string in this file.
-        - ubuntu-22.04
+        - ubuntu-latest
         ocaml:
+        - 5.5.x
         - 5.2.x
         - 4.14.x
         include:
@@ -21,14 +30,16 @@ jobs:
 
     runs-on: ${{matrix.os}}
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
+    - uses: actions/checkout@v6
 
     - uses: ocaml/setup-ocaml@v3
       with:
         ocaml-compiler: ${{matrix.ocaml}}
-        dune-cache: true
+
+    # bisect_ppx is currently unmaintained and does not support OCaml 5.5 / ppxlib >= 0.36.0.
+    # See this PR https://github.com/aantron/bisect_ppx/pull/448
+    - run: opam pin add bisect_ppx "git+https://github.com/aantron/bisect_ppx.git#7061d643ff492b0045796357ee6917ded21fb1f0" --no-action
+      if: matrix.ocaml == '5.5.x'
 
     # For Caqti PostgreSQL examples. opam does actually install PostgreSQL for
     # us. However, Homebrew doesn't link it by default, so we have to install
@@ -36,17 +47,23 @@ jobs:
     - run: brew install postgresql@15 && brew link --overwrite postgresql@15
       if: runner.os == 'macOS'
 
-    # Workaround https://github.com/savonet/ocaml-ssl/issues/155 and/or
-    # https://github.com/ocaml/setup-ocaml/issues/856.
-    - run: opam pin add ssl 0.6.0 --no-action
+    # OpenSSL 4 no longer has SSLv3, which breaks SSLv23 contexts. Workaround
+    # until https://github.com/savonet/ocaml-ssl/pull/189 is merged and released.
+    - run: opam pin add ssl "git+https://github.com/balat/ocaml-ssl.git#b9088ef7ac27f594d399867c45d00e8055d527fa" --no-action
+      if: runner.os == 'macOS'
+
+    # Postgres is required for the tests and difficult to install on Windows
+    # As the tests don't run on Windows anyway right now we just disable those dependencies
+    - run: opam exec -- make deps-no-test
       if: runner.os == 'Windows'
 
     - run: opam exec -- make deps
+      if: runner.os != 'Windows'
 
     - run: opam exec -- make
 
     # Tests on Windows are disabled because of a difference in ppx_expect
-    # output. See https://github.com/aantron/dream/pull/282. This difference
+    # output. See https://github.com/camlworks/dream/pull/282. This difference
     # remains as of ppx_expect 0.16.
     - run: opam exec -- make test
       if: runner.os != 'Windows'
@@ -77,68 +94,26 @@ jobs:
           opam exec -- dune build $EXE
         done
 
-  quickstart:
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-        - ubuntu-22.04
-        ocaml:
-        - 5.2.x
-        - 4.14.x
-        include:
-        - os: macos-latest
-          ocaml: 4.14.x
-
-    runs-on: ${{matrix.os}}
-    steps:
-    - uses: ocaml/setup-ocaml@v3
-      with:
-        ocaml-compiler: ${{matrix.ocaml}}
-        dune-cache: true
-
-    - name: Run quickstart.sh
-      shell: bash
-      run: |
-        set -x
-        touch output
-        tail -f output | grep --line-buffered 'Ctrl' | xargs -L1 -I FOO bash -c "echo Success && touch success && killall middleware.exe" &
-        tail -f output &
-        ((curl -fsSL https://raw.githubusercontent.com/aantron/dream/$GITHUB_SHA/example/quickstart.sh | bash -s $GITHUB_SHA) || true) > output 2>&1
-        sleep 1
-        if [ -f success ]
-        then
-          exit 0
-        else
-          exit 1
-        fi
-
   mirage:
-    if: false
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
+    - uses: actions/checkout@v6
     - run: mkdir ../repo-copy
     - run: cp -r * ../repo-copy/
     - uses: ocaml/setup-ocaml@v3
       with:
         ocaml-compiler: 4.14.x
-        dune-cache: true
-    # Needed until https://github.com/robur-coop/ocaml-letsencrypt/pull/34.
-    - run: opam pin add letsencrypt git+https://github.com/hannesm/ocaml-letsencrypt.git#no-cstruct --no-action
     - run: opam install --yes --deps-only ./dream-pure.opam ./dream-httpaf.opam ./dream.opam ./dream-mirage.opam
-    - run: opam install --yes mirage mirage-clock-unix mirage-crypto-rng-mirage
+    - run: opam install --yes mirage mirage-ptime mirage-crypto-rng-mirage
     - run: cd example/w-mirage && mv config.ml config.ml.backup
     - run: cd example/w-mirage && sed -e 's/package "dream-mirage"//' < config.ml.backup > config.ml
     - run: cd example/w-mirage && opam exec -- mirage configure -t unix
     - run: cd example/w-mirage && opam exec -- make depends
     - run: cd example/w-mirage && ls duniverse
     - run: cp -r ../repo-copy example/w-mirage/duniverse/dream
-    - run: cd example/w-mirage/duniverse && rm -rf ocaml-cstruct logs ke fmt lwt bytes seq mirage-flow sexplib0 ptime tls domain-name ocaml-ipaddr mirage-clock ocplib-endian digestif eqaf mirage-crypto mirage-runtime
+    # `dune` is not the package but the actual dune file. Don't remove it
+    - run: cd example/w-mirage/duniverse && rm -rf $(OPAMCOLOR=never opam list --installed --short | grep -vx dune) ocaml-cstruct bytes ocaml-ipaddr mirage-tcpip
     - run: cd example/w-mirage && mv config.ml.backup config.ml
-    - run: cd example/w-mirage && sed -e 's/(libraries/(libraries dream-mirage/' < dune.build > dune.build.2
-    - run: cd example/w-mirage && mv dune.build.2 dune.build
+    - run: cd example/w-mirage && sed -i -e 's/(libraries/(libraries dream-mirage/' dune.build
     - run: cd example/w-mirage && opam exec -- dune build
     - run: file example/w-mirage/_build/default/main.exe

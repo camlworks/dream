@@ -3,7 +3,7 @@
 <br>
 
 In this example, the client connects to the server by a
-[WebSocket](https://aantron.github.io/dream/#websockets). They then follow a
+[WebSocket](https://camlworks.github.io/dream/#websockets). They then follow a
 silly protocol: if the client sends `"Hello?"`, the server responds with
 `"Good-bye!"`. The client displays the message in an alert box:
 
@@ -57,7 +57,7 @@ let () =
 Visit [http://localhost:8080](http://localhost:8080) to get the whole exchange
 started!
 
-![WebSocket alert](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/websocket.png)
+![WebSocket alert](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/websocket.png)
 
 <br>
 
@@ -65,14 +65,15 @@ If you are running under HTTPS, be sure to use `wss://` for the protocol scheme,
 rather than `ws://`, on the client.
 
 You don't have to call
-[`Dream.close_websocket`](https://aantron.github.io/dream/#val-close_websocket)
+[`Dream.close_websocket`](https://camlworks.github.io/dream/#val-close_websocket)
 when you are done with the WebSocket.
-[`Dream.websocket`](https://aantron.github.io/dream/#val-websocket) calls it
+[`Dream.websocket`](https://camlworks.github.io/dream/#val-websocket) calls it
 automatically when your callback's promise resolves or is rejected with an
 exception. This example calls `Dream.close_websocket` in one branch just
 because there is nothing else to do.
 
-See [*WebSockets*](https://aantron.github.io/dream/#websockets) in the API docs.
+See [*WebSockets*](https://camlworks.github.io/dream/#websockets) in the API
+docs.
 
 <br>
 

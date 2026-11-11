@@ -31,11 +31,11 @@ let () =
 <br>
 
 To get this, we depend on package `html_of_jsx` in
-[`esy.json`](https://github.com/aantron/dream/blob/master/example/r-html_of_jsx/esy.json):
+[`esy.json`](https://github.com/camlworks/dream/blob/master/example/r-html_of_jsx/esy.json):
 
 <pre><code>{
   "dependencies": {
-    "@opam/dream": "1.0.0~alpha4",
+    "@opam/dream": "1.0.0",
     "@opam/dune": "^2.0",
     "@opam/reason": "^3.8.0",
     <b>"@opam/html_of_jsx": "*",</b>
@@ -48,7 +48,7 @@ To get this, we depend on package `html_of_jsx` in
 </code></pre>
 
 and add `html_of_jsx.ppx` to our preprocessor list in
-[`dune`](https://github.com/aantron/dream/blob/master/example/r-html_of_jsx/dune):
+[`dune`](https://github.com/camlworks/dream/blob/master/example/r-html_of_jsx/dune):
 
 <pre><code>(executable
  (name html_of_jsx)

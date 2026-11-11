@@ -78,7 +78,7 @@ let%html greet who = {|
 ```
 
 To use `tyxml-ppx`, be sure to include it in the
-[`dune`](https://github.com/aantron/dream/blob/master/example/w-tyxml/dune)
+[`dune`](https://github.com/camlworks/dream/blob/master/example/w-tyxml/dune)
 file:
 
 <pre><code>(executable
@@ -93,7 +93,7 @@ file:
 Note: TyXML is able to serialize HTML straight into a response body stream,
 rather than into an intermediary string. However, Dream doesn't expose a
 convenient way for TyXML to do so at the present time. If you need support for
-this, please [open an issue](https://github.com/aantron/dream/issues).
+this, please [open an issue](https://github.com/camlworks/dream/issues).
 
 <br>
 

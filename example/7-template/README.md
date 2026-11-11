@@ -2,7 +2,7 @@
 
 <br>
 
-Dream [*templates*](https://aantron.github.io/dream/#templates) allow
+Dream [*templates*](https://camlworks.github.io/dream/#templates) allow
 interleaving OCaml and HTML in a straightforward way, and help with
 [XSS protection](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html).
 After looking at a secure example, we will [weaken and then exploit
@@ -37,7 +37,7 @@ let () =
 <br>
 
 This requires a bit more setup in our
-[`dune`](https://github.com/aantron/dream/blob/master/example/7-template/dune)
+[`dune`](https://github.com/camlworks/dream/blob/master/example/7-template/dune)
 file to run the template preprocessor:
 
 <pre><code>(executable
@@ -70,12 +70,12 @@ If your template file is mostly HTML, you can give it a name like
 ## Security
 
 The template automatically passes strings through
-[`Dream.html_escape`](https://aantron.github.io/dream/#val-html_escape) before
+[`Dream.html_escape`](https://camlworks.github.io/dream/#val-html_escape) before
 inserting them into the output. This only applies to formats that can emit
 dangerous characters: `%s`, `%S`, `%c`, `%C`, `%a`, and `%t`.
 
 You can suppress the hidden call to
-[`Dream.html_escape`](https://aantron.github.io/dream/#val-html_escape) using
+[`Dream.html_escape`](https://camlworks.github.io/dream/#val-html_escape) using
 `!`; for example, `<%s! param %>`. You may want to do this if your data is
 already escaped, or if it is safe for some other reason. But be careful!
 
@@ -83,7 +83,7 @@ already escaped, or if it is safe for some other reason. But be careful!
 
 To show the danger, let's launch a **script injection (XSS) attack** against
 this tiny Web app! First, go to
-[`template.eml.ml`](https://github.com/aantron/dream/blob/master/example/7-template/template.eml.ml#L4),
+[`template.eml.ml`](https://github.com/camlworks/dream/blob/master/example/7-template/template.eml.ml#L4),
 change the substitution to `<%s! param %>`, and restart the app. Then, visit
 this highly questionable URL:
 
@@ -92,7 +92,7 @@ this highly questionable URL:
 This URL will cause our Web app to display an alert box, which we, as the
 developers, did not intend!
 
-![XSS example](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/xss.png)
+![XSS example](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/xss.png)
 
 Despite all the URL-escapes, you may be able to see that the URL contains a
 complete `<script>` tag that runs a potentially arbitrary script. Our app
@@ -102,16 +102,16 @@ our clients!
 If you change the substitution back to `<%s param %>`, and visit that same URL,
 you will see that the app safely formats the script tag as text:
 
-![XSS prevented](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/no-xss.png)
+![XSS prevented](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/no-xss.png)
 
 <br>
 
 In general, if you are not using the templater, you should pass any text that
 will be included in HTML through
-[`Dream.html_escape`](https://aantron.github.io/dream/#val-html_escape), unless
-you can guarantee that it does not contain the characters `<`, `>`, `&`, `"`,
-or `'`. Also, always use quoted attribute values &mdash; the rules for escaping
-unquoted attributes are much more invasive.
+[`Dream.html_escape`](https://camlworks.github.io/dream/#val-html_escape),
+unless you can guarantee that it does not contain the characters `<`, `>`, `&`,
+`"`, or `'`. Also, always use quoted attribute values &mdash; the rules for
+escaping unquoted attributes are much more invasive.
 
 Likewise, escaping inline scripts and CSS is also
 [more complicated](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html#rule-3-javascript-encode-before-inserting-untrusted-data-into-javascript-data-values),

@@ -7,11 +7,9 @@ type handler = request -> response Lwt.t
 type middleware = handler -> handler
 
 module Make
-    (Pclock : Mirage_clock.PCLOCK)
-    (Time : Mirage_time.S)
     (Stack : Tcpip.Stack.V4V6) : sig
   (* This file is part of Dream, released under the MIT license. See LICENSE.md
-     for details, or visit https://github.com/aantron/dream.
+     for details, or visit https://github.com/camlworks/dream.
 
      Copyright 2021 Anton Bachin *)
 
@@ -30,11 +28,11 @@ module Make
 
   and handler = request -> response promise
   (** Handlers are asynchronous functions from requests to responses. Example
-      {{:https://github.com/aantron/dream/tree/master/example/1-hello#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/1-hello#folders-and-files}
       [1-hello]} \[{{:http://dream.as/1-hello} playground}\] shows the simplest
       handler, an anonymous function which we pass to {!Dream.run}. This creates a
       complete Web server! You can also see the Reason version in example
-      {{:https://github.com/aantron/dream/tree/master/example/r-hello#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/r-hello#folders-and-files}
       [r-hello]}.
 
       {[
@@ -46,7 +44,7 @@ module Make
   and middleware = handler -> handler
   (** Middlewares are functions that take a {!handler}, and run some code before
       or after — producing a “bigger” handler. Example
-      {{:https://github.com/aantron/dream/tree/master/example/2-middleware#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files}
       [2-middleware]} inserts the {!Dream.logger} middleware into a Web app:
 
       {[
@@ -57,9 +55,9 @@ module Make
       ]}
 
       Examples
-      {{:https://github.com/aantron/dream/tree/master/example/4-counter#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/4-counter#folders-and-files}
       [4-counter]} \[{{:http://dream.as/4-counter} playground}\] and
-      {{:https://github.com/aantron/dream/tree/master/example/5-promise#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/5-promise#folders-and-files}
       [5-promise]} show user-defined middlewares:
 
       {[
@@ -81,13 +79,13 @@ module Make
   and route
   (** Routes tell {!Dream.router} which handler to select for each request. See
       {!section-routing} and example
-      {{:https://github.com/aantron/dream/tree/master/example/3-router#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/3-router#folders-and-files}
       [3-router]} \[{{:http://dream.as/3-router/echo/foo} playground}\]. Routes
       are created by helpers such as {!Dream.get} and {!Dream.scope}:
 
       {[
         Dream.router [
-          Dream.scope "/admin" [Dream.memory_sessions] [
+          Dream.scope "/admin" [Dream.memory_sessions ()] [
             Dream.get "/" admin_handler;
             Dream.get "/logout" admin_logout_handler;
           ];
@@ -131,7 +129,7 @@ module Make
   and 'a promise = 'a Lwt.t
   (** Dream uses {{:https://github.com/ocsigen/lwt} Lwt} for promises and
       asynchronous I/O. See example
-      {{:https://github.com/aantron/dream/tree/master/example/5-promise#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/5-promise#folders-and-files}
       [5-promise]} \[{{:http://dream.as/5-promise} playground}\].
 
       Use [raise] to reject promises. If you are writing a library, you may prefer
@@ -361,6 +359,11 @@ module Make
   val target : request -> string
   (** Request target. For example, ["/foo/bar"]. *)
 
+  val site_prefix : request -> string
+  (** The site prefix of the request. This is the prefix configured with
+      {!with_site_prefix}, or ["/"] if the application is not mounted under a
+      prefix. Cookies are scoped to this prefix by default. *)
+
   (**/**)
 
   val prefix : request -> string
@@ -371,7 +374,7 @@ module Make
   val path : request -> string list
   [@@ocaml.deprecated
   "Router path access is being removed from the API. Comment at
-  https://github.com/aantron/dream/issues
+  https://github.com/camlworks/dream/issues
   "]
   (** Parsed request path. For example, ["foo"; "bar"]. *)
   (* TODO If not removing this, move it to section Routing. *)
@@ -387,7 +390,7 @@ module Make
   (** First query parameter with the given name. See
       {{:https://tools.ietf.org/html/rfc3986#section-3.4} RFC 3986 §3.4} and
       example
-      {{:https://github.com/aantron/dream/tree/master/example/w-query#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/w-query#folders-and-files}
       [w-query]}. *)
 
   val queries : request -> string -> string list
@@ -435,7 +438,7 @@ module Make
 
       As your Web app develops, consider adding [Content-Security-Policy] headers,
       as described in example
-      {{:https://github.com/aantron/dream/tree/master/example/w-content-security-policy#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/w-content-security-policy#folders-and-files}
       [w-content-security-policy]}. These headers are completely optional, but
       they can provide an extra layer of defense for a mature app. *)
 
@@ -463,8 +466,10 @@ module Make
       If you use [~code], be sure the number follows the pattern [3xx], or most
       browsers and other clients won't actually perform a redirect.
 
-      The {!type-request} is used for retrieving the site prefix, if the string is
-      an absolute path. Most applications don't have a site prefix. *)
+      If {!with_site_prefix} is in use, it prepends the site prefix to a
+      root-relative [Location] (one beginning with [/]). Absolute URLs and
+      relative references are left unchanged. Most applications don't have a
+      site prefix. *)
 
   val empty : ?headers:(string * string) list -> status -> response promise
   (** Same as {!Dream.val-response} with the empty string for a body. *)
@@ -482,7 +487,7 @@ module Make
   (** Creates a fresh [101 Switching Protocols] response. Once this response is
     returned to Dream's HTTP layer, the callback is passed a new
     {!type-websocket}, and the application can begin using it. See example
-    {{:https://github.com/aantron/dream/tree/master/example/k-websocket#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/k-websocket#folders-and-files}
     [k-websocket]} \[{{:http://dream.as/k-websocket} playground}\].
 
     {[
@@ -573,7 +578,7 @@ module Make
       {!Dream.set_cookie} and {!Dream.cookie} are designed for round-tripping
       secure cookies. The most secure settings applicable to the current server
       are inferred automatically. See example
-      {{:https://github.com/aantron/dream/tree/master/example/c-cookie#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/c-cookie#folders-and-files}
       [c-cookie]} \[{{:http://dream.as/c-cookie} playground}\].
 
       {[
@@ -619,7 +624,7 @@ module Make
       decrypt cookies from prior starts.
 
       See example
-      {{:https://github.com/aantron/dream/tree/master/example/c-cookie#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/c-cookie#folders-and-files}
       [c-cookie]}.
 
       Most of the optional arguments are for overriding inferred defaults.
@@ -711,7 +716,7 @@ module Make
     string ->
     string option
   (** First cookie with the given name. See example
-      {{:https://github.com/aantron/dream/tree/master/example/c-cookie#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/c-cookie#folders-and-files}
       [c-cookie]}.
 
       {[
@@ -730,11 +735,29 @@ module Make
 
   val body : 'a message -> string promise
   (** Retrieves the entire body. See example
-      {{:https://github.com/aantron/dream/tree/master/example/6-echo#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/6-echo#folders-and-files}
       [6-echo]}. *)
 
   val set_body : 'a message -> string -> unit
   (** Replaces the body. *)
+
+  val body_size_limit : int -> middleware
+  (** Rejects requests whose body is larger than the given number of bytes,
+      responding with [413 Payload Too Large].
+
+      If the request declares a [Content-Length:] larger than the limit, it is
+      rejected immediately, before the handler runs, even if the handler would
+      not have read the body. Otherwise, the limit is enforced as the body is
+      read, so a handler that doesn't read a streamed body will not trigger it.
+      Once the limit is reached, the body is closed and discarded, and the
+      connection is closed so that the client stops sending.
+
+      Raises [Invalid_argument] if the limit is negative.
+
+      {!http} and {!https} install this middleware to enforce the server-wide
+      limit configured with [~max_body_size], 10 MiB by default. If several
+      {!body_size_limit}s apply to a request, the lowest limit among them is
+      enforced. *)
 
   (** {2 Low-level streaming} *)
 
@@ -772,7 +795,7 @@ module Make
     response promise
   (** Creates a response with a {!type-stream} open for writing, and passes the
     stream to the callback when it is ready. See example
-    {{:https://github.com/aantron/dream/tree/master/example/j-stream#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/j-stream#folders-and-files}
     [j-stream]}.
 
     {[
@@ -786,7 +809,7 @@ module Make
 
   val read : stream -> string option promise
   (** Retrieves a body chunk. See example
-      {{:https://github.com/aantron/dream/tree/master/example/j-stream#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/j-stream#folders-and-files}
       [j-stream]}. *)
   (* TODO Document difference between receiving a request and receiving on a
      WebSocket. *)
@@ -878,7 +901,7 @@ module Make
       for generating JSON parsers and serializers for OCaml data types.
 
       See example
-      {{:https://github.com/aantron/dream/tree/master/example/e-json#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/e-json#folders-and-files}
       [e-json]}. *)
 
   val origin_referrer_check : middleware
@@ -889,7 +912,7 @@ module Make
       - their value must match [Host:]
 
       Responds with [400 Bad Request] if the check fails. See example
-      {{:https://github.com/aantron/dream/tree/master/example/e-json#security}
+      {{:https://github.com/camlworks/dream/tree/master/example/e-json#security}
       [e-json]}.
 
       Implements the
@@ -928,7 +951,7 @@ module Make
       ]}
 
       See example
-      {{:https://github.com/aantron/dream/tree/master/example/d-form#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/d-form#folders-and-files}
       [d-form]} \[{{:http://dream.as/d-form} playground}\]. *)
 
   type 'a form_result =
@@ -941,7 +964,7 @@ module Make
     | `Wrong_content_type ]
   (** Form CSRF checking results, in order from least to most severe. See
       {!Dream.val-form} and example
-      {{:https://github.com/aantron/dream/tree/master/example/d-form#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/d-form#folders-and-files}
       [d-form]}.
 
       The first three constructors, [`Ok], [`Expired], and [`Wrong_session] can
@@ -956,7 +979,7 @@ module Make
   (** Parses the request body as a form. Performs CSRF checks. Use
       {!Dream.csrf_tag} in a template to transparently generate forms that will
       pass these checks. See {!section-templates} and example
-      {{:https://github.com/aantron/dream/tree/master/example/d-form#readme}
+      {{:https://github.com/camlworks/dream/tree/master/example/d-form#readme}
       [d-form]}.
 
       - [Content-Type:] must be [application/x-www-form-urlencoded].
@@ -1021,7 +1044,7 @@ module Make
       ]}
 
       See example
-      {{:https://github.com/aantron/dream/tree/master/example/g-upload#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/g-upload#folders-and-files}
       [g-upload]} \[{{:http://dream.as/g-upload} playground}\] and
       {{:https://datatracker.ietf.org/doc/html/rfc7578} RFC 7578}.
 
@@ -1053,7 +1076,7 @@ module Make
       ]}
 
       See {!Dream.form_tag}, section {!section-templates}, and example
-      {{:https://github.com/aantron/dream/tree/master/example/g-upload#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/g-upload#folders-and-files}
       [g-upload]}.
 
       Note that, like {!Dream.form}, this function sorts form fields by field
@@ -1153,19 +1176,19 @@ module Make
       v}
 
       See examples
-      {{:https://github.com/aantron/dream/tree/master/example/7-template#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/7-template#folders-and-files}
       [7-template]} \[{{:http://dream.as/7-template} playground}\] and
-      {{:https://github.com/aantron/dream/tree/master/example/r-template#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/r-template#folders-and-files}
       [r-template]} \[{{:http://dream.as/r-template} playground}\].
 
       There is also a typed alternative, provided by an external library,
       {{:https://github.com/ocsigen/tyxml} TyXML}. It is shown in example
-      {{:https://github.com/aantron/dream/tree/master/example/w-tyxml#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/w-tyxml#folders-and-files}
       [w-tyxml]} \[{{:http://dream.as/w-tyxml} playground}\]. If you are using
       Reason syntax, TyXML can be used with
       {{:https://ocsigen.org/tyxml/latest/manual/jsx} server-side JSX}. See
       example
-      {{:https://github.com/aantron/dream/tree/master/example/r-tyxml#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/r-tyxml#folders-and-files}
       [r-tyxml]} \[{{:http://dream.as/r-tyxml} playground}\].
 
       To use the built-in templates, add this to [dune]:
@@ -1188,9 +1211,9 @@ module Make
       supported presently is [%% response] for streaming the template using
       {!Dream.write}, to a {!type-response} that is in scope. This is shown in
       examples
-      {{:https://github.com/aantron/dream/tree/master/example/w-template-stream#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/w-template-stream#folders-and-files}
       [w-template-stream]} and
-      {{:https://github.com/aantron/dream/tree/master/example/r-template-stream#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/r-template-stream#folders-and-files}
       [r-template-stream]}.
 
       A template ends...
@@ -1282,7 +1305,7 @@ module Make
   (** Creates a router. If none of the routes match the request, the router
     returns {!Dream.not_found}. Route components starting with [:] are
     parameters, which can be retrieved with {!Dream.param}. See example
-    {{:https://github.com/aantron/dream/tree/master/example/3-router#folders-and-files}
+    {{:https://github.com/camlworks/dream/tree/master/example/3-router#folders-and-files}
     [3-router]} \[{{:http://dream.as/3-router} playground}\].
 
     {[
@@ -1305,9 +1328,11 @@ module Make
         ]
     ]}
 
-    [**] causes the request's path to be trimmed by the route prefix, and the
-    request's prefix to be extended by it. It is mainly useful for “mounting”
-    {!Dream.static} as a subsite.
+    [**] causes the request's path to be trimmed up to the [**] so that the
+    next handler only sees the part of the path which matches the [**]. This
+    prefix is stored in the request and can be retrieved using
+    {!Dream.prefix}. It is mainly useful for “mounting” {!Dream.static} as a
+    subsite.
 
     It can also be used as an escape hatch to convert a handler, which may
     include its own router, into a subsite. However, it is better to compose
@@ -1371,7 +1396,11 @@ module Make
         ]
       ]}
 
-      Scopes can be nested. *)
+      Scopes can be nested.
+
+      {!scope} only groups routes within the router. To serve the entire
+      application under a different root path, use {!with_site_prefix} instead.
+      This ensures that e.g. cookies are set to the correct scope. *)
 
   val no_route : route
   (** A dummy value of type {!type-route} that is completely ignored by the
@@ -1386,11 +1415,53 @@ module Make
         ]
       ]} *)
 
+  val trailing_slash :
+    ?status:[< redirection ] ->
+    [< `Strict | `Drop | `Append | `Redirect_drop | `Redirect_append ] ->
+    middleware
+  (** Middleware that applies a uniform trailing-slash policy to requests, so
+      that an application need not declare both [/foo] and [/foo/] for every
+      route.
+
+      The policies are:
+      - [`Strict] leaves [/foo] and [/foo/] as distinct paths.
+      - [`Drop] rewrites [/foo/] to [/foo] internally, then runs the next
+        handler.
+      - [`Append] rewrites [/foo] to [/foo/] internally, then runs the next
+        handler.
+      - [`Redirect_drop] redirects [/foo/] to [/foo].
+      - [`Redirect_append] redirects [/foo] to [/foo/].
+
+      {[
+        let () =
+          Dream.run
+          @@ Dream.trailing_slash `Redirect_drop
+          @@ Dream.router [
+            Dream.get "/widget" handler;
+          ]
+      ]}
+
+      The right policy depends on the application: a content site typically
+      wants [`Redirect_drop] (or [`Redirect_append]) so that each page has one
+      canonical URL, while a JSON API may prefer the redirect-free [`Drop] or
+      [`Append], and a static-file subtree usually wants [`Strict], since
+      [/dir] and [/dir/] resolve relative links differently.
+
+      [~status] sets the redirect status for the [`Redirect_*] policies. It
+      defaults to [`Moved_Permanently] ([301]); use [`Permanent_Redirect] ([308])
+      to preserve the request method and body (e.g. for a [POST]). It is ignored
+      by [`Strict], [`Drop], and [`Append].
+
+      The root path [/] and the asterisk-form target [*] are never modified.
+      The [`Drop] and [`Append] policies assume the application declares its
+      routes in the matching canonical form (without or with the trailing
+      slash, respectively). *)
+
   (** {1 Static files} *)
 
   val static : loader:(string -> string -> handler) -> string -> handler
   (** Serves static files from a local directory. See example
-      {{:https://github.com/aantron/dream/tree/master/example/f-static#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/f-static#folders-and-files}
       [f-static]}.
 
       {[
@@ -1416,8 +1487,17 @@ module Make
       - [path] is what was substituted for [**].
 
       The default loader is {!Dream.from_filesystem}. See example
-      {{:https://github.com/aantron/dream/tree/master/example/w-one-binary#folders-and-files}
-      [w-one-binary]} for a loader that serves files from memory instead. *)
+      {{:https://github.com/camlworks/dream/tree/master/example/w-one-binary#folders-and-files}
+      [w-one-binary]} for a loader that serves files from memory instead.
+
+      If the loader's response carries an [ETag:] or [Last-Modified:] header,
+      {!Dream.static} performs conditional-request handling: a request with a
+      matching [If-None-Match:] (or, in its absence, a matching
+      [If-Modified-Since:]) is answered with [304 Not Modified] and no body.
+      [If-None-Match:] is compared weakly and takes precedence over
+      [If-Modified-Since:], per
+      {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. A
+      loader opts into this handling simply by setting those headers. *)
 
   val mime_lookup : string -> (string * string) list
   (** Returns a [Content-Type:] header based on the given filename. This is mostly
@@ -1456,7 +1536,7 @@ module Make
       the next request that it is assigned to.
 
       See example
-      {{:https://github.com/aantron/dream/tree/master/example/b-session#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/b-session#folders-and-files}
       [b-session]} \[{{:http://dream.as/b-session} playground}\]. *)
 
   val session : string -> request -> string option
@@ -1475,9 +1555,10 @@ module Make
 
   (** {2 Back ends} *)
 
-  val memory_sessions : ?lifetime:float -> middleware
-  (** Stores sessions in server memory. Passes session IDs to clients in cookies.
-      Session data is lost when the server process exits. *)
+  val memory_sessions : ?lifetime:float -> unit -> middleware
+  (** Stores sessions in server memory and requires initialization before
+      usage. Passes session IDs to clients in cookies. Session data is lost when
+      the server process exits. *)
 
   val cookie_sessions : ?lifetime:float -> middleware
   (** Stores sessions in encrypted cookies. Pass {!Dream.run} [~secret] to be able
@@ -1499,7 +1580,7 @@ module Make
       Flash messages are short strings which are stored in cookies during one
       request, to be made available for the next request. The typical use case is
       to provide form feedback across a redirect. See example
-      {{:https://github.com/aantron/dream/tree/master/example/w-flash#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/w-flash#folders-and-files}
       [w-flash]} \[{{:http://dream.as/w-flash} playground}\]. *)
 
   val flash_messages : middleware
@@ -1525,25 +1606,6 @@ module Make
       OWASP {i Logging Cheat Sheet}} for a survey of security topics related to
       logging. *)
 
-  val logger : middleware
-  (** Logs and times requests. Time spent logging is included. See example
-      {{:https://github.com/aantron/dream/tree/master/example/2-middleware#folders-and-files}
-      [2-middleware]} \[{{:http://dream.as/2-middleware} playground}\]. *)
-
-  val log : ('a, Format.formatter, unit, unit) format4 -> 'a
-  (** Formats a message and logs it. Disregard the obfuscated type: the first
-      argument is a format string as described in the standard library modules
-      {{:https://v2.ocaml.org/api/Printf.html#VALfprintf} [Printf]} and
-      {{:https://v2.ocaml.org/api/Format.html#VALfprintf} [Format]}. The rest of
-      the arguments are determined by the format string. See example
-      {{:https://github.com/aantron/dream/tree/master/example/a-log#folders-and-files}
-      [a-log]} \[{{:http://dream.as/a-log} playground}\].
-
-      {[
-        Dream.log "Counter is now: %i" counter;
-        Dream.log "Client: %s" (Dream.client request);
-      ]} *)
-
   type ('a, 'b) conditional_log =
     ((?request:request -> ('a, Format.formatter, unit, 'b) format4 -> 'a) -> 'b) ->
     unit
@@ -1557,11 +1619,41 @@ module Make
     | `Debug ]
   (** Log levels, in order from most urgent to least. *)
 
+  type sub_log = {
+    error : 'a. ('a, unit) conditional_log;
+    warning : 'a. ('a, unit) conditional_log;
+    info : 'a. ('a, unit) conditional_log;
+    debug : 'a. ('a, unit) conditional_log;
+  }
+  (** Sub-logs. See {!Dream.val-sub_log} below. *)
+
+  val logger : ?log:sub_log -> middleware
+  (** Logs and times requests. Time spent logging is included. See example
+      {{:https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files}
+      [2-middleware]} \[{{:http://dream.as/2-middleware} playground}\].
+
+      [~log] can be used to choose the sub-log used by this middleware. By
+      default, request logs use the ["dream.logger"] source. *)
+
+  val log : ('a, Format.formatter, unit, unit) format4 -> 'a
+  (** Formats a message and logs it. Disregard the obfuscated type: the first
+      argument is a format string as described in the standard library modules
+      {{:https://v2.ocaml.org/api/Printf.html#VALfprintf} [Printf]} and
+      {{:https://v2.ocaml.org/api/Format.html#VALfprintf} [Format]}. The rest of
+      the arguments are determined by the format string. See example
+      {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
+      [a-log]} \[{{:http://dream.as/a-log} playground}\].
+
+      {[
+        Dream.log "Counter is now: %i" counter;
+        Dream.log "Client: %s" (Dream.client request);
+      ]} *)
+
   val error : ('a, unit) conditional_log
   (** Formats a message and writes it to the log at level [`Error]. The inner
       formatting function is called only if the {{!initialize_log} current log
       level} is [`Error] or higher. See example
-      {{:https://github.com/aantron/dream/tree/master/example/a-log#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
       [a-log]}.
 
       {[
@@ -1579,14 +1671,6 @@ module Make
   val debug : ('a, unit) conditional_log
   (** Like {!Dream.val-error}, but for each of the other {{!log_level} log
       levels}. *)
-
-  type sub_log = {
-    error : 'a. ('a, unit) conditional_log;
-    warning : 'a. ('a, unit) conditional_log;
-    info : 'a. ('a, unit) conditional_log;
-    debug : 'a. ('a, unit) conditional_log;
-  }
-  (** Sub-logs. See {!Dream.val-sub_log} right below. *)
 
   val sub_log : ?level:[< log_level] -> string -> sub_log
   (** Creates a new sub-log with the given name. For example,
@@ -1607,7 +1691,7 @@ module Make
       unless {!Dream.set_log_level} is used.
 
       See [README] of example
-      {{:https://github.com/aantron/dream/tree/master/example/a-log#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
       [a-log]}. *)
 
   val initialize_log :
@@ -1771,7 +1855,7 @@ module Make
   val error_template :
     (error -> string -> response -> response promise) -> error_handler
   (** Builds an {!error_handler} from a template. See example
-      {{:https://github.com/aantron/dream/tree/master/example/9-error#folders-and-files}
+      {{:https://github.com/camlworks/dream/tree/master/example/9-error#folders-and-files}
       [9-error]} \[{{:http://dream.as/9-error} playground}\].
 
       {[
@@ -1817,14 +1901,31 @@ module Make
       used here. *)
 
   val with_site_prefix : string -> middleware
-  (** Removes the given prefix from the path in each request, and adds it to the
-      request prefix. Responds with [502 Bad Gateway] if the path does not have
-      the expected prefix.
+  (** Removes the given prefix from the path in each request, and stores it as
+      the request's site prefix. Responds with [502 Bad Gateway] if the path
+      does not have the expected prefix.
 
       This is for applications that are not running at the root ([/]) of their
-      domain. The default is ["/"], for no prefix. After [with_site_prefix],
-      routing is done relative to the prefix, and the prefix is also necessary for
-      emitting secure cookies. *)
+      domain. The default is ["/"], for no site prefix. After
+      [with_site_prefix], routing is done relative to the prefix, and the site
+      prefix is also used as the default cookie path. A request for the prefix
+      itself, with or without a trailing slash, is treated as the application
+      root ([/]).
+
+      The middleware is a translation layer between externally visible, prefixed
+      URLs and the application's internal, unprefixed world. On the way out, the
+      site prefix is added to root-relative [Location] response headers, i.e.
+      those beginning with [/]. "Root-relative" means relative to the
+      application root, so the site prefix is added even if the path happens to
+      begin with the same string as the site prefix. This includes locations
+      produced by {!Dream.redirect}, as well as headers set directly, for
+      example on a [201 Created] response. Absolute URLs and relative references
+      are left unchanged.
+
+      URLs inside a response body, such as [<a href=/foo>] in rendered HTML,
+      are not rewritten. Generate those with the site prefix already included
+      by calling {!Dream.site_prefix}, so that they resolve correctly on
+      clients. *)
   (* TODO Clarify that this isn't included with the built-ins, but is something on
       topic that one might want to use. *)
 
@@ -1838,7 +1939,7 @@ module Make
 
       This function is {e not} suitable for use with unquoted attributes, inline
       scripts, or inline CSS. See {i Security} in example
-      {{:https://github.com/aantron/dream/tree/master/example/7-template#security}
+      {{:https://github.com/camlworks/dream/tree/master/example/7-template#security}
       [7-template]}. *)
 
   val to_base64url : string -> string
@@ -2037,6 +2138,7 @@ module Make
     ?stop:Lwt_switch.t ->
     port:int ->
     ?prefix:string ->
+    ?max_body_size:int ->
     Stack.TCP.t ->
     ?cfg:Tls.Config.server ->
     ?error_handler:error_handler ->
@@ -2047,9 +2149,13 @@ module Make
     ?stop:Lwt_switch.t ->
     port:int ->
     ?prefix:string ->
+    ?max_body_size:int ->
     ?protocol:[`H2 | `HTTP_1_1] ->
     Stack.TCP.t ->
     ?error_handler:error_handler ->
     handler ->
     unit Lwt.t
+  (** [~max_body_size] sets a server-wide request body size limit for {!http}
+      and {!https}. See {!body_size_limit}. Defaults to 10 MiB. Pass
+      [~max_body_size:max_int] to disable the limit. *)
 end

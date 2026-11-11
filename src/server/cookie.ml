@@ -1,5 +1,5 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
@@ -48,7 +48,7 @@ let cookie
   let path =
     match path with
     | Some path -> path
-    | None -> Some (Router.prefix request)
+    | None -> Some (Router.site_prefix request)
   in
 
   let secure =
@@ -88,11 +88,10 @@ let set_cookie
     name
     value =
 
-  (* TODO Need the site prefix, not the subsite prefix! *)
   let path =
     match path with
     | Some path -> path
-    | None -> Some (Router.prefix request)
+    | None -> Some (Router.site_prefix request)
   in
 
   let secure =
@@ -118,7 +117,7 @@ let set_cookie
     if encrypt_cookie then
       (* Give each cookie name a different associated data "space," effectively
          partitioning valid ciphertexts among the cookies. See also
-         https://github.com/aantron/dream/issues/19#issuecomment-820250853. *)
+         https://github.com/camlworks/dream/issues/19#issuecomment-820250853. *)
       Cipher.encrypt request value ~associated_data:("dream.cookie-" ^ name)
       |> Formats.to_base64url
     else

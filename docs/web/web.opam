@@ -1,7 +1,7 @@
 opam-version: "2.0"
 
 synopsis: "Dream docs"
-maintainer: "Anton Bachin <antonbachin@yahoo.com>"
+maintainer: ["Sebastian Willenbrink <sebastian.willenbrink@mailbox.org>" "Yawar Amin <yawar.amin@gmail.com>" "Anton Bachin <antonbachin@yahoo.com>"]
 depends: [
   "lambdasoup"
   "odoc" {= "2.0.2"}

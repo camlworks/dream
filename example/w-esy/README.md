@@ -10,7 +10,7 @@ and looks like this:
 ```json
 {
   "dependencies": {
-    "@opam/dream": "1.0.0~alpha4",
+    "@opam/dream": "1.0.0",
     "@opam/dune": "^2.0",
     "ocaml": "4.12.x"
   },
@@ -116,16 +116,13 @@ uninstall it from your project:
 }
 ```
 
-You can make this even more powerful by writing the client itself in OCaml,
-Reason, or ReScript &mdash; all flavors of OCaml that compile to JavaScript.
-See the examples linked below.
+You can make this even more powerful by writing the client itself in OCaml or
+Reason &mdash; both compile to JavaScript. See the examples linked below.
 
 <br>
 
 **See also:**
 
-- [**`w-fullstack-rescript`**](../w-fullstack-rescript#folders-and-files) for full-stack
-  development with ReScript.
 - [**`r-fullstack-melange`**](../r-fullstack-melange#folders-and-files) for full-stack
   development with Melange and Reason syntax.
 - [**`w-fswatch`**](../w-fswatch#folders-and-files) for a development watcher.

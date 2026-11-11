@@ -1,5 +1,5 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
@@ -332,14 +332,14 @@ let graphiql ?(default_query = "") graphql_endpoint =
     log.error (fun log ->
       log "If intentional, please open an issue about supporting this");
     log.error (fun log ->
-      log "https://github.com/aantron/dream/issues")
+      log "https://github.com/camlworks/dream/issues")
   end;
 
   let html =
     lazy begin
       Dream__graphiql.content
-      |> Str.(global_replace (regexp (quote "%%ENDPOINT%%")) graphql_endpoint)
-      |> Str.(global_replace (regexp (quote "%%DEFAULT_QUERY%%")) default_query)
+      |> Stringext.replace_all ~pattern:"%%ENDPOINT%%" ~with_:graphql_endpoint
+      |> Stringext.replace_all ~pattern:"%%DEFAULT_QUERY%%" ~with_:default_query
     end
   in
 

@@ -1,10 +1,11 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
 
 
+module Body_size_limit = Dream__server.Body_size_limit
 module Catch = Dream__server.Catch
 module Cipher = Dream__cipher.Cipher
 module Cookie = Dream__server.Cookie
@@ -31,6 +32,7 @@ module Static = Dream__unix.Static
 module Status = Dream_pure.Status
 module Stream = Dream_pure.Stream
 module Tag = Dream__server.Tag
+module Trailing_slash = Dream__server.Trailing_slash
 module Upload = Dream__server.Upload
 
 
@@ -42,7 +44,6 @@ module Upload = Dream__server.Upload
 module Log =
 struct
   include Dream__server.Log
-  include Dream__server.Log.Make (Ptime_clock)
 end
 
 let default_log =
@@ -52,16 +53,15 @@ let () =
   Log.initialize ~setup_outputs:Fmt_tty.setup_std_outputs
 
 let now () =
-  Ptime.to_float_s (Ptime.v (Ptime_clock.now_d_ps ()))
+  Ptime.to_float_s (Ptime.v (Mirage_ptime.now_d_ps ()))
 
 let () =
   Random.initialize (fun () ->
-    Mirage_crypto_rng_lwt.initialize (module Mirage_crypto_rng.Fortuna))
+    Mirage_crypto_rng_unix.use_default ())
 
 module Session =
 struct
   include Dream__server.Session
-  include Dream__server.Session.Make (Ptime_clock)
 end
 
 
@@ -99,7 +99,8 @@ let client = Helpers.client
 let tls = Helpers.tls
 let method_ = Message.method_
 let target = Message.target
-let prefix = Router.prefix
+let site_prefix = Router.site_prefix
+let prefix = Router.full_prefix
 let path = Router.path
 let set_client = Helpers.set_client
 let set_method_ = Message.set_method_
@@ -147,6 +148,7 @@ let all_cookies = Cookie.all_cookies
 
 let body = Message.body
 let set_body = Message.set_body
+let body_size_limit = Body_size_limit.body_size_limit
 
 
 
@@ -238,6 +240,8 @@ let not_found = Helpers.not_found
 let param = Router.param
 let scope = Router.scope
 let no_route = Router.no_route
+
+let trailing_slash = Trailing_slash.trailing_slash
 
 
 

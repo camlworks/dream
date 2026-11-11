@@ -3,7 +3,7 @@
 <br>
 
 This very simple example accesses a value in the query string with
-[`Dream.query`](https://aantron.github.io/dream/#val-query):
+[`Dream.query`](https://camlworks.github.io/dream/#val-query):
 
 ```ocaml
 let () =
@@ -24,7 +24,7 @@ let () =
 Visit [http://localhost:8080?echo=foo](http://localhost:8080?echo=foo)
 and you will see `foo` printed! Since we are inserting untrusted client-sent
 data into an HTML response, we have to escape it with
-[`Dream.html_escape`](https://aantron.github.io/dream/#val-html_escape). See
+[`Dream.html_escape`](https://camlworks.github.io/dream/#val-html_escape). See
 *Security* in example [**`7-template`**](../7-template#security) for a
 discussion. Perhaps you can even launch an XSS attack against an unsafe version
 of this example!

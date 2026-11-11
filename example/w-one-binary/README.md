@@ -6,9 +6,9 @@ is contained inside just `one_binary.exe`!
 <br>
 
 First, we make the
-[`dune`](https://github.com/aantron/dream/blob/master/example/w-one-binary/dune)
+[`dune`](https://github.com/camlworks/dream/blob/master/example/w-one-binary/dune)
 file call [crunch](https://github.com/mirage/ocaml-crunch) to turn the
-[`assets/`](https://github.com/aantron/dream/tree/master/example/w-one-binary/assets)
+[`assets/`](https://github.com/camlworks/dream/tree/master/example/w-one-binary/assets)
 directory into a file `assets.ml`:
 
 <pre><code><b>(rule
@@ -17,21 +17,6 @@ directory into a file `assets.ml`:
  (action (with-stdout-to %{null}
   (run ocaml-crunch -m plain assets -o %{target}))))
 </b></code></pre>
-
-crunch comes from the opam repository, so we also add it in
-[`one_binary.opam`](https://github.com/aantron/dream/blob/master/example/w-one-binary/esy.json):
-
-<pre><code>opam-version: "2.0"
-
-depends: [
-  <b>"crunch"</b>
-  "ocaml" {>= "4.08.0"}
-  "dream"
-  "dune" {>= "2.0.0"}
-]
-</code></pre>
-
-<br>
 
 The generated `assets.ml` has a signature like this:
 
@@ -46,7 +31,7 @@ val Assets.read : string -> string option
 <br>
 
 After that, we just need to tell
-[`Dream.static`](https://aantron.github.io/dream/#val-static) to load files from
+[`Dream.static`](https://camlworks.github.io/dream/#val-static) to load files from
 module `Assets`, rather than from the file system. We do this by passing it the
 optional `~loader` argument:
 
@@ -64,11 +49,11 @@ let () =
   ]
 ```
 
-[`Dream.static`](https://aantron.github.io/dream/#val-static) will take care of
+[`Dream.static`](https://camlworks.github.io/dream/#val-static) will take care of
 adding a `Content-Type` to each file, based on its extension. You can override
 it by setting `Content-Type` yourself when calling
-[`Dream.respond`](https://aantron.github.io/dream/#val-respond), or using
-[`Dream.add_header`](https://aantron.github.io/dream/#headers).
+[`Dream.respond`](https://camlworks.github.io/dream/#val-respond), or using
+[`Dream.add_header`](https://camlworks.github.io/dream/#headers).
 
 <br>
 
@@ -82,7 +67,7 @@ You can now visit
 [http://localhost:8080/assets/camel.jpeg](http://localhost:8080/assets/camel.jpeg)
 for a picture of a nice camel:
 
-![Camel](https://raw.githubusercontent.com/aantron/dream/master/example/w-one-binary/assets/camel.jpeg)
+![Camel](https://raw.githubusercontent.com/camlworks/dream/master/example/w-one-binary/assets/camel.jpeg)
 
 [http://localhost:8080/assets/README.md](http://localhost:8080/assets/README.md)
 gives the source link and license information for the image.
@@ -91,7 +76,7 @@ gives the source link and license information for the image.
 
 Copy the binary out for deployment with
 
-<pre><code><b>$ npx esy cp '#{self.target_dir}/default/one_binary.exe' .
+<pre><code><b>$ cp _build/default/one_binary.exe .
 </b></code></pre>
 
 It will continue to serve the camel no matter where it is moved to! The
@@ -101,11 +86,11 @@ It will continue to serve the camel no matter where it is moved to! The
 
 If you'd like to inspect the generated `assets.ml` yourself, run
 
-<pre><code><b>$ npx esy less '#{self.target_dir}/default/assets.ml'
+<pre><code><b>$ less _build/default/assets.ml
 </b></code></pre>
 
 To add more files, just add them to the `assets/` directory and re-run
-`npx esy run`. Dune and crunch will pick them up automatically.
+`dune exec --root . ./one-binary.exe`. Dune and crunch will pick them up automatically.
 
 <br>
 
@@ -115,7 +100,7 @@ To add more files, just add them to the `assets/` directory and re-run
 - [**`w-watch`**](../w-watch#folders-and-files) for a primitive watcher, which can be
   extended to watch `assets/`.
 - [**`f-static`**](../f-static#folders-and-files) shows the basics of
-  [`Dream.static`](https://aantron.github.io/dream/#val-static).
+  [`Dream.static`](https://camlworks.github.io/dream/#val-static).
 
 <br>
 

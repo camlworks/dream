@@ -4,7 +4,7 @@
 
 This example shares a toy function between client and server using
 [Melange](https://github.com/melange-re/melange). The function is in
-[common/common.re](https://github.com/aantron/dream/blob/master/example/r-fullstack-melange/common/common.re):
+[common/common.re](https://github.com/camlworks/dream/blob/master/example/r-fullstack-melange/common/common.re):
 
 ```reason
 let greet = fun
@@ -13,7 +13,7 @@ let greet = fun
 ```
 
 The server, in
-[server/server.eml.re](https://github.com/aantron/dream/blob/master/example/r-fullstack-melange/server/server.eml.re),
+[server/server.eml.re](https://github.com/camlworks/dream/blob/master/example/r-fullstack-melange/server/server.eml.re),
 prints the first part of the message:
 
 ```reason
@@ -41,7 +41,7 @@ let () =
 ```
 
 ...and the client, in
-[client/client.re](https://github.com/aantron/dream/blob/master/example/r-fullstack-melange/client/client.re),
+[client/client.re](https://github.com/camlworks/dream/blob/master/example/r-fullstack-melange/client/client.re),
 completes it!
 
 ```reason
@@ -76,7 +76,7 @@ $ dune exec --root . server/server.exe
 
 Then visit [http://localhost:8080](http://localhost:8080), and you will see...
 
-![Full-stack greeting](https://raw.githubusercontent.com/aantron/dream/master/docs/asset/fullstack.png)
+![Full-stack greeting](https://raw.githubusercontent.com/camlworks/dream/master/docs/asset/fullstack.png)
 
 <br>
 

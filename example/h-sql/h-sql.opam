@@ -1,15 +1,15 @@
 opam-version: "2.0"
 
 depends: [
-  "caqti-driver-sqlite3" {>= "1.7.0"}
+  "caqti-driver-sqlite3"
   "ocaml" {>= "4.08.0"}
   "dream"
   "dune" {>= "2.0.0"}
 ]
 
 synopsis: "One of the Dream examples"
-homepage: "https://github.com/aantron/dream"
-bug-reports: "https://github.com/aantron/dream/issues"
+homepage: "https://github.com/camlworks/dream"
+bug-reports: "https://github.com/camlworks/dream/issues"
 author: "Anton Bachin <antonbachin@yahoo.com>"
 license: "MIT"
 maintainer: "Anton Bachin <antonbachin@yahoo.com>"

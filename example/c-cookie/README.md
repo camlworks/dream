@@ -2,7 +2,7 @@
 
 <br>
 
-Let's [set our own cookie](https://aantron.github.io/dream/#cookies):
+Let's [set our own cookie](https://camlworks.github.io/dream/#cookies):
 
 ```ocaml
 let () =
@@ -35,7 +35,7 @@ request, the client sends it back. The app retrieves and displays it.
 
 <br>
 
-The [`Dream.set_cookie`](https://aantron.github.io/dream/#val-set_cookie)
+The [`Dream.set_cookie`](https://camlworks.github.io/dream/#val-set_cookie)
 function is a little odd &mdash; even though it transforms a response (by
 adding a `Set-Cookie:` header), it also takes a *request* as an argument.
 That's because it access certain fields of the request to set some fairly
@@ -43,7 +43,7 @@ aggressive security defaults:
 
 - Cookie encryption, for which it accesses the encryption key. This is why we
   used the
-  [`Dream.set_secret`](https://aantron.github.io/dream/#val-set_secret)
+  [`Dream.set_secret`](https://camlworks.github.io/dream/#val-set_secret)
   middleware.
 - Whether the request likely came through an HTTPS connection, to set the
   [`Secure`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#restrict_access_to_cookies)
@@ -55,23 +55,23 @@ aggressive security defaults:
   `__Secure-`
   prefixes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Cookie_prefixes).
 
-[`Dream.set_cookie`](https://aantron.github.io/dream/#val-set_cookie) also sets
-other security defaults, but doesn't need to check the request for them.
+[`Dream.set_cookie`](https://camlworks.github.io/dream/#val-set_cookie) also
+sets other security defaults, but doesn't need to check the request for them.
 
 All of these automatic choices can be overridden with the optional parameters
-of [`Dream.set_cookie`](https://aantron.github.io/dream/#val-set_cookie).
+of [`Dream.set_cookie`](https://camlworks.github.io/dream/#val-set_cookie).
 
 <br>
 
 You can ignore all of this for basic usage &mdash; the cookie getter,
-[`Dream.cookie`](https://aantron.github.io/dream/#val-cookie) “knows” how to
+[`Dream.cookie`](https://camlworks.github.io/dream/#val-cookie) “knows” how to
 parse such cookies, including automatic stripping of prefixes and decryption of
 the value.
 
 So, if you use
-[`Dream.set_cookie`](https://aantron.github.io/dream/#val-set_cookie) and
-[`Dream.cookie`](https://aantron.github.io/dream/#val-cookie) together, you get
-the most secure settings automatically “for free.”
+[`Dream.set_cookie`](https://camlworks.github.io/dream/#val-set_cookie) and
+[`Dream.cookie`](https://camlworks.github.io/dream/#val-cookie) together, you
+get the most secure settings automatically “for free.”
 
 <br>
 
@@ -82,15 +82,15 @@ You may wish to not encrypt the cookie value, because...
 - it is already encrypted.
 
 In that case, pass `~encrypt:false` to
-[`Dream.set_cookie`](https://aantron.github.io/dream/#val-set_cookie) and
+[`Dream.set_cookie`](https://camlworks.github.io/dream/#val-set_cookie) and
 `~decrypt:false` to
-[`Dream.cookie`](https://aantron.github.io/dream/#val-cookie). However, then you
-need to escape the cookie value so that it does not contain `=`, `;` or
+[`Dream.cookie`](https://camlworks.github.io/dream/#val-cookie). However, then
+you need to escape the cookie value so that it does not contain `=`, `;` or
 newlines, and undo the escaping after reading the value.
 
 The easiest way to do that for general data is to use
-[`Dream.to_base64url`](https://aantron.github.io/dream/#val-to_base64url) and
-[`Dream.from_base64url`](https://aantron.github.io/dream/#val-from_base64url).
+[`Dream.to_base64url`](https://camlworks.github.io/dream/#val-to_base64url) and
+[`Dream.from_base64url`](https://camlworks.github.io/dream/#val-from_base64url).
 
 <br>
 

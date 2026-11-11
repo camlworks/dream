@@ -1,7 +1,4 @@
-module Httpaf = Dream_httpaf_.Httpaf
-module Paf_mirage = Dream_paf_mirage.Paf_mirage
-module Alpn = Dream_alpn.Alpn
-
+module Body_size_limit = Dream__server.Body_size_limit
 module Catch = Dream__server.Catch
 module Error_template = Dream__server.Error_template
 module Method = Dream_pure.Method
@@ -20,29 +17,29 @@ module Tag = Dream__server.Tag
 open Rresult
 open Lwt.Infix
 
-let to_dream_method meth = Httpaf.Method.to_string meth |> Method.string_to_method
-let to_httpaf_status status = Status.status_to_int status |> Httpaf.Status.of_code
+let to_dream_method meth = H1.Method.to_string meth |> Method.string_to_method
+let to_httpaf_status status = Status.status_to_int status |> H1.Status.of_code
 let ( >>? ) = Lwt_result.bind
 
 let wrap_handler_httpaf _user's_error_handler user's_dream_handler =
   let httpaf_request_handler = fun _ reqd ->
-    let httpaf_request = Httpaf.Reqd.request reqd in
+    let httpaf_request = H1.Reqd.request reqd in
     let method_ = to_dream_method httpaf_request.meth in
     let target  = httpaf_request.target in
     let _version = (httpaf_request.version.major, httpaf_request.version.minor) in
-    let headers = Httpaf.Headers.to_list httpaf_request.headers in
-    let body    = Httpaf.Reqd.request_body reqd in
+    let headers = H1.Headers.to_list httpaf_request.headers in
+    let request_body = H1.Reqd.request_body reqd in
 
     let read ~data ~flush:_ ~ping:_ ~pong:_ ~close ~exn:_ =
-      Httpaf.Body.Reader.schedule_read
-        body
+      H1.Body.Reader.schedule_read
+        request_body
         ~on_eof:(fun () -> close 1000)
         ~on_read:(fun buffer ~off ~len -> data buffer off len true false)
     in
     let close _close =
-      Httpaf.Body.Reader.close body in
+      H1.Body.Reader.close request_body in
     let abort _close =
-      Httpaf.Body.Reader.close body in
+      H1.Body.Reader.close request_body in
     let body =
       Stream.reader ~read ~close ~abort in
 
@@ -76,10 +73,14 @@ let wrap_handler_httpaf _user's_error_handler user's_dream_handler =
            2. Upon failure to establish a WebSocket, the function is called to
               transmit the resulting error response. *)
         let forward_response response =
+          if Body_size_limit.exceeded request then begin
+            H1.Body.Reader.close request_body;
+            Message.set_header response "Connection" "close"
+          end;
           Message.set_content_length_headers response;
 
           let headers =
-            Httpaf.Headers.of_list (Message.all_headers response) in
+            H1.Headers.of_list (Message.all_headers response) in
 
           (* let version =
             match Dream.version_override response with
@@ -92,9 +93,9 @@ let wrap_handler_httpaf _user's_error_handler user's_dream_handler =
             Dream.reason_override response in *)
 
           let httpaf_response =
-            Httpaf.Response.create ~headers status in
+            H1.Response.create ~headers status in
           let body =
-            Httpaf.Reqd.respond_with_streaming reqd httpaf_response in
+            H1.Reqd.respond_with_streaming reqd httpaf_response in
 
           Adapt.forward_body response body;
 
@@ -106,7 +107,7 @@ let wrap_handler_httpaf _user's_error_handler user's_dream_handler =
       @@ fun exn ->
         (* TODO LATER There was something in the fork changelogs about not
            requiring report_exn. Is it relevant to this? *)
-        Httpaf.Reqd.report_exn reqd exn;
+        H1.Reqd.report_exn reqd exn;
         Lwt.return_unit
     end
   in
@@ -135,7 +136,7 @@ let error_handler
     fun client protocol ?request error respond ->
     match protocol with
     | Alpn.HTTP_1_1 _ ->
-      let start_response hdrs : Httpaf.Body.Writer.t =
+      let start_response hdrs : H1.Body.Writer.t =
         respond hdrs
       in
       Error_handler.httpaf user's_error_handler client ?request:(Some request) error start_response
@@ -150,13 +151,12 @@ let handler user_err user_resp =
   }
 
 
-module Make (Pclock : Mirage_clock.PCLOCK) (Time : Mirage_time.S) (Stack : Tcpip.Stack.V4V6) = struct
+module Make (Stack : Tcpip.Stack.V4V6) = struct
   include Dream_pure
   include Method
   include Status
 
   include Log
-  include Log.Make (Pclock)
   include Dream__server.Echo
 
   let default_log =
@@ -167,10 +167,7 @@ module Make (Pclock : Mirage_clock.PCLOCK) (Time : Mirage_time.S) (Stack : Tcpip
   let info = default_log.info
   let debug = default_log.debug
 
-  module Session = struct
-    include Dream__server.Session
-    include Dream__server.Session.Make (Pclock)
-  end
+  module Session = Dream__server.Session
   module Flash = Dream__server.Flash
 
 
@@ -182,6 +179,8 @@ module Make (Pclock : Mirage_clock.PCLOCK) (Time : Mirage_time.S) (Stack : Tcpip
 
   include Dream__server.Catch
   include Dream__server.Site_prefix
+  include Dream__server.Body_size_limit
+  include Dream__server.Trailing_slash
 
   let error_template =
     Error_handler.customize
@@ -212,7 +211,8 @@ module Make (Pclock : Mirage_clock.PCLOCK) (Time : Mirage_time.S) (Stack : Tcpip
   let client = Helpers.client
   let method_ = Message.method_
   let target = Message.target
-  let prefix = Router.prefix
+  let site_prefix = Router.site_prefix
+  let prefix = Router.full_prefix
   let path = Router.path
   let set_client = Helpers.set_client
   let set_method_ = Message.set_method_
@@ -335,7 +335,7 @@ module Make (Pclock : Mirage_clock.PCLOCK) (Time : Mirage_time.S) (Stack : Tcpip
     Log.convenience_log
 
 
-  let now () = Ptime.to_float_s (Ptime.v (Pclock.now_d_ps ()))
+  let now () = Ptime.to_float_s (Ptime.v (Mirage_ptime.now_d_ps ()))
 
   let form = form ~now
   let multipart = multipart ~now
@@ -403,15 +403,21 @@ module Make (Pclock : Mirage_clock.PCLOCK) (Time : Mirage_time.S) (Stack : Tcpip
       Dream__server.Site_prefix.with_site_prefix prefix;
     ]
 
+  (* [max_int] means no limit: skip the middleware rather than count bytes. *)
+  let apply_body_size_limit max_body_size handler =
+    if max_body_size = max_int then handler
+    else Body_size_limit.body_size_limit max_body_size handler
+
   let localhost_certificate =
     let crts = Rresult.R.failwith_error_msg
-      (X509.Certificate.decode_pem_multiple (Cstruct.of_string Dream__certificate.localhost_certificate)) in
+      (X509.Certificate.decode_pem_multiple Dream__certificate.localhost_certificate) in
     let key = Rresult.R.failwith_error_msg
-      (X509.Private_key.decode_pem (Cstruct.of_string Dream__certificate.localhost_certificate_key)) in
+      (X509.Private_key.decode_pem Dream__certificate.localhost_certificate_key) in
     `Single (crts, key)
 
-  let https ?stop ~port ?(prefix= "") stack
-    ?(cfg= Tls.Config.server ~certificates:localhost_certificate ())
+  let https ?stop ~port ?(prefix= "")
+    ?(max_body_size = Body_size_limit.default_max_body_size) stack
+    ?(cfg= Tls.Config.server ~certificates:localhost_certificate () |> Result.get_ok)
     ?error_handler:(user's_error_handler : error_handler = Error_handler.default) (user's_dream_handler : Message.handler) =
     initialize ~setup_outputs:ignore ;
     let connect flow =
@@ -423,6 +429,8 @@ module Make (Pclock : Mirage_clock.PCLOCK) (Time : Mirage_time.S) (Stack : Tcpip
         TCP.close flow >>= fun () ->
         Lwt.return (R.error_msgf "%a" TLS.pp_write_error err)
     in
+    let user's_dream_handler =
+      apply_body_size_limit max_body_size user's_dream_handler in
     let user's_dream_handler =
       built_in_middleware prefix user's_error_handler user's_dream_handler in
     let handler = handler user's_error_handler user's_dream_handler in
@@ -440,13 +448,17 @@ module Make (Pclock : Mirage_clock.PCLOCK) (Time : Mirage_time.S) (Stack : Tcpip
     let injection (_, flow) = R.T flow in
     { Alpn.alpn; peer; injection; }
 
-  let http ?stop ~port ?(prefix= "") ?(protocol= `HTTP_1_1) stack
+  let http ?stop ~port ?(prefix= "")
+    ?(max_body_size = Body_size_limit.default_max_body_size)
+    ?(protocol= `HTTP_1_1) stack
     ?error_handler:(user's_error_handler= Error_handler.default)
     user's_dream_handler =
     initialize ~setup_outputs:ignore ;
     let accept t = accept t >>? fun flow ->
       let edn = TCP.dst flow in
       Lwt.return_ok (edn, flow) in
+    let user's_dream_handler =
+      apply_body_size_limit max_body_size user's_dream_handler in
     let user's_dream_handler =
       built_in_middleware prefix user's_error_handler user's_dream_handler in
     let handler = handler user's_error_handler user's_dream_handler in
@@ -517,7 +529,7 @@ module Make (Pclock : Mirage_clock.PCLOCK) (Time : Mirage_time.S) (Stack : Tcpip
           | _ ->
             ()
         end;
-        Lwt.return response
+        Dream__server.Conditional.respond request response
 
 end
 

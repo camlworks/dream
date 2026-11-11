@@ -3,7 +3,7 @@
 <br>
 
 This example deploys a very simple Dream
-[application](https://github.com/aantron/dream/blob/master/example/z-heroku/app.ml)
+[application](https://github.com/camlworks/dream/blob/master/example/z-heroku/app.ml)
 to [Heroku](https://www.heroku.com/). A low-usage app can be hosted for
 [free](https://www.heroku.com/pricing). Heroku has an easy-to-use CLI and
 [scaling](https://devcenter.heroku.com/articles/scaling) options. The drawback
@@ -40,7 +40,7 @@ Heroku. This works fine if you and your developers are on an Ubuntu or similar
 systems. If you need to support something else, we suggest building an
 executable in either a container or in CI, using almost the same instructions.
 See the
-[GitHub Actions workflow](https://github.com/aantron/dream/blob/master/.github/workflows/heroku.yml)
+[GitHub Actions workflow](https://github.com/camlworks/dream/blob/master/.github/workflows/heroku.yml)
 that deploys this example. `heroku local`, mentioned later, probably runs
 cross-platform.
 
@@ -66,7 +66,7 @@ $ dune build --root . ./app.exe
 <br>
 
 With Heroku, there are two new pieces of boilerplate to consider. The
-[`Procfile`](https://github.com/aantron/dream/blob/master/example/z-heroku/Procfile)
+[`Procfile`](https://github.com/camlworks/dream/blob/master/example/z-heroku/Procfile)
 tells Heroku what we would like to run. In this example, it's just one Web
 server:
 
@@ -74,7 +74,7 @@ server:
 web: deploy/app.exe
 ```
 
-[`.slugignore`](https://github.com/aantron/dream/blob/master/example/z-heroku/.slugignore) tells the `heroku` CLI not to upload all of our intermediate build
+[`.slugignore`](https://github.com/camlworks/dream/blob/master/example/z-heroku/.slugignore) tells the `heroku` CLI not to upload all of our intermediate build
 artifacts, dependencies, etc., to Heroku, which saves a huge amount of time on
 deploy:
 
@@ -168,7 +168,7 @@ full reference.
 These instructions are clearly not as convenient for users on macOS or Windows
 outside WSL. All suggestions and improvements are welcome. Also, fully usable
 logs and full cookie security in Heroku probably require
-[#10 *Add trust_proxy_headers middleware*](https://github.com/aantron/dream/issues/10).
+[#10 *Add trust_proxy_headers middleware*](https://github.com/camlworks/dream/issues/10).
 
 <br>
 

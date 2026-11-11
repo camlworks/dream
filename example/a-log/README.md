@@ -3,7 +3,7 @@
 <br>
 
 This app writes custom messages to Dream's
-[log](https://aantron.github.io/dream/#logging):
+[log](https://camlworks.github.io/dream/#logging):
 
 ```ocaml
 let () =
@@ -45,14 +45,14 @@ so you can quickly print values of various types to the log.
 
 <br>
 
-[`Dream.warning`](https://aantron.github.io/dream/#val-error) is a bit strange.
+[`Dream.warning`](https://camlworks.github.io/dream/#val-error) is a bit strange.
 The reason it takes a callback, which waits for a `log` argument, is because if
 the log threshold is higher than `` `Warning``, the callback is never called,
 so the application doesn't spend any time formatting a string that it will not
 print. This is the style of the [Logs](https://erratique.ch/software/logs)
 library. Try calling
-[`Dream.initialize_log`](https://aantron.github.io/dream/#val-initialize_log)
-right before [`Dream.run`](https://aantron.github.io/dream/#val-run), to
+[`Dream.initialize_log`](https://camlworks.github.io/dream/#val-initialize_log)
+right before [`Dream.run`](https://camlworks.github.io/dream/#val-run), to
 suppress warnings:
 
 ```ocaml
@@ -62,7 +62,7 @@ Dream.initialize_log ~level:`Error ();
 <br>
 
 You can create named sub-logs for different parts of your application with
-[`Dream.sub_log`](https://aantron.github.io/dream/#type-sub_log):
+[`Dream.sub_log`](https://camlworks.github.io/dream/#type-sub_log):
 
 ```ocaml
 let my_log =

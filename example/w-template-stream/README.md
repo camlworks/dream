@@ -2,7 +2,7 @@
 
 <br>
 
-This example [streams](https://aantron.github.io/dream/#streaming) a template as
+This example [streams](https://camlworks.github.io/dream/#streaming) a template as
 a response body. It sends one paragraph per second to the client:
 
 ```ocaml
@@ -35,7 +35,7 @@ let () =
 <br>
 
 Most uses of streaming don't need
-[`Dream.flush`](https://aantron.github.io/dream/#val-flush), but we are using it
+[`Dream.flush`](https://camlworks.github.io/dream/#val-flush), but we are using it
 here to prevent buffering of each paragraph.
 
 <br>

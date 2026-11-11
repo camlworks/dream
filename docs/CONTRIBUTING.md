@@ -2,13 +2,13 @@
 
 Contributions are very welcome. This includes not only code PRs, but also:
 
-- [Examples](https://github.com/aantron/dream/tree/master/example#readme)
-- [Docs fixes](https://aantron.github.io/dream/)
-- [Bug reports](https://github.com/aantron/dream/issues)
-- Links to [blogs](https://github.com/aantron/dream#example-repositories)
+- [Examples](https://github.com/camlworks/dream/tree/master/example#readme)
+- [Docs fixes](https://camlworks.github.io/dream/)
+- [Bug reports](https://github.com/camlworks/dream/issues)
+- Links to [blogs](https://github.com/camlworks/dream#example-repositories)
   &mdash; different people benefit from different presentations!
 - Links to projects that use Dream &mdash; to serve as large examples
-- Links to [libraries](https://github.com/aantron/dream#recommended-projects)
+- Links to [libraries](https://github.com/camlworks/dream#recommended-projects)
   to use with Dream
 - And more!
 
@@ -35,13 +35,9 @@ npx esy ls-builds
 If you'd like to contribute code, clone the repository with
 
 ```
-git clone https://github.com/aantron/dream.git --recursive
+git clone https://github.com/camlworks/dream.git
 cd dream
 ```
-
-Note: the clone *must* be `--recursive`, because Dream several dependencies
-vendored as
-[submodules](https://github.com/aantron/dream/tree/master/src/vendor).
 
 Later, you'll need to fork the repository on GitHub, and add your fork as a
 remote:
@@ -101,13 +97,6 @@ git push -u fork my-branch
 
 GitHub should print a URL into your terminal for opening a pull request.
 
-If you want to work again later, be sure to use `--recurse-submodules` during
-`git pull`, similar to `git clone --recursive`:
-
-```
-git pull --recurse-submodules
-```
-
 **Note:** Please don't force-push into a PR &mdash; it makes incremental review
 very difficult, and we will squash-merge most PRs anyway!
 
@@ -144,7 +133,7 @@ dependency.
 ## Docs
 
 To build the docs, go to
-[`docs/web/`](https://github.com/aantron/dream/tree/master/docs/web) and run
+[`docs/web/`](https://github.com/camlworks/dream/tree/master/docs/web) and run
 
 ```
 make deps

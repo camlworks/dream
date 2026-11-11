@@ -1,5 +1,5 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
@@ -23,6 +23,8 @@ val to_path : ?relative:bool -> ?international:bool -> string list -> string
 val drop_trailing_slash : string list -> string list
 val text_html : string
 val application_json : string
+
+val to_http_date : float -> string option
 
 val to_set_cookie :
   ?expires:float ->

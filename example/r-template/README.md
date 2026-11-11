@@ -2,7 +2,7 @@
 
 <br>
 
-Dream [*templates*](https://aantron.github.io/dream/#templates) interleave
+Dream [*templates*](https://camlworks.github.io/dream/#templates) interleave
 Reason and HTML, and offer some built-in
 [XSS protection](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html):
 
@@ -33,7 +33,7 @@ let () =
 <br>
 
 To use the templater, we need to add a stanza to our
-[`dune`](https://github.com/aantron/dream/blob/master/example/r-template/dune)
+[`dune`](https://github.com/camlworks/dream/blob/master/example/r-template/dune)
 file:
 
 <pre><code>(executable

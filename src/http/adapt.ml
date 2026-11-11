@@ -1,5 +1,5 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
@@ -74,7 +74,7 @@ let forward_body
     response
     (Httpun.Body.Writer.write_string body)
     (Httpun.Body.Writer.write_bigstring body)
-    (Httpun.Body.Writer.flush body)
+    (fun f -> Httpun.Body.Writer.flush body (fun _ -> f ()))
     (fun _code -> Httpun.Body.Writer.close body)
 
 let forward_body_h2
@@ -85,5 +85,5 @@ let forward_body_h2
     response
     (H2.Body.Writer.write_string body)
     (H2.Body.Writer.write_bigstring body)
-    (H2.Body.Writer.flush body)
+    (fun f -> H2.Body.Writer.flush body (fun _ -> f ()))
     (fun _code -> H2.Body.Writer.close body)

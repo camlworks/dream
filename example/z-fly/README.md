@@ -3,7 +3,7 @@
 <br>
 
 This example deploys a very simple Dream
-[application](https://github.com/aantron/dream/blob/master/example/z-fly/app.ml)
+[application](https://github.com/camlworks/dream/blob/master/example/z-fly/app.ml)
 to [Fly.io](https://www.fly.io/), a hosting platform that scales and smartly
 moves your servers closer to your users. A low-usage app can be hosted for
 [free](https://fly.io/docs/about/pricing/#free-tier). Fly.io offers
@@ -39,7 +39,7 @@ services:
 The setup can be run locally or on any server provider.
 
 The
-[`Dockerfile`](https://github.com/aantron/dream/blob/master/example/z-docker-esy/Dockerfile)
+[`Dockerfile`](https://github.com/camlworks/dream/blob/master/example/z-docker-esy/Dockerfile)
 has two stages: one for building our application, and one for the runtime that
 only contains the final binary and its run-time dependencies.
 

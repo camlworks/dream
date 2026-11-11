@@ -5,13 +5,12 @@
 (rule
  (targets dream__graphiql.ml)
  (deps
-  (:bundle index.bundle.html))
+  (:html index.html))
  (action
   (with-stdout-to
    %{targets}
    (progn
     (echo "let content = {html|")
-    (cat %{bundle})
+    (cat %{html})
     (echo "|html}")))))
 
-(data_only_dirs node_modules)

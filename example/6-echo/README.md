@@ -3,7 +3,7 @@
 <br>
 
 This example just echoes the bodies of `POST /echo` requests, after reading
-them with [`Dream.body`](https://aantron.github.io/dream/#val-body):
+them with [`Dream.body`](https://camlworks.github.io/dream/#val-body):
 
 ```ocaml
 let () =

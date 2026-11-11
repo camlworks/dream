@@ -29,10 +29,10 @@ let () =
 <br>
 
 As you can see, defining middlewares in Dream is completely trivial! They are
-[just functions](https://aantron.github.io/dream/#type-middleware) that take an
-`inner_handler` as a parameter, and wrap it. They act like handlers themselves,
-which means they usually also
-[take a `request`](https://aantron.github.io/dream/#type-handler).
+[just functions](https://camlworks.github.io/dream/#type-middleware) that take
+an `inner_handler` as a parameter, and wrap it. They act like handlers
+themselves, which means they usually also
+[take a `request`](https://camlworks.github.io/dream/#type-handler).
 
 This example's middleware only does something *before* calling the
 `inner_handler`. To do something *after*, we will need to await the response

@@ -44,13 +44,13 @@ events {
 ```
 
 The reference for
-[`nginx.conf`](https://github.com/aantron/dream/blob/master/example/w-nginx/nginx.conf)
+[`nginx.conf`](https://github.com/camlworks/dream/blob/master/example/w-nginx/nginx.conf)
 can be found [here](https://nginx.org/en/docs/). In particular, see
 [this page](http://nginx.org/en/docs/http/websocket.html) for information on
 WebSocket proxying.
 
 Our
-[`docker-compose.yml`](https://github.com/aantron/dream/blob/master/example/w-nginx/docker-compose.yml)
+[`docker-compose.yml`](https://github.com/camlworks/dream/blob/master/example/w-nginx/docker-compose.yml)
 just declares our two containers, connects them together, and makes the right
 files visible to nginx:
 
@@ -110,7 +110,7 @@ application at [`http://localhost:8080`](http://localhost:8080)!
 
 For debugging, you may sometimes want to bypass nginx and access the Dream app
 directly. To do so, add a `ports` directive to the `dream` container in
-[`docker-compose.yml`](https://github.com/aantron/dream/blob/master/example/w-nginx/docker-compose.yml):
+[`docker-compose.yml`](https://github.com/camlworks/dream/blob/master/example/w-nginx/docker-compose.yml):
 
 ```yml
   dream:

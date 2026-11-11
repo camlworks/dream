@@ -11,7 +11,7 @@ Run this example:
 ...and visit
 [http://localhost:8080/static/static.ml](http://localhost:8080/static/static.ml).
 You will see that it prints this example's [source
-code](https://github.com/aantron/dream/blob/master/example/f-static/static.ml)!
+code](https://github.com/camlworks/dream/blob/master/example/f-static/static.ml)!
 
 ```ocaml
 let () =
@@ -25,20 +25,20 @@ let () =
 <br>
 
 That is because the example uses
-[`Dream.static`](https://aantron.github.io/dream/#val-static) to serve this
+[`Dream.static`](https://camlworks.github.io/dream/#val-static) to serve this
 very directory at `/static`! Obviously, you shouldn't do this in a real app
 &mdash; serve a subdirectory instead.
 
 <br>
 
 The static route ends with `**`. This is a [subsite
-route](https://aantron.github.io/dream/#val-router). Generally, you should
-prefer [`Dream.scope`](https://aantron.github.io/dream/#val-scope) to `**`,
-because [`Dream.scope`](https://aantron.github.io/dream/#val-scope) will
+route](https://camlworks.github.io/dream/#val-router). Generally, you should
+prefer [`Dream.scope`](https://camlworks.github.io/dream/#val-scope) to `**`,
+because [`Dream.scope`](https://camlworks.github.io/dream/#val-scope) will
 support router introspection, if it is added in the future.
 
 However, `**` is exactly what it is needed for
-[`Dream.static`](https://aantron.github.io/dream/#val-static). Pure
+[`Dream.static`](https://camlworks.github.io/dream/#val-static). Pure
 introspection of a static subsite is impossible to begin with, because the
 available sub-routes depend on the actual files in the file system.
 
@@ -46,16 +46,16 @@ available sub-routes depend on the actual files in the file system.
 
 If you inspect the response headers for our request, you will see
 `Content-Type: text/x-ocaml`. That is because
-[`Dream.static`](https://aantron.github.io/dream/#val-static) uses
+[`Dream.static`](https://camlworks.github.io/dream/#val-static) uses
 [magic-mime](https://github.com/mirage/ocaml-magic-mime) to guess
 `Content-Type:` based on the extension.
 
 You can replace the file loading behavior of
-[`Dream.static`](https://aantron.github.io/dream/#val-static) by passing it a
+[`Dream.static`](https://camlworks.github.io/dream/#val-static) by passing it a
 `~loader` argument. One possibility is to use
 [crunch](https://github.com/mirage/ocaml-crunch) to compile a directory right
 into your Web app binary, and then serve that directory from memory with
-[`Dream.static`](https://aantron.github.io/dream/#val-static)! See example
+[`Dream.static`](https://camlworks.github.io/dream/#val-static)! See example
 [**`w-one-binary`**](../w-one-binary#folders-and-files).
 
 You can also use `~loader` to set arbitrary headers on the response.

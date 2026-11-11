@@ -11,14 +11,14 @@ imperatively. That means that template fragments evaluate to `unit`, and the
 surrounding OCaml code often needs semicolons. Templates also tend to use
 `List.iter` rather than `List.map`.
 
-The `%` and `<%`/`%>` syntax is documented [in the manual](https://aantron.github.io/dream/#templates).
+The `%` and `<%`/`%>` syntax is documented [in the manual](https://camlworks.github.io/dream/#templates).
 
 ```ocaml
 let render_home tasks =
   <html>
   <body>
 %   tasks |> List.iter begin fun (name, complete) ->
-      <p>Task <%s name %>:
+      <p>Task <a href="/<%s name %>"><%s name %></a>:
 %       if complete then begin
           complete!
 %       end

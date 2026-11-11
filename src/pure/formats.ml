@@ -1,5 +1,5 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
@@ -48,45 +48,56 @@ let from_cookie s =
    specially. This might not be important, however, if user agents treat cookies
    as opaque, because then only Dream has to deal with its own cookies. *)
 
+(* HTTP-date in IMF-fixdate form, e.g. [Sun, 06 Nov 1994 08:49:37 GMT]. This is
+   the format of [Expires] in [Set-Cookie:] (RFC 6265 §4.1.1) and of HTTP header
+   dates such as [Last-Modified:] (RFC 9110 §5.6.7). Returns [None] if [seconds]
+   is not representable as a date. *)
+let to_http_date seconds =
+  match Ptime.of_float_s seconds with
+  | None -> None
+  | Some time ->
+    let weekday =
+      match Ptime.weekday time with
+      | `Sun -> "Sun" | `Mon -> "Mon" | `Tue -> "Tue" | `Wed -> "Wed"
+      | `Thu -> "Thu" | `Fri -> "Fri" | `Sat -> "Sat"
+    in
+    let ((y, m, d), ((hh, mm, ss), _tz_offset_s)) = Ptime.to_date_time time in
+    let month =
+      match m with
+      | 1 -> "Jan" | 2 -> "Feb" | 3 -> "Mar" | 4 -> "Apr" | 5 -> "May"
+      | 6 -> "Jun" | 7 -> "Jul" | 8 -> "Aug" | 9 -> "Sep" | 10 -> "Oct"
+      | 11 -> "Nov" | 12 -> "Dec"
+      | _ -> assert false
+    in
+    (* [Ptime.to_date_time] docs give range 0..60 for [ss], accounting for
+       leap seconds. However, RFC 6265 §5.1.1 states:
+
+       5.  Abort these steps and fail to parse the cookie-date if:
+
+         *  the second-value is greater than 59.
+
+         (Note that leap seconds cannot be represented in this syntax.)
+
+       See https://tools.ietf.org/html/rfc6265#section-5.1.1.
+
+       Even though [Ptime.to_date_time] time does not return leap seconds, in
+       case I misunderstood the gmtime API, of system differences, or future
+       refactoring, make sure no leap seconds creep into the output. *)
+    let seconds =
+      if ss < 60 then ss else 59 [@coverage off]
+    in
+    Some (Printf.sprintf "%s, %02i %s %i %02i:%02i:%02i GMT"
+      weekday d month y hh mm seconds)
+
+
+
 let to_set_cookie
     ?expires ?max_age ?domain ?path ?secure ?http_only ?same_site name value =
 
   let expires =
-    match Option.bind expires Ptime.of_float_s with
+    match Option.bind expires to_http_date with
     | None -> ""
-    | Some time ->
-      let weekday =
-        match Ptime.weekday time with
-        | `Sun -> "Sun" | `Mon -> "Mon" | `Tue -> "Tue" | `Wed -> "Wed"
-        | `Thu -> "Thu" | `Fri -> "Fri" | `Sat -> "Sat"
-      in
-      let ((y, m, d), ((hh, mm, ss), _tz_offset_s)) = Ptime.to_date_time time in
-      let month =
-        match m with
-        | 1 -> "Jan" | 2 -> "Feb" | 3 -> "Mar" | 4 -> "Apr" | 5 -> "May"
-        | 6 -> "Jun" | 7 -> "Jul" | 8 -> "Aug" | 9 -> "Sep" | 10 -> "Oct"
-        | 11 -> "Nov" | 12 -> "Dec"
-        | _ -> assert false
-      in
-      (* [Ptime.to_date_time] docs give range 0..60 for [ss], accounting for
-         leap seconds. However, RFC 6265 §5.1.1 states:
-
-         5.  Abort these steps and fail to parse the cookie-date if:
-
-           *  the second-value is greater than 59.
-
-           (Note that leap seconds cannot be represented in this syntax.)
-
-         See https://tools.ietf.org/html/rfc6265#section-5.1.1.
-
-         Even though [Ptime.to_date_time] time does not return leap seconds, in
-         case I misunderstood the gmtime API, of system differences, or future
-         refactoring, make sure no leap seconds creep into the output. *)
-      let seconds =
-        if ss < 60 then ss else 59 [@coverage off]
-      in
-      Printf.sprintf "; Expires=%s, %02i %s %i %02i:%02i:%02i GMT"
-        weekday d month y hh mm seconds
+    | Some date -> "; Expires=" ^ date
   in
 
   let max_age =
@@ -165,14 +176,52 @@ let from_form_urlencoded string =
 
 
 
-let split_target string =
-  let uri = Uri.of_string string in
-  let query =
-    match Uri.verbatim_query uri with
-    | Some query -> query
-    | None -> ""
+let split_origin_form string =
+  (* [string] is an origin-form target (RFC 9112 §3.2.1): an absolute path,
+     optionally followed by a query, and with no authority. Drop the fragment
+     (everything from the first '#'), then split the path and query at the first
+     '?'. The path is decoded per segment, reproducing [Uri.path] without running
+     the whole target through [Uri.of_string], which misreads a leading "//" as
+     introducing a host (issue #248) and so drops path components. Decoding per
+     pre-split segment also preserves a standalone "%2F" segment, which
+     [Uri.path] would otherwise collapse to a bare '/'. *)
+  let string =
+    match String.index_opt string '#' with
+    | Some i -> String.sub string 0 i
+    | None -> string
   in
-  Uri.path uri, query
+  let path, query =
+    match String.index_opt string '?' with
+    | Some i ->
+      String.sub string 0 i,
+      String.sub string (i + 1) (String.length string - i - 1)
+    | None -> string, ""
+  in
+  let path =
+    String.split_on_char '/' path
+    |> List.map (fun segment ->
+      Uri.pct_encode ~component:`Path (Uri.pct_decode segment))
+    |> String.concat "/"
+  in
+  path, query
+
+let split_target string =
+  (* Only origin-form targets (the common case) begin with '/', and they are the
+     only form affected by the leading-"//" bug (issue #248), so handle them
+     directly. Absolute-form (proxied requests, e.g. "http://host/path"),
+     authority-form, and asterisk-form legitimately carry an authority or are not
+     a path at all; defer those to [Uri.of_string], which parses the authority
+     correctly. *)
+  if String.length string > 0 && string.[0] = '/' then
+    split_origin_form string
+  else
+    let uri = Uri.of_string string in
+    let query =
+      match Uri.verbatim_query uri with
+      | Some query -> query
+      | None -> ""
+    in
+    Uri.path uri, query
 
 let from_path =
   (* Not tail-recursive. *)

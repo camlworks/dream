@@ -5,7 +5,7 @@
 This example splits the code of the basic template example,
 [**`7-template`**](../7-template#folders-and-files), into two files. The first is the
 template, in
-[`template.eml.html`](https://github.com/aantron/dream/blob/master/example/w-template-files/template.eml.html).
+[`template.eml.html`](https://github.com/camlworks/dream/blob/master/example/w-template-files/template.eml.html).
 We use the `.html` extension because it is mostly HTML, and to prevent
 `ocamlformat` from trying to format the file:
 
@@ -21,7 +21,7 @@ let render param =
 After preprocessing by the templater, this file becomes `template.ml`, so it
 defines a module `Template`, containing a function `Template.render`. We call
 this function from the main server module in
-[`server.ml`](https://github.com/aantron/dream/blob/master/example/w-template-files/server.ml):
+[`server.ml`](https://github.com/camlworks/dream/blob/master/example/w-template-files/server.ml):
 
 ```ocaml
 let () =
@@ -47,9 +47,9 @@ let () =
 **See also:**
 
 - [**`7-template`**](../7-template#folders-and-files) for comments on the [`dune`
-  file](https://github.com/aantron/dream/blob/master/example/w-template-files/dune)
+  file](https://github.com/camlworks/dream/blob/master/example/w-template-files/dune)
   and [security
-  information](https://github.com/aantron/dream/tree/master/example/7-template#security).
+  information](https://github.com/camlworks/dream/tree/master/example/7-template#security).
 - [**`r-template-files`**](../r-template-files) for the Reason syntax version of
   this example.
 

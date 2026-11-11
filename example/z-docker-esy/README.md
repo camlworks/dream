@@ -36,7 +36,7 @@ The setup can be run locally or on any server provider. We will use a [Digital
 Ocean](https://digitalocean.com) "droplet" (virtual machine). The server binary is built by Docker.
 
 The
-[`Dockerfile`](https://github.com/aantron/dream/blob/master/example/z-docker-esy/Dockerfile)
+[`Dockerfile`](https://github.com/camlworks/dream/blob/master/example/z-docker-esy/Dockerfile)
 has two stages: one for building our application, and one for the runtime that
 only contains the final binary and its run-time dependencies.
 
@@ -115,7 +115,7 @@ $ exit
 
 To deploy to the droplet, we send the sources over, and trigger the commands
 in
-[`deploy.sh`](https://github.com/aantron/dream/blob/master/example/z-docker-esy/deploy.sh)
+[`deploy.sh`](https://github.com/camlworks/dream/blob/master/example/z-docker-esy/deploy.sh)
 remotely:
 
 ```
@@ -123,7 +123,7 @@ $ rsync -rlv . build@my-droplet:app --exclude _esy --exclude node_modules
 $ ssh build@my-droplet "cd app && bash deploy.sh"
 ```
 
-[`deploy.sh`](https://github.com/aantron/dream/blob/master/example/z-docker-esy/deploy.sh)
+[`deploy.sh`](https://github.com/camlworks/dream/blob/master/example/z-docker-esy/deploy.sh)
 looks like this:
 
 ```bash

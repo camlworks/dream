@@ -40,7 +40,8 @@ let () =
 ```
 
 To get this working, we have to add `ppx_yojson_conv` to our
-[`dune`](https://github.com/aantron/dream/blob/master/example/e-json/dune) file:
+[`dune`](https://github.com/camlworks/dream/blob/master/example/e-json/dune)
+file:
 
 <pre><code>(executable
  (name json)
@@ -49,7 +50,7 @@ To get this working, we have to add `ppx_yojson_conv` to our
 </code></pre>
 
 and to
-[`json.opam`](https://github.com/aantron/dream/blob/master/example/e-json/e-json.opam):
+[`json.opam`](https://github.com/camlworks/dream/blob/master/example/e-json/e-json.opam):
 
 <pre><code>depends: [
   "ocaml" {>= "4.08.0"}
@@ -92,13 +93,13 @@ Content-Type: application/json
 
 ## Security
 
-[`Dream.origin_referrer_check`](https://aantron.github.io/dream/#val-origin_referrer_check)
+[`Dream.origin_referrer_check`](https://camlworks.github.io/dream/#val-origin_referrer_check)
 implements the
 [OWASP Verifying Origin With Standard Headers](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#verifying-origin-with-standard-headers)
 CSRF protection technique. It doesn't protect `GET` requests, so they shouldn't
 do mutations. It also isn't good enough for cross-origin usage in its current
 form. But it is enough to do AJAX in small and medium Web apps without the need
-for [generating tokens](https://aantron.github.io/dream/#csrf-tokens).
+for [generating tokens](https://camlworks.github.io/dream/#csrf-tokens).
 
 This technique relies on that the browser will send matching `Origin:` (or
 `Referer:`) and `Host:` headers to the Web app for a genuine request, while,

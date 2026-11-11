@@ -1,5 +1,5 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
-   for details, or visit https://github.com/aantron/dream.
+   for details, or visit https://github.com/camlworks/dream.
 
    Copyright 2021 Anton Bachin *)
 
@@ -33,9 +33,13 @@ val param : Message.request -> string -> string
 
 (* Variables used by the router. *)
 val path : Message.request -> string list
-val prefix : Message.request -> string
+val site_prefix : Message.request -> string
+val wildcard_prefix : Message.request -> string
+val wildcard_prefix_path : Message.request -> string list
+val full_prefix : Message.request -> string
+
 val set_path : Message.request -> string list -> unit
-val set_prefix : Message.request -> string list -> unit
+val set_site_prefix : Message.request -> string list -> unit
 
 (**/**)
 

@@ -2,7 +2,7 @@
 
 <br>
 
-A [*router*](https://aantron.github.io/dream/#routing) sends requests to
+A [*router*](https://camlworks.github.io/dream/#routing) sends requests to
 different handlers, depending on their method and path. In this example, we
 still serve `Good morning, world!` at our site root, `/`. But, we have a
 different response for `GET` requests to `/echo/*`, and we respond to
@@ -35,7 +35,7 @@ This is also our first dynamic site! A request to `/echo/foo` gets the response
 `foo`, and a request to `/echo/bar` gets `bar`!
 
 The syntax `:word` in a route creates a path parameter, which can be read with
-[`Dream.param`](https://aantron.github.io/dream/#val-param).
+[`Dream.param`](https://camlworks.github.io/dream/#val-param).
 
 <!-- TODO hyperlink Dream.param to docsc, also Dream.logger. -->
 

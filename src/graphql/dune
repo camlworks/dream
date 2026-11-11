@@ -8,7 +8,7 @@
   graphql_parser
   graphql-lwt
   lwt
-  str
+  stringext
   yojson
  )
  (preprocess (pps lwt_ppx))
