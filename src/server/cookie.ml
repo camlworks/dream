@@ -3,13 +3,9 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 module Cipher = Dream__cipher.Cipher
 module Formats = Dream_pure.Formats
 module Message = Dream_pure.Message
-
-
 
 (* TODO LATER Optimize by caching the parsed cookies in a local key. *)
 (* TODO LATER Can decide whether to accept multiple Cookie: headers based on
@@ -27,13 +23,13 @@ let all_cookies request =
   |> List.flatten
 
 let infer_cookie_prefix prefix domain path secure =
-  match prefix, domain, path, secure with
-    | Some (Some `Host), _, _, _ -> "__Host-"
-    | Some (Some `Secure), _, _, _ -> "__Secure-"
-    | Some None, _, _, _ -> ""
-    | None, None, Some "/", true -> "__Host-"
-    | None, _, _, true -> "__Secure-"
-    | None, _, _, _ -> ""
+  match (prefix, domain, path, secure) with
+  | Some (Some `Host), _, _, _ -> "__Host-"
+  | Some (Some `Secure), _, _, _ -> "__Secure-"
+  | Some None, _, _, _ -> ""
+  | None, None, Some "/", true -> "__Host-"
+  | None, _, _, true -> "__Secure-"
+  | None, _, _, _ -> ""
 
 (* TODO Some actual performance in the implementation. *)
 let cookie
@@ -44,7 +40,6 @@ let cookie
     ?secure
     request
     name =
-
   let path =
     match path with
     | Some path -> path
@@ -63,15 +58,16 @@ let cookie
 
   match all_cookies request |> List.find_opt test with
   | None -> None
-  | Some (_, value) ->
+  | Some (_, value) -> (
     if not decrypt_cookie then
       Some value
     else
-      match Formats.from_base64url value with
-      | None ->
-        None
+      match
+        Formats.from_base64url value
+      with
+      | None -> None
       | Some value ->
-        Cipher.decrypt request value ~associated_data:("dream.cookie-" ^ name)
+        Cipher.decrypt request value ~associated_data:("dream.cookie-" ^ name))
 
 let set_cookie
     ?prefix:cookie_prefix
@@ -87,7 +83,6 @@ let set_cookie
     request
     name
     value =
-
   let path =
     match path with
     | Some path -> path
@@ -125,14 +120,13 @@ let set_cookie
   in
 
   let set_cookie =
-    Formats.to_set_cookie
-      ?expires ?max_age ?domain ?path ~secure ~http_only ?same_site name value
+    Formats.to_set_cookie ?expires ?max_age ?domain ?path ~secure ~http_only
+      ?same_site name value
   in
 
   Message.add_header response "Set-Cookie" set_cookie
 
 let drop_cookie
     ?prefix ?domain ?path ?secure ?http_only ?same_site response request name =
-  set_cookie
-    ?prefix ~encrypt:false ~expires:0. ?domain ?path ?secure ?http_only
+  set_cookie ?prefix ~encrypt:false ~expires:0. ?domain ?path ?secure ?http_only
     ?same_site response request name ""

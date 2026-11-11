@@ -3,21 +3,14 @@
 
    Copyright 2021-2023 Thibaut Mattio, Anton Bachin *)
 
-
-
 module Message = Dream_pure.Message
 
+let route = "/_livereload"
 
+let retry_interval_ms = 500
 
-let route =
-  "/_livereload"
-
-let retry_interval_ms =
-  500
-
-
-
-let script = Printf.sprintf
+let script =
+  Printf.sprintf
     {js|
 var socketUrl = "ws://" + location.host + "%s";
 var s = new WebSocket(socketUrl);
@@ -52,17 +45,13 @@ s.onerror = function(event) {
 |js}
     route retry_interval_ms
 
-
-
 let livereload next_handler request =
-
   match Message.target request with
   | target when target = route ->
     Helpers.websocket @@ fun socket ->
     let%lwt _ = Helpers.receive socket in
     Message.close_websocket socket
-
-  | _ ->
+  | _ -> (
     let%lwt response = next_handler request in
     match Message.header response "Content-Type" with
     | Some ("text/html" | "text/html; charset=utf-8") ->
@@ -74,15 +63,11 @@ let livereload next_handler request =
         |> Soup.from_signals
       in
       begin match Soup.Infix.(soup $? "head") with
-      | None ->
-        Lwt.return response
+      | None -> Lwt.return response
       | Some head ->
         Soup.create_element "script" ~inner_text:script
         |> Soup.append_child head;
-        soup
-        |> Soup.to_string
-        |> Message.set_body response;
+        soup |> Soup.to_string |> Message.set_body response;
         Lwt.return response
       end
-
-    | _ -> Lwt.return response
+    | _ -> Lwt.return response)

@@ -3,7 +3,4 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
-let require : unit =
-  Dream.initialize_log ~enable:false ()
+let require : unit = Dream.initialize_log ~enable:false ()

@@ -3,10 +3,7 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
-let encode string =
-  Printf.printf "%S\n" (Dream.to_base64url string)
+let encode string = Printf.printf "%S\n" (Dream.to_base64url string)
 
 let%expect_test _ =
   encode "a";
@@ -17,7 +14,8 @@ let%expect_test _ =
   encode "abcdef";
   encode "abcde";
   encode "";
-  [%expect {|
+  [%expect
+    {|
     "YQ"
     "Yg"
     "_w"

@@ -3,11 +3,7 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 (* Note: this is not a stable API! *)
-
-
 
 val html_escape : string -> string
 val to_base64url : string -> string
@@ -33,5 +29,7 @@ val to_set_cookie :
   ?path:string ->
   ?secure:bool ->
   ?http_only:bool ->
-  ?same_site:[ `Strict | `Lax | `None ] ->
-    string -> string -> string
+  ?same_site:[`Strict | `Lax | `None] ->
+  string ->
+  string ->
+  string

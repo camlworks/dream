@@ -3,15 +3,14 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 let show ?syntax ?(format = Fun.id) input =
   Eml.Location.reset ();
 
   let underlying = Stream.of_string input in
-  let input_stream = Eml.Location.stream (fun () ->
-    try Some (Stream.next underlying)
-    with _ -> None) in
+  let input_stream =
+    Eml.Location.stream (fun () ->
+        try Some (Stream.next underlying) with _ -> None)
+  in
 
   try
     input_stream
@@ -19,13 +18,9 @@ let show ?syntax ?(format = Fun.id) input =
     |> List.map Eml.Token.show
     |> List.map format
     |> List.iter print_endline
-  with Failure message ->
-    print_endline message
+  with Failure message -> print_endline message
 
-let escape_tabs text =
-  text
-  |> String.split_on_char '\t'
-  |> String.concat "\\t"
+let escape_tabs text = text |> String.split_on_char '\t' |> String.concat "\\t"
 
 let%expect_test _ =
   show "";
@@ -52,7 +47,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n< bar";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -61,7 +57,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n < bar";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -70,7 +67,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  < bar";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -79,7 +77,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n   < bar";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -88,7 +87,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <html>\n  </html>";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -99,7 +99,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show ~format:escape_tabs "let foo =\n\t<html>\n\t</html>";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -110,7 +111,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <html>\n  plain";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -121,7 +123,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <html>\n  </html>\nlet bar = ()\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -135,7 +138,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <% a %>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -147,7 +151,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <% a % %>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -159,7 +164,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <% a %%>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -171,7 +177,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <%= a %>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -183,7 +190,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <% a\nb %>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -196,7 +204,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <%";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -207,7 +216,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <%\na %>";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -219,7 +229,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <% \n a";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -231,7 +242,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <html>\n\na";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -245,7 +257,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n% abc";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -253,7 +266,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n% abc\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -261,7 +275,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n% abc\n% def";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -271,7 +286,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo =\n  <html>\n% abc\n  </html>";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -291,7 +307,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo=\n  <html>\n % bar";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo=
 
@@ -303,7 +320,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo\n  <html>\n\n% bar";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo
 
@@ -316,7 +334,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo\n  <html>\n \n% bar";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo
 
@@ -329,7 +348,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo = \n  <html>\nbar";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo =
 
@@ -341,7 +361,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo\n %% a = b\n bar";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo
 
@@ -350,7 +371,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo\n %% a = b\n bar\n %%\n baz";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let foo
 
@@ -362,7 +384,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let foo\n %% a = b\n %%";
-  [%expect {|
+  [%expect
+    {|
     (1, 0) Code_block
     let foo
 
@@ -385,7 +408,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "(* a\n  <p>b</p>\n*)\nlet c = ()\n  <p>d</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     (* a
       <p>b</p>
@@ -398,7 +422,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "(* a (* b\n  <p>c</p>\n*)\n  <p>d</p>\n*)\n  <p>e</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     (* a (* b
       <p>c</p>
@@ -420,7 +445,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let a\n(*\n%% b\n  <p>c</p>\n*)\n";
-  [%expect {|
+  [%expect
+    {|
     (1, 0) Code_block
     let a
     (*
@@ -430,7 +456,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "(* a *) let b = ()\n  <p>c</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     (* a *) let b = ()
 
@@ -443,7 +470,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let a = \"(*\"\n  <p>b</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let a = "(*"
 
@@ -453,7 +481,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let a = '\"'\n  <p>b</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let a = '"'
 
@@ -463,7 +492,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let a = {|(*|}\n  <p>b</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let a = {|(*|}
 
@@ -473,7 +503,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "type 'a t = 'a list\n  <p>b</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     type 'a t = 'a list
 
@@ -485,7 +516,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let a = (\n* b\n  <p>c</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let a = (
     * b
@@ -499,7 +531,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let a = {%html|(*|}\n  <p>b</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let a = {%html|(*|}
 
@@ -509,7 +542,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let a = {%sql foo|(*|foo}\n  <p>b</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let a = {%sql foo|(*|foo}
 
@@ -519,7 +553,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "(* {%html|*)|}\n  <p>c</p>\n*)\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     (* {%html|*)|}
       <p>c</p>
@@ -530,7 +565,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let _ = x'\"'(* \"\n  <p>Hi</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let _ = x'"'(* "
 
@@ -554,7 +590,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "(* {|*)|} a\n  <p>b</p>\n*)\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     (* {|*)|} a
       <p>b</p>
@@ -573,7 +610,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show ~syntax:`Reason "let a = f((*), b)\n  <p>c</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let a = f((*), b)
 
@@ -586,7 +624,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let icon = {%html|\n  <svg></svg>\n|}\n  <p>b</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let icon = {%html|
       <svg></svg>
@@ -598,7 +637,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let s = {|\n  <p>a</p>\n|}\nlet t = ()\n  <p>b</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let s = {|
       <p>a</p>
@@ -611,7 +651,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let s = \"\n  <p>a</p>\n\"\n  <p>b</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let s = "
       <p>a</p>
@@ -626,7 +667,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   show "let a = b {%|c\n  <p>d</p>\n";
-  [%expect {xxx|
+  [%expect
+    {xxx|
     (1, 0) Code_block
     let a = b {%|c
 

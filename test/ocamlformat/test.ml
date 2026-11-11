@@ -5,11 +5,12 @@ type t = {
   c : string;
 }
 
-let t = {
-  a = "a_pretty_long_string_to_force_separate_line";
-  b = "a_pretty_long_string_to_force_separate_line";
-  c = "a_pretty_long_string_to_force_separate_line";
-}
+let t =
+  {
+    a = "a_pretty_long_string_to_force_separate_line";
+    b = "a_pretty_long_string_to_force_separate_line";
+    c = "a_pretty_long_string_to_force_separate_line";
+  }
 
 type t =
   | A of int
@@ -18,23 +19,19 @@ type t =
 
 (* Failure: the bracket is set on the first line rather than having unifrom
    lines. *)
-type t = [
-  | `A of int
+type t =
+  [ `A of int
   | `B of string
-  | `C of unit
-]
+  | `C of unit ]
 
-let list = [
-  a;
-  b;
-  c;
-]
+let list = [a; b; c]
 
-let list = [
-  a_very_long_identifier_or_expression_one;
-  a_very_long_identifier_or_expression_two;
-  a_very_long_identifier_or_expression_three;
-]
+let list =
+  [
+    a_very_long_identifier_or_expression_one;
+    a_very_long_identifier_or_expression_two;
+    a_very_long_identifier_or_expression_three;
+  ]
 
 let bool =
   match true with

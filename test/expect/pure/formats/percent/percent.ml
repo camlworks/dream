@@ -3,8 +3,6 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 let encode ?international s =
   Printf.printf "%S\n" (Dream.to_percent_encoded ?international s)
 
@@ -17,8 +15,7 @@ let%expect_test _ =
     "a%2F%20\206\187"
     "a%2F%20%CE%BB" |}]
 
-let decode s =
-  Printf.printf "%S\n" (Dream.from_percent_encoded s)
+let decode s = Printf.printf "%S\n" (Dream.from_percent_encoded s)
 
 let%expect_test _ =
   decode "";
@@ -30,7 +27,8 @@ let%expect_test _ =
   decode "%zz";
   decode "%1A";
   decode "λ%CE%BB";
-  [%expect {|
+  [%expect
+    {|
     ""
     "%"
     "%2"

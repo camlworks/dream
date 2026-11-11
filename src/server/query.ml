@@ -3,15 +3,11 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 (* TODO Long-term, query string handler is likely to become part of the
    router. *)
 
 module Formats = Dream_pure.Formats
 module Message = Dream_pure.Message
-
-
 
 (* TODO Actually cache the result of parsing the query string. *)
 (* let query_variable : (string * string) list Dream.local =
@@ -28,15 +24,15 @@ let all_queries request =
   |> snd
   |> Formats.from_form_urlencoded
 
-let query request name =
-  List.assoc_opt name (all_queries request)
+let query request name = List.assoc_opt name (all_queries request)
 
 let queries request name =
   all_queries request
-  |> List.fold_left (fun accumulator (name', value) ->
-    if name' = name then
-      value::accumulator
-    else
-      accumulator)
-    []
+  |> List.fold_left
+       (fun accumulator (name', value) ->
+         if name' = name then
+           value :: accumulator
+         else
+           accumulator)
+       []
   |> List.rev

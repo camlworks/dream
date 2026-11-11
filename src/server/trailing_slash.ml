@@ -33,9 +33,11 @@ let redirect_to_canonical ?status request canonical_path =
   in
   Helpers.redirect ~status request location
 
-let trailing_slash ?status
+let trailing_slash
+    ?status
     (policy : [< `Strict | `Drop | `Append | `Redirect_drop | `Redirect_append])
-    next_handler request =
+    next_handler
+    request =
   let path = Router.path request in
   if Message.target request = "*" || path = [] || path = [""] then
     (* The asterisk-form target is not a path. Check the target rather than

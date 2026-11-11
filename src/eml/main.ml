@@ -3,56 +3,47 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
-module Command_line :
-sig
-  val parse : unit -> (string * string * [ `OCaml | `Reason ] * bool * int * int) list
-end =
-struct
+module Command_line : sig
+  val parse :
+    unit -> (string * string * [`OCaml | `Reason] * bool * int * int) list
+end = struct
   let usage = {|Usage:
 
   eml FILE
 |}
 
-  let input_files =
-    ref []
+  let input_files = ref []
 
-  let workspace_path =
-    ref ""
+  let workspace_path = ref ""
 
-  let emit_reason =
-    ref false
+  let emit_reason = ref false
 
-  let std_out =
-    ref false
+  let std_out = ref false
 
-  let buffer_size =
-    ref 4096
+  let buffer_size = ref 4096
 
-  let pool_size =
-    ref 1
+  let pool_size = ref 1
 
-  let options = Arg.align [
-    "--workspace",
-    Arg.Set_string workspace_path,
-    "PATH Relative path to the Dune workspace for better locations";
-    "--emit-reason",
-    Arg.Set emit_reason,
-    " Emit Reason syntax after preprocessing the template";
-    "--stdout",
-    Arg.Set std_out,
-    " Print to STDOUT";
-    "--buffer-size",
-    Arg.Set_int buffer_size,
-    " Size of buffers for generated templates in bytes. 4096 by default";
-    "--pool-size",
-    Arg.Set_int pool_size,
-    " Amount of precreated buffers. 1 by default"
-  ]
+  let options =
+    Arg.align
+      [
+        ( "--workspace",
+          Arg.Set_string workspace_path,
+          "PATH Relative path to the Dune workspace for better locations" );
+        ( "--emit-reason",
+          Arg.Set emit_reason,
+          " Emit Reason syntax after preprocessing the template" );
+        ("--stdout", Arg.Set std_out, " Print to STDOUT");
+        ( "--buffer-size",
+          Arg.Set_int buffer_size,
+          " Size of buffers for generated templates in bytes. 4096 by default"
+        );
+        ( "--pool-size",
+          Arg.Set_int pool_size,
+          " Amount of precreated buffers. 1 by default" );
+      ]
 
-  let set_file file =
-    input_files := file::!input_files
+  let set_file file = input_files := file :: !input_files
 
   let parse () =
     Arg.parse options set_file usage;
@@ -71,8 +62,7 @@ struct
           (Filename.dirname location)
           (Filename.concat directory prefix)
           (Filename.dirname path)
-      | "" | "." ->
-        prefix
+      | "" | "." -> prefix
       | s ->
         prerr_endline s;
         Printf.ksprintf failwith
@@ -83,15 +73,23 @@ struct
 
     input_files
     |> List.map (fun file ->
-      let syntax = if !emit_reason then `Reason else
-        (* If there was no explicit command line argument, decide using file extension *)
-        match Filename.extension file with
-        | ".re" -> `Reason
-        | _ -> `OCaml
-      in
-      file, Filename.concat prefix file, syntax, !std_out, !buffer_size, !pool_size)
+        let syntax =
+          if !emit_reason then
+            `Reason
+          else
+            (* If there was no explicit command line argument, decide using file extension *)
+              match
+                Filename.extension file
+              with
+            | ".re" -> `Reason
+            | _ -> `OCaml
+        in
+        ( file,
+          Filename.concat prefix file,
+          syntax,
+          !std_out,
+          !buffer_size,
+          !pool_size ))
 end
 
-let () =
-  Command_line.parse ()
-  |> List.iter Eml.process_file
+let () = Command_line.parse () |> List.iter Eml.process_file

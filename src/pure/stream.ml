@@ -3,13 +3,10 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 type buffer =
   (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
 
-type 'a promise =
-  'a Lwt.t
+type 'a promise = 'a Lwt.t
 
 type read =
   data:(buffer -> int -> int -> bool -> bool -> unit) ->
@@ -18,13 +15,9 @@ type read =
   pong:(buffer -> int -> int -> unit) ->
   close:(int -> unit) ->
   exn:(exn -> unit) ->
-    unit
+  unit
 
-type write =
-  close:(int -> unit) ->
-  exn:(exn -> unit) ->
-  (unit -> unit) ->
-    unit
+type write = close:(int -> unit) -> exn:(exn -> unit) -> (unit -> unit) -> unit
 
 type reader = {
   read : read;
@@ -46,59 +39,44 @@ type stream = {
   writer : writer;
 }
 
-let stream reader writer =
-  {reader; writer}
+let stream reader writer = {reader; writer}
 
-let no_reader = {
-  read =
-    (fun ~data:_ ~flush:_ ~ping:_ ~pong:_ ~close:_ ~exn:_ ->
-      raise (Failure "read from a non-readable stream"));
-  close =
-    ignore;
-  abort =
-    ignore;
-}
+let no_reader =
+  {
+    read =
+      (fun ~data:_ ~flush:_ ~ping:_ ~pong:_ ~close:_ ~exn:_ ->
+        raise (Failure "read from a non-readable stream"));
+    close = ignore;
+    abort = ignore;
+  }
 
-let no_writer = {
-  data =
-    (fun _buffer _offset _length _binary _fin ~close:_ ~exn:_ _ok ->
-      raise (Failure "write to a read-only stream"));
-  flush =
-    (fun ~close:_ ~exn:_ _ok ->
-      raise (Failure "flush of a read-only stream"));
-  ping =
-    (fun _buffer _offset _length ~close:_ ~exn:_ _ok ->
-      raise (Failure "ping on a read-only stream"));
-  pong =
-    (fun _buffer _offset _length ~close:_ ~exn:_ _ok ->
-      raise (Failure "pong on a read-only stream"));
-  close =
-    ignore;
-  abort =
-    ignore;
-}
+let no_writer =
+  {
+    data =
+      (fun _buffer _offset _length _binary _fin ~close:_ ~exn:_ _ok ->
+        raise (Failure "write to a read-only stream"));
+    flush =
+      (fun ~close:_ ~exn:_ _ok -> raise (Failure "flush of a read-only stream"));
+    ping =
+      (fun _buffer _offset _length ~close:_ ~exn:_ _ok ->
+        raise (Failure "ping on a read-only stream"));
+    pong =
+      (fun _buffer _offset _length ~close:_ ~exn:_ _ok ->
+        raise (Failure "pong on a read-only stream"));
+    close = ignore;
+    abort = ignore;
+  }
 
-let reader ~read ~close ~abort = {
-  read;
-  close;
-  abort;
-}
+let reader ~read ~close ~abort = {read; close; abort}
 
-let null = {
-  reader = no_reader;
-  writer = no_writer;
-}
+let null = {reader = no_reader; writer = no_writer}
 
 let empty_reader =
   reader
     ~read:(fun ~data:_ ~flush:_ ~ping:_ ~pong:_ ~close ~exn:_ -> close 1000)
-    ~close:ignore
-    ~abort:ignore
+    ~close:ignore ~abort:ignore
 
-let empty = {
-  reader = empty_reader;
-  writer = no_writer;
-}
+let empty = {reader = empty_reader; writer = no_writer}
 
 (* TODO This shows the awkwardness in string-to-string body reading. *)
 let string_reader the_string =
@@ -109,9 +87,8 @@ let string_reader the_string =
 
   let read ~data ~flush:_ ~ping:_ ~pong:_ ~close ~exn =
     match !exn_ref with
-    | Some the_exn ->
-      exn the_exn
-    | None ->
+    | Some the_exn -> exn the_exn
+    | None -> (
       match !string_ref with
       | Some stored_string ->
         string_ref := None;
@@ -119,13 +96,10 @@ let string_reader the_string =
         data
           (Bigstringaf.of_string ~off:0 ~len:length stored_string)
           0 length true true
-      | None ->
-        close 1000
+      | None -> close 1000)
   in
 
-  let close _code =
-    string_ref := None
-  in
+  let close _code = string_ref := None in
 
   let abort exn =
     string_ref := None;
@@ -138,10 +112,7 @@ let string the_string =
   if String.length the_string = 0 then
     empty
   else
-    {
-      reader = string_reader the_string;
-      writer = no_writer;
-    }
+    {reader = string_reader the_string; writer = no_writer}
 
 let read stream ~data ~flush ~ping ~pong ~close ~exn =
   stream.reader.read ~data ~flush ~ping ~pong ~close ~exn
@@ -157,8 +128,7 @@ let abort stream exn =
 let write stream buffer offset length binary fin ~close ~exn ok =
   stream.writer.data buffer offset length binary fin ~close ~exn ok
 
-let flush stream ~close ~exn ok =
-  stream.writer.flush ~close ~exn ok
+let flush stream ~close ~exn ok = stream.writer.flush ~close ~exn ok
 
 let ping stream buffer offset length ~close ~exn ok =
   stream.writer.ping buffer offset length ~close ~exn ok
@@ -170,20 +140,13 @@ let pong stream buffer offset length ~close ~exn ok =
    is already queued, and add tests for this. This should be done after ping
    and pong get their separate queues. *)
 type pipe = {
-  mutable state : [
-    | `Idle
-    | `Reader_waiting
-    | `Closed of int
-    | `Aborted of exn
-  ];
-
+  mutable state : [`Idle | `Reader_waiting | `Closed of int | `Aborted of exn];
   mutable read_data_callback : buffer -> int -> int -> bool -> bool -> unit;
   mutable read_flush_callback : unit -> unit;
   mutable read_ping_callback : buffer -> int -> int -> unit;
   mutable read_pong_callback : buffer -> int -> int -> unit;
   mutable read_close_callback : int -> unit;
   mutable read_abort_callback : exn -> unit;
-
   mutable write_ok_callback : unit -> unit;
   mutable write_close_callback : int -> unit;
   mutable write_abort_callback : exn -> unit;
@@ -192,8 +155,7 @@ type pipe = {
 let dummy_read_data_callback _buffer _offset _length _binary _fin =
   () [@coverage off]
 
-let dummy_ping_pong_callback _buffer _offset _length =
-  () [@coverage off]
+let dummy_ping_pong_callback _buffer _offset _length = () [@coverage off]
 
 let clean_up_reader_fields pipe =
   pipe.read_data_callback <- dummy_read_data_callback;
@@ -209,20 +171,20 @@ let clean_up_writer_fields pipe =
   pipe.write_abort_callback <- ignore
 
 let pipe () =
-  let internal = {
-    state = `Idle;
-
-    read_data_callback = dummy_read_data_callback;
-    read_flush_callback = ignore;
-    read_ping_callback = dummy_ping_pong_callback;
-    read_pong_callback = dummy_ping_pong_callback;
-    read_close_callback = ignore;
-    read_abort_callback = ignore;
-
-    write_ok_callback = ignore;
-    write_close_callback = ignore;
-    write_abort_callback = ignore;
-  } in
+  let internal =
+    {
+      state = `Idle;
+      read_data_callback = dummy_read_data_callback;
+      read_flush_callback = ignore;
+      read_ping_callback = dummy_ping_pong_callback;
+      read_pong_callback = dummy_ping_pong_callback;
+      read_close_callback = ignore;
+      read_abort_callback = ignore;
+      write_ok_callback = ignore;
+      write_close_callback = ignore;
+      write_abort_callback = ignore;
+    }
+  in
 
   let read ~data ~flush ~ping ~pong ~close ~exn =
     match internal.state with
@@ -239,17 +201,15 @@ let pipe () =
       write_ok_callback ()
     | `Reader_waiting ->
       raise (Failure "stream read: the previous read has not completed")
-    | `Closed code ->
-      close code
-    | `Aborted the_exn ->
-      exn the_exn
+    | `Closed code -> close code
+    | `Aborted the_exn -> exn the_exn
   in
 
   let rec data buffer offset length binary fin ~close ~exn ok =
     match internal.state with
     | `Idle ->
-      internal.write_ok_callback <- (fun () ->
-        data buffer offset length binary fin ~close ~exn ok);
+      internal.write_ok_callback <-
+        (fun () -> data buffer offset length binary fin ~close ~exn ok);
       internal.write_close_callback <- close;
       internal.write_abort_callback <- exn
     | `Reader_waiting ->
@@ -258,17 +218,14 @@ let pipe () =
       clean_up_reader_fields internal;
       read_data_callback buffer offset length binary fin;
       ok ()
-    | `Closed code ->
-      close code
-    | `Aborted the_exn ->
-      exn the_exn
+    | `Closed code -> close code
+    | `Aborted the_exn -> exn the_exn
   in
 
   let rec flush ~close ~exn ok =
     match internal.state with
     | `Idle ->
-      internal.write_ok_callback <- (fun () ->
-        flush ~close ~exn ok);
+      internal.write_ok_callback <- (fun () -> flush ~close ~exn ok);
       internal.write_close_callback <- close;
       internal.write_abort_callback <- exn
     | `Reader_waiting ->
@@ -277,17 +234,15 @@ let pipe () =
       clean_up_reader_fields internal;
       read_flush_callback ();
       ok ()
-    | `Closed code ->
-      close code
-    | `Aborted the_exn ->
-      exn the_exn
+    | `Closed code -> close code
+    | `Aborted the_exn -> exn the_exn
   in
 
   let rec ping buffer offset length ~close ~exn ok =
     match internal.state with
     | `Idle ->
-      internal.write_ok_callback <- (fun () ->
-        ping buffer offset length ~close ~exn ok);
+      internal.write_ok_callback <-
+        (fun () -> ping buffer offset length ~close ~exn ok);
       internal.write_close_callback <- close;
       internal.write_abort_callback <- exn
     | `Reader_waiting ->
@@ -296,17 +251,15 @@ let pipe () =
       clean_up_reader_fields internal;
       read_ping_callback buffer offset length;
       ok ()
-    | `Closed code ->
-      close code
-    | `Aborted the_exn ->
-      exn the_exn
+    | `Closed code -> close code
+    | `Aborted the_exn -> exn the_exn
   in
 
   let rec pong buffer offset length ~close ~exn ok =
     match internal.state with
     | `Idle ->
-      internal.write_ok_callback <- (fun () ->
-        pong buffer offset length ~close ~exn ok);
+      internal.write_ok_callback <-
+        (fun () -> pong buffer offset length ~close ~exn ok);
       internal.write_close_callback <- close;
       internal.write_abort_callback <- exn
     | `Reader_waiting ->
@@ -315,10 +268,8 @@ let pipe () =
       clean_up_reader_fields internal;
       read_pong_callback buffer offset length;
       ok ()
-    | `Closed code ->
-      close code
-    | `Aborted the_exn ->
-      exn the_exn
+    | `Closed code -> close code
+    | `Aborted the_exn -> exn the_exn
   in
 
   let close code =
@@ -333,10 +284,8 @@ let pipe () =
       let read_close_callback = internal.read_close_callback in
       clean_up_reader_fields internal;
       read_close_callback code
-    | `Closed _code ->
-      ()
-    | `Aborted _the_exn ->
-      ()
+    | `Closed _code -> ()
+    | `Aborted _the_exn -> ()
   in
 
   let abort exn =
@@ -351,25 +300,12 @@ let pipe () =
       let read_abort_callback = internal.read_abort_callback in
       clean_up_reader_fields internal;
       read_abort_callback exn
-    | `Closed _code ->
-      ()
-    | `Aborted _the_exn ->
-      ()
+    | `Closed _code -> ()
+    | `Aborted _the_exn -> ()
   in
 
-  let reader = {
-    read;
-    close;
-    abort;
-  }
-  and writer = {
-    data;
-    flush;
-    ping;
-    pong;
-    close;
-    abort;
-  } in
+  let reader = {read; close; abort}
+  and writer = {data; flush; ping; pong; close; abort} in
 
   (reader, writer)
 
@@ -377,21 +313,17 @@ let forward (reader : reader) stream =
   let rec loop () =
     reader.read
       ~data:(fun buffer offset length binary fin ->
-        stream.writer.data
-          buffer offset length
-          binary fin
-          ~close:reader.close ~exn:reader.abort
-          loop)
+        stream.writer.data buffer offset length binary fin ~close:reader.close
+          ~exn:reader.abort loop)
       ~flush:(fun () ->
         stream.writer.flush ~close:reader.close ~exn:reader.abort loop)
       ~ping:(fun buffer offset length ->
-        stream.writer.ping
-          buffer offset length ~close:reader.close ~exn:reader.abort loop)
+        stream.writer.ping buffer offset length ~close:reader.close
+          ~exn:reader.abort loop)
       ~pong:(fun buffer offset length ->
-        stream.writer.pong
-          buffer offset length ~close:reader.close ~exn:reader.abort loop)
-      ~close:stream.writer.close
-      ~exn:stream.writer.abort
+        stream.writer.pong buffer offset length ~close:reader.close
+          ~exn:reader.abort loop)
+      ~close:stream.writer.close ~exn:stream.writer.abort
   in
   loop ()
 
@@ -407,18 +339,11 @@ let read_convenience stream =
         |> Bigstringaf.to_string
         |> Option.some
         |> Lwt.wakeup_later resolver)
-
       ~flush:loop
-
       ~ping:(fun buffer offset length ->
         stream.writer.pong buffer offset length ~close ~exn:abort loop)
-
-      ~pong:(fun _buffer _offset _length ->
-        loop ())
-
-      ~close
-
-      ~exn:abort
+      ~pong:(fun _buffer _offset _length -> loop ())
+      ~close ~exn:abort
   in
   loop ();
 
@@ -444,28 +369,20 @@ let read_until_close stream =
 
         if new_length > Bigstringaf.length !buffer then begin
           let new_buffer = Bigstringaf.create (new_length * 2) in
-          Bigstringaf.blit
-            !buffer ~src_off:0 new_buffer ~dst_off:0 ~len:!length;
+          Bigstringaf.blit !buffer ~src_off:0 new_buffer ~dst_off:0 ~len:!length;
           buffer := new_buffer
         end;
 
-        Bigstringaf.blit
-          chunk ~src_off:offset !buffer ~dst_off:!length ~len:chunk_length;
+        Bigstringaf.blit chunk ~src_off:offset !buffer ~dst_off:!length
+          ~len:chunk_length;
         length := new_length;
 
         loop ())
-
       ~flush:loop
-
       ~ping:(fun buffer offset length ->
         stream.writer.pong buffer offset length ~close ~exn:abort loop)
-
-      ~pong:(fun _buffer _offset _length ->
-        loop ())
-
-      ~close
-
-      ~exn:abort
+      ~pong:(fun _buffer _offset _length -> loop ())
+      ~close ~exn:abort
   in
   loop ();
 

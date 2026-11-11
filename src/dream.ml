@@ -3,8 +3,6 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 module Body_size_limit = Dream__server.Body_size_limit
 module Catch = Dream__server.Catch
 module Cipher = Dream__cipher.Cipher
@@ -35,36 +33,25 @@ module Tag = Dream__server.Tag
 module Trailing_slash = Dream__server.Trailing_slash
 module Upload = Dream__server.Upload
 
-
-
 (* Initialize clock handling and random number generator. These are
    platform-specific, differing between Unix and Mirage. This is the Unix
    initialization. *)
 
-module Log =
-struct
+module Log = struct
   include Dream__server.Log
 end
 
-let default_log =
-  Log.sub_log (Logs.Src.name Logs.default)
+let default_log = Log.sub_log (Logs.Src.name Logs.default)
 
-let () =
-  Log.initialize ~setup_outputs:Fmt_tty.setup_std_outputs
+let () = Log.initialize ~setup_outputs:Fmt_tty.setup_std_outputs
 
-let now () =
-  Ptime.to_float_s (Ptime.v (Mirage_ptime.now_d_ps ()))
+let now () = Ptime.to_float_s (Ptime.v (Mirage_ptime.now_d_ps ()))
 
-let () =
-  Random.initialize (fun () ->
-    Mirage_crypto_rng_unix.use_default ())
+let () = Random.initialize (fun () -> Mirage_crypto_rng_unix.use_default ())
 
-module Session =
-struct
+module Session = struct
   include Dream__server.Session
 end
-
-
 
 (* Types *)
 
@@ -79,19 +66,13 @@ type client = Message.client
 type server = Message.server
 type 'a promise = 'a Message.promise
 
-
-
 (* Methods *)
 
 include Method
 
-
-
 (* Status codes *)
 
 include Status
-
-
 
 (* Requests *)
 
@@ -108,8 +89,6 @@ let query = Query.query
 let queries = Query.queries
 let all_queries = Query.all_queries
 
-
-
 (* Responses *)
 
 let response = Helpers.response_with_body
@@ -121,8 +100,6 @@ let empty = Helpers.empty
 let status = Message.status
 let set_status = Message.set_status
 
-
-
 (* Headers *)
 
 let header = Message.header
@@ -133,8 +110,6 @@ let add_header = Message.add_header
 let drop_header = Message.drop_header
 let set_header = Message.set_header
 
-
-
 (* Cookies *)
 
 let set_cookie = Cookie.set_cookie
@@ -142,15 +117,11 @@ let drop_cookie = Cookie.drop_cookie
 let cookie = Cookie.cookie
 let all_cookies = Cookie.all_cookies
 
-
-
 (* Bodies *)
 
 let body = Message.body
 let set_body = Message.set_body
 let body_size_limit = Body_size_limit.body_size_limit
-
-
 
 (* Streams *)
 
@@ -174,26 +145,24 @@ let pong_stream = Stream.pong
 let close_stream = Stream.close
 let abort_stream = Stream.abort
 
-
-
 (* WebSockets *)
 
 type websocket = stream * stream
 let websocket = Helpers.websocket
-type text_or_binary = [ `Text | `Binary ]
-type end_of_message = [ `End_of_message | `Continues ]
+type text_or_binary =
+  [ `Text
+  | `Binary ]
+type end_of_message =
+  [ `End_of_message
+  | `Continues ]
 let send = Helpers.send
 let receive = Helpers.receive
 let receive_fragment = Helpers.receive_fragment
 let close_websocket = Message.close_websocket
 
-
-
 (* JSON *)
 
 let origin_referrer_check = Origin_referrer_check.origin_referrer_check
-
-
 
 (* Forms *)
 
@@ -208,20 +177,15 @@ type csrf_result = Csrf.csrf_result
 let csrf_token = Csrf.csrf_token ~now
 let verify_csrf_token = Csrf.verify_csrf_token ~now
 
-
-
 (* Templates *)
 
 let csrf_tag = Tag.csrf_tag ~now
-
 
 (* Middleware *)
 
 let no_middleware = Message.no_middleware
 let pipeline = Message.pipeline
 let livereload = Livereload.livereload
-
-
 
 (* Routing *)
 
@@ -243,15 +207,11 @@ let no_route = Router.no_route
 
 let trailing_slash = Trailing_slash.trailing_slash
 
-
-
 (* Static files *)
 
 let static = Static.static
 let from_filesystem = Static.from_filesystem
 let mime_lookup = Static.mime_lookup
-
-
 
 (* Sessions *)
 (* TODO Internalize argument order and name changes. *)
@@ -271,8 +231,6 @@ let session_id = Session.session_id
 let session_label = Session.session_label
 let session_expires_at = Session.session_expires_at
 
-
-
 (* Flash messages *)
 (* TODO Internalize argument order and name changes. *)
 
@@ -280,21 +238,15 @@ let flash = Flash.flash_messages
 let flash_messages = Flash.flash
 let add_flash_message = Flash.put_flash
 
-
-
 (* GraphQL *)
 
 let graphql = Graphql.graphql
 let graphiql = Graphql.graphiql
 
-
-
 (* SQL *)
 
 let sql_pool = Sql.sql_pool
 let sql = Sql.sql
-
-
 
 (* Logging *)
 
@@ -316,27 +268,12 @@ let sub_log = Log.sub_log
 let initialize_log = Log.initialize_log
 let set_log_level = Log.set_log_level
 
-
-
 (* Errors *)
 
 type error = Catch.error = {
-  condition : [
-    | `Response of Message.response
-    | `String of string
-    | `Exn of exn
-  ];
-  layer : [
-    | `App
-    | `HTTP
-    | `HTTP2
-    | `TLS
-    | `WebSocket
-  ];
-  caused_by : [
-    | `Server
-    | `Client
-  ];
+  condition : [`Response of Message.response | `String of string | `Exn of exn];
+  layer : [`App | `HTTP | `HTTP2 | `TLS | `WebSocket];
+  caused_by : [`Server | `Client];
   request : Message.request option;
   response : Message.response option;
   client : string option;
@@ -348,21 +285,15 @@ let error_template = Error_handler.customize
 let debug_error_handler = Error_handler.debug_error_handler
 let catch = Catch.catch
 
-
-
 (* Servers *)
 
 let run = Http.run
 let serve = Http.serve
 let with_site_prefix = Site_prefix.with_site_prefix
 
-
-
 (* Web formats *)
 
 include Formats
-
-
 
 (* Cryptography *)
 
@@ -371,16 +302,12 @@ let random = Random.random
 let encrypt = Cipher.encrypt
 let decrypt = Cipher.decrypt
 
-
-
 (* Custom fields *)
 
 type 'a field = 'a Message.field
 let new_field = Message.new_field
 let field = Message.field
 let set_field = Message.set_field
-
-
 
 (* Testing. *)
 
@@ -389,17 +316,12 @@ let request = Helpers.request_with_body
 (* TODO Restore the ability to test with a prefix and re-enable the
    corresponding tests. *)
 let test ?(prefix = "") handler request =
-  let app =
-    Site_prefix.with_site_prefix prefix
-    @@ handler
-  in
+  let app = Site_prefix.with_site_prefix prefix @@ handler in
 
   Lwt_main.run (app request)
 
 let sort_headers = Message.sort_headers
 let echo = Echo.echo
-
-
 
 (* Deprecated helpers. *)
 

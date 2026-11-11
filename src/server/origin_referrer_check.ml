@@ -3,24 +3,16 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 module Message = Dream_pure.Message
 module Stream = Dream_pure.Stream
 
-
-
-let log =
-  Log.sub_log "dream.origin"
+let log = Log.sub_log "dream.origin"
 
 (* TODO Rename all next_handler to inner_handler. *)
 let origin_referrer_check inner_handler request =
-
   match Message.method_ request with
-  | `GET | `HEAD ->
-    inner_handler request
-
-  | _ ->
+  | `GET | `HEAD -> inner_handler request
+  | _ -> (
     let origin =
       match Message.header request "Origin" with
       | Some "null" | None -> Message.header request "Referer"
@@ -29,22 +21,18 @@ let origin_referrer_check inner_handler request =
 
     match origin with
     | None ->
-      log.warning (fun log -> log ~request
-        "Origin and Referer headers both missing");
+      log.warning (fun log ->
+          log ~request "Origin and Referer headers both missing");
       Message.response ~status:`Bad_Request Stream.empty Stream.null
       |> Lwt.return
-
     (* TODO Also recommend Uri to users. *)
-    | Some origin ->
-
+    | Some origin -> (
       match Message.header request "Host" with
       | None ->
         log.warning (fun log -> log ~request "Host header missing");
         Message.response ~status:`Bad_Request Stream.empty Stream.null
         |> Lwt.return
-
       | Some host ->
-
         let origin_uri = Uri.of_string origin in
 
         let schemes_match =
@@ -56,8 +44,8 @@ let origin_referrer_check inner_handler request =
 
         let host_host, host_port =
           match String.split_on_char ':' host with
-          | [host; port] -> Some host, Some port
-          | _ -> Some host, None
+          | [host; port] -> (Some host, Some port)
+          | _ -> (Some host, None)
         in
 
         let origin_port =
@@ -71,10 +59,9 @@ let origin_referrer_check inner_handler request =
 
         if schemes_match && hosts_match && ports_match then
           inner_handler request
-
         else begin
-          log.warning (fun log -> log ~request
-            "Origin-Host mismatch: '%s' vs. '%s'" origin host);
+          log.warning (fun log ->
+              log ~request "Origin-Host mismatch: '%s' vs. '%s'" origin host);
           Message.response ~status:`Bad_Request Stream.empty Stream.null
           |> Lwt.return
-        end
+        end))

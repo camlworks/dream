@@ -3,8 +3,6 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 module Catch = Dream__server.Catch
 module Error_template = Dream__server.Error_template
 module Method = Dream_pure.Method
@@ -14,23 +12,18 @@ module Message = Dream_pure.Message
 module Status = Dream_pure.Status
 module Stream = Dream_pure.Stream
 
-
-
 (* TODO DOC The error handler is almost a middleware. But it needs to plug in to
    the lower levels of the framework. Also, a benefit of it not being directly
    a middleware is that it cannot wrongly appear composed into deeper levels of
    an app. *)
 
-let log =
-  Log.sub_log "dream.http"
+let log = Log.sub_log "dream.http"
 
 let select_log = function
   | `Error -> log.error
   | `Warning -> log.warning
   | `Info -> log.info
   | `Debug -> log.debug
-
-
 
 let dump (error : Catch.error) =
   let buffer = Buffer.create 4096 in
@@ -40,13 +33,8 @@ let dump (error : Catch.error) =
   | `Response response ->
     let status = Message.status response in
     p "%i %s\n" (Status.status_to_int status) (Status.status_to_string status)
-
-  | `String "" ->
-    p "(Library error without description payload)\n"
-
-  | `String string ->
-    p "%s\n" string
-
+  | `String "" -> p "(Library error without description payload)\n"
+  | `String string -> p "%s\n" string
   | `Exn exn ->
     let backtrace = Printexc.get_backtrace () in
     p "%s\n" (Printexc.to_string exn);
@@ -97,13 +85,13 @@ let dump (error : Catch.error) =
     Message.all_headers request
     |> List.iter (fun (name, value) -> p "\n%s: %s" name value);
 
-    Message.fold_fields (fun name value first ->
-      if first then
-        p "\n";
-      p "\n%s: %s" name value;
-      false)
-      true
-      request
+    Message.fold_fields
+      (fun name value first ->
+        if first then
+          p "\n";
+        p "\n%s: %s" name value;
+        false)
+      true request
     |> ignore
   end;
 
@@ -113,17 +101,14 @@ let dump (error : Catch.error) =
    which are calling functions that use exceptions during parsing, which are
    clobbering the backtrace. *)
 let customize template (error : Catch.error) =
-
   (* First, log the error. *)
-
   begin match error.condition with
   | `Response _ -> ()
-  | `String _ | `Exn _ as condition ->
-
+  | (`String _ | `Exn _) as condition ->
     let client =
       match error.client with
       | None -> ""
-      | Some client ->  " (" ^ client ^ ")"
+      | Some client -> " (" ^ client ^ ")"
     in
 
     let layer =
@@ -137,28 +122,27 @@ let customize template (error : Catch.error) =
 
     let description, backtrace =
       match condition with
-      | `String string -> string, ""
+      | `String string -> (string, "")
       | `Exn exn ->
         let backtrace = Printexc.get_backtrace () in
-        Printexc.to_string exn, backtrace
+        (Printexc.to_string exn, backtrace)
     in
 
     let message = String.concat ": " (layer @ [description]) in
 
     select_log error.severity (fun log ->
-      log ?request:error.request "%s" message);
-    backtrace |> Log.iter_backtrace (fun line ->
-      select_log error.severity (fun log ->
-        log ?request:error.request "%s" line))
+        log ?request:error.request "%s" message);
+    backtrace
+    |> Log.iter_backtrace (fun line ->
+        select_log error.severity (fun log ->
+            log ?request:error.request "%s" line))
   end;
 
   (* If Dream will not send a response for this error, we are done after
      logging. Otherwise, if debugging is enabled, gather a bunch of information.
      Then, call the template, and return the response. *)
-
   if not error.will_send_response then
     Lwt.return_none
-
   else
     let debug_dump = dump error in
 
@@ -180,10 +164,7 @@ let customize template (error : Catch.error) =
     let%lwt response = template error debug_dump response in
     Lwt.return (Some response)
 
-
-
-let default_template _error _debug_dump response =
-  Lwt.return response
+let default_template _error _debug_dump response = Lwt.return response
 
 let debug_template _error debug_dump response =
   let status = Message.status response in
@@ -193,31 +174,24 @@ let debug_template _error debug_dump response =
   Message.set_body response (Error_template.render ~debug_dump ~code ~reason);
   Lwt.return response
 
-let default =
-  customize default_template
+let default = customize default_template
 
-let debug_error_handler =
-  customize debug_template
-
-
+let debug_error_handler = customize debug_template
 
 (* Error reporters (called in various places by the framework). *)
 
-
-
 let double_faults f default =
   Lwt.catch f begin fun exn ->
-    let backtrace = Printexc.get_backtrace () in
+      let backtrace = Printexc.get_backtrace () in
 
-    log.error (fun log ->
-      log "Error handler raised: %s" (Printexc.to_string exn));
+      log.error (fun log ->
+          log "Error handler raised: %s" (Printexc.to_string exn));
 
-    backtrace
-    |> Log.iter_backtrace (fun line ->
-      log.error (fun log -> log "%s" line));
+      backtrace
+      |> Log.iter_backtrace (fun line -> log.error (fun log -> log "%s" line));
 
-    default ()
-  end
+      default ()
+    end
 
 (* If the user's handler fails to provide a response, return an empty 500
    response. Don't return the original response we passed to the error handler,
@@ -232,13 +206,11 @@ let respond_with_option f =
       |> Lwt.map (function
         | Some response -> response
         | None ->
-          Message.response
-            ~status:`Internal_Server_Error Stream.empty Stream.null))
+          Message.response ~status:`Internal_Server_Error Stream.empty
+            Stream.null))
     (fun () ->
       Message.response ~status:`Internal_Server_Error Stream.empty Stream.null
       |> Lwt.return)
-
-
 
 (* In the functions below, the first row or set of arguments comes from the
    framework, by partial application, and the second row or set (after "fun")
@@ -248,208 +220,176 @@ let respond_with_option f =
    reaching the centralized error handler provided by the user, so it is built
    into the framework. *)
 
-let app
-    user's_error_handler =
-    fun error ->
-
-  respond_with_option (fun () -> user's_error_handler error)
-
-
+let app user's_error_handler =
+ fun error -> respond_with_option (fun () -> user's_error_handler error)
 
 let default_response = function
   | `Server ->
     Message.response ~status:`Internal_Server_Error Stream.empty Stream.null
-  | `Client ->
-    Message.response ~status:`Bad_Request Stream.empty Stream.null
+  | `Client -> Message.response ~status:`Bad_Request Stream.empty Stream.null
 
-let httpaf
-    user's_error_handler =
-    fun client_address ?request error start_response ->
-
+let httpaf user's_error_handler =
+ fun client_address ?request error start_response ->
   ignore (request : Httpun.Request.t option);
+
   (* TODO LATER Should factor out the request translation function and use it to
      partially recover the request info. *)
-
   let condition, severity, caused_by =
     match error with
-    | `Exn exn ->
-      `Exn exn,
-      `Error,
-      `Server
-
-    | `Bad_request
-    | `Bad_gateway ->
-      `String "Bad request",
-      `Warning,
-      `Client
-
+    | `Exn exn -> (`Exn exn, `Error, `Server)
+    | `Bad_request | `Bad_gateway -> (`String "Bad request", `Warning, `Client)
     | `Internal_server_error ->
-      `String "Content-Length missing or negative",
-      `Error,
-      `Server
+      (`String "Content-Length missing or negative", `Error, `Server)
   in
 
-  let error = {
-    Catch.condition;
-    layer = `HTTP;
-    caused_by;
-    request = None;
-    response = None;
-    client = Some (Adapt.address_to_string client_address);
-    severity;
-    will_send_response = true;
-  } in
+  let error =
+    {
+      Catch.condition;
+      layer = `HTTP;
+      caused_by;
+      request = None;
+      response = None;
+      client = Some (Adapt.address_to_string client_address);
+      severity;
+      will_send_response = true;
+    }
+  in
 
   Lwt.async begin fun () ->
-    double_faults begin fun () ->
-      let%lwt response = user's_error_handler error in
+      double_faults
+        begin fun () ->
+          let%lwt response = user's_error_handler error in
 
-      let response =
-        match response with
-        | Some response -> response
-        | None -> default_response caused_by
-      in
+          let response =
+            match response with
+            | Some response -> response
+            | None -> default_response caused_by
+          in
 
-      let headers = Httpun.Headers.of_list (Message.all_headers response) in
-      let body = start_response headers in
+          let headers = Httpun.Headers.of_list (Message.all_headers response) in
+          let body = start_response headers in
 
-      Adapt.forward_body response body;
+          Adapt.forward_body response body;
 
-      Lwt.return_unit
+          Lwt.return_unit
+        end
+        Lwt.return
     end
-      Lwt.return
-  end
 
+let h2 user's_error_handler =
+ fun client_address ?request error start_response ->
+  ignore request;
 
-
-let h2
-    user's_error_handler =
-    fun client_address ?request error start_response ->
-
-  ignore request; (* TODO Recover something from the request. *)
-
+  (* TODO Recover something from the request. *)
   let condition, severity, caused_by =
     match error with
-    | `Exn exn ->
-      `Exn exn,
-      `Error,
-      `Server
-
-    | `Bad_request ->
-      `String "Bad request",
-      `Warning,
-      `Client
-
+    | `Exn exn -> (`Exn exn, `Error, `Server)
+    | `Bad_request -> (`String "Bad request", `Warning, `Client)
     | `Internal_server_error ->
-      `String "Content-Length missing or negative",
-      `Error,
-      `Server
-      (* TODO LATER When does H2 raise `Internal_server_error? *)
+      (`String "Content-Length missing or negative", `Error, `Server)
+    (* TODO LATER When does H2 raise `Internal_server_error? *)
   in
 
-  let error = {
-    Catch.condition;
-    layer = `HTTP2;
-    caused_by;
-    request = None;
-    response = None;
-    client = Some (Adapt.address_to_string client_address);
-    severity;
-    will_send_response = true;
-  } in
+  let error =
+    {
+      Catch.condition;
+      layer = `HTTP2;
+      caused_by;
+      request = None;
+      response = None;
+      client = Some (Adapt.address_to_string client_address);
+      severity;
+      will_send_response = true;
+    }
+  in
 
   Lwt.async begin fun () ->
-    double_faults begin fun () ->
-      let%lwt response = user's_error_handler error in
+      double_faults
+        begin fun () ->
+          let%lwt response = user's_error_handler error in
 
-      let response =
-        match response with
-        | Some response -> response
-        | None -> default_response caused_by
-      in
+          let response =
+            match response with
+            | Some response -> response
+            | None -> default_response caused_by
+          in
 
-      let headers = H2.Headers.of_list (Message.all_headers response) in
-      let body = start_response headers in
+          let headers = H2.Headers.of_list (Message.all_headers response) in
+          let body = start_response headers in
 
-      Adapt.forward_body_h2 response body;
+          Adapt.forward_body_h2 response body;
 
-      Lwt.return_unit
+          Lwt.return_unit
+        end
+        Lwt.return
     end
-      Lwt.return
-  end
-
-
 
 (* The protocol state machines (http/af, etc.) try to pass all errors generated
    inside their request handlers to their own error handlers. In addition, all
    user code run by Dream is wrapped in Lwt.catch to catch all user errors.
    However, SSL protocol errors are not wrapped in any of these, so we add an
    edditional top-level handler to catch them. *)
-let tls
-    user's_error_handler client_address error =
-
-  let error = {
-    Catch.condition = `Exn error;
-    layer = `TLS;
-    caused_by = `Client;
-    request = None;
-    response = None;
-    client = Some (Adapt.address_to_string client_address);
-    severity = `Warning;
-    will_send_response = false;
-  } in
+let tls user's_error_handler client_address error =
+  let error =
+    {
+      Catch.condition = `Exn error;
+      layer = `TLS;
+      caused_by = `Client;
+      request = None;
+      response = None;
+      client = Some (Adapt.address_to_string client_address);
+      severity = `Warning;
+      will_send_response = false;
+    }
+  in
 
   Lwt.async (fun () ->
-    double_faults
-      (fun () -> Lwt.map ignore (user's_error_handler error))
-      Lwt.return)
+      double_faults
+        (fun () -> Lwt.map ignore (user's_error_handler error))
+        Lwt.return)
 
-
-
-let websocket
-    user's_error_handler request response =
-    fun socket error ->
-
+let websocket user's_error_handler request response =
+ fun socket error ->
   (* Note: in this function, request and response are from the original request
      that negotiated the websocket. *)
-
   Httpun_ws.Wsd.close socket;
 
   (* The only constructor of error is `Exn, so presumably these are server-side
      errors. Not sure if any I/O errors are possible here. *)
-  let `Exn exn = error in
+  let (`Exn exn) = error in
 
-  let error = {
-    Catch.condition = `Exn exn;
-    layer = `WebSocket;
-    caused_by = `Server;
-    request = Some request;
-    response = Some response;
-    client = Some (Helpers.client request);
-    severity = `Warning;   (* Not sure what these errors are, yet. *)
-    will_send_response = false;
-  } in
+  let error =
+    {
+      Catch.condition = `Exn exn;
+      layer = `WebSocket;
+      caused_by = `Server;
+      request = Some request;
+      response = Some response;
+      client = Some (Helpers.client request);
+      severity = `Warning;
+      (* Not sure what these errors are, yet. *)
+      will_send_response = false;
+    }
+  in
 
   Lwt.async (fun () ->
-    double_faults
-      (fun () -> Lwt.map ignore (user's_error_handler error))
-      Lwt.return)
+      double_faults
+        (fun () -> Lwt.map ignore (user's_error_handler error))
+        Lwt.return)
 
-
-
-let websocket_handshake
-    user's_error_handler =
-    fun request response error_string ->
-
-  let error = {
-    Catch.condition = `String error_string;
-    layer = `WebSocket;
-    caused_by = `Client;
-    request = Some request;
-    response = Some response;
-    client = Some (Helpers.client request);
-    severity = `Warning;
-    will_send_response = true;
-  } in
+let websocket_handshake user's_error_handler =
+ fun request response error_string ->
+  let error =
+    {
+      Catch.condition = `String error_string;
+      layer = `WebSocket;
+      caused_by = `Client;
+      request = Some request;
+      response = Some response;
+      client = Some (Helpers.client request);
+      severity = `Warning;
+      will_send_response = true;
+    }
+  in
 
   respond_with_option (fun () -> user's_error_handler error)

@@ -3,78 +3,73 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 let or_none f value =
   match f value with
-  Some string -> string
+  | Some string -> string
   | None -> "None"
 
+let informational = [`Continue; `Switching_Protocols]
 
+let successful =
+  [
+    `OK;
+    `Created;
+    `Accepted;
+    `Non_Authoritative_Information;
+    `No_Content;
+    `Reset_Content;
+    `Partial_Content;
+  ]
 
-let informational = [
-  `Continue;
-  `Switching_Protocols;
-]
+let redirection =
+  [
+    `Multiple_Choices;
+    `Moved_Permanently;
+    `Found;
+    `See_Other;
+    `Not_Modified;
+    `Temporary_Redirect;
+    `Permanent_Redirect;
+  ]
 
-let successful = [
-  `OK;
-  `Created;
-  `Accepted;
-  `Non_Authoritative_Information;
-  `No_Content;
-  `Reset_Content;
-  `Partial_Content;
-]
+let client_error =
+  [
+    `Bad_Request;
+    `Unauthorized;
+    `Payment_Required;
+    `Forbidden;
+    `Not_Found;
+    `Method_Not_Allowed;
+    `Not_Acceptable;
+    `Proxy_Authentication_Required;
+    `Request_Timeout;
+    `Conflict;
+    `Gone;
+    `Length_Required;
+    `Precondition_Failed;
+    `Payload_Too_Large;
+    `URI_Too_Long;
+    `Unsupported_Media_Type;
+    `Range_Not_Satisfiable;
+    `Expectation_Failed;
+    `Misdirected_Request;
+    `Too_Early;
+    `Upgrade_Required;
+    `Precondition_Required;
+    `Too_Many_Requests;
+    `Request_Header_Fields_Too_Large;
+    `Unavailable_For_Legal_Reasons;
+  ]
 
-let redirection = [
-  `Multiple_Choices;
-  `Moved_Permanently;
-  `Found;
-  `See_Other;
-  `Not_Modified;
-  `Temporary_Redirect;
-  `Permanent_Redirect;
-]
-
-let client_error = [
-  `Bad_Request;
-  `Unauthorized;
-  `Payment_Required;
-  `Forbidden;
-  `Not_Found;
-  `Method_Not_Allowed;
-  `Not_Acceptable;
-  `Proxy_Authentication_Required;
-  `Request_Timeout;
-  `Conflict;
-  `Gone;
-  `Length_Required;
-  `Precondition_Failed;
-  `Payload_Too_Large;
-  `URI_Too_Long;
-  `Unsupported_Media_Type;
-  `Range_Not_Satisfiable;
-  `Expectation_Failed;
-  `Misdirected_Request;
-  `Too_Early;
-  `Upgrade_Required;
-  `Precondition_Required;
-  `Too_Many_Requests;
-  `Request_Header_Fields_Too_Large;
-  `Unavailable_For_Legal_Reasons;
-]
-
-let server_error = [
-  `Internal_Server_Error;
-  `Not_Implemented;
-  `Bad_Gateway;
-  `Service_Unavailable;
-  `Gateway_Timeout;
-  `HTTP_Version_Not_Supported;
-]
-
-
+let server_error =
+  [
+    `Internal_Server_Error;
+    `Not_Implemented;
+    `Bad_Gateway;
+    `Service_Unavailable;
+    `Gateway_Timeout;
+    `HTTP_Version_Not_Supported;
+  ]
 
 (* Variand codes. *)
 
@@ -91,7 +86,8 @@ let show_status status =
 
 let%expect_test _ =
   informational |> List.iter show_status;
-  [%expect {|
+  [%expect
+    {|
     100 true  false false false false
         Continue
         Continue
@@ -101,7 +97,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   successful |> List.iter show_status;
-  [%expect {|
+  [%expect
+    {|
     200 false true  false false false
         OK
         OK
@@ -126,7 +123,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   redirection |> List.iter show_status;
-  [%expect {|
+  [%expect
+    {|
     300 false false true  false false
         Multiple Choices
         Multiple Choices
@@ -151,7 +149,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   client_error |> List.iter show_status;
-  [%expect {|
+  [%expect
+    {|
     400 false false false true  false
         Bad Request
         Bad Request
@@ -230,7 +229,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   server_error |> List.iter show_status;
-  [%expect {|
+  [%expect
+    {|
     500 false false false false true
         Internal Server Error
         Internal Server Error
@@ -250,8 +250,6 @@ let%expect_test _ =
         HTTP Version Not Supported
         HTTP Version Not Supported |}]
 
-
-
 (* Numeric codes. *)
 
 let show_status_code code =
@@ -268,7 +266,8 @@ let show_status_code code =
 
 let%expect_test _ =
   informational |> List.map Dream.status_to_int |> List.iter show_status_code;
-  [%expect {|
+  [%expect
+    {|
     100 true  false false false false
         Continue
         Continue
@@ -278,7 +277,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   successful |> List.map Dream.status_to_int |> List.iter show_status_code;
-  [%expect {|
+  [%expect
+    {|
     200 false true  false false false
         OK
         OK
@@ -303,7 +303,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   redirection |> List.map Dream.status_to_int |> List.iter show_status_code;
-  [%expect {|
+  [%expect
+    {|
     300 false false true  false false
         Multiple Choices
         Multiple Choices
@@ -328,7 +329,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   client_error |> List.map Dream.status_to_int |> List.iter show_status_code;
-  [%expect {|
+  [%expect
+    {|
     400 false false false true  false
         Bad Request
         Bad Request
@@ -407,7 +409,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   server_error |> List.map Dream.status_to_int |> List.iter show_status_code;
-  [%expect {|
+  [%expect
+    {|
     500 false false false false true
         Internal Server Error
         Internal Server Error
@@ -430,14 +433,15 @@ let%expect_test _ =
 (* Some numeric codes that don't correspond to any variands. *)
 
 let%expect_test _ =
-  show_status_code  98;
+  show_status_code 98;
   show_status_code 198;
   show_status_code 298;
   show_status_code 398;
   show_status_code 498;
   show_status_code 598;
   show_status_code 698;
-  [%expect {|
+  [%expect
+    {|
      98 false false false false false
         None
         98
@@ -479,7 +483,8 @@ let%expect_test _ =
   show_status_code 508;
   show_status_code 510;
   show_status_code 511;
-  [%expect {|
+  [%expect
+    {|
     102 true  false false false false
         Processing
         Processing
@@ -540,7 +545,8 @@ let%expect_test _ =
   equal `OK (`Status 200);
   equal (`Status 200) `OK;
   equal `OK (`Status 404);
-  [%expect {|
+  [%expect
+    {|
     true
     false
     false

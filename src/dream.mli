@@ -3,16 +3,14 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 (** {1 Types}
 
     Dream is built on just five types. The first two are the data types of
     Dream. Both are abstract, even though they appear to have definitions: *)
 
 type request = client message
-(** HTTP requests, such as [GET /something HTTP/1.1]. See
-    {!section-requests}. *)
+(** HTTP requests, such as [GET /something HTTP/1.1]. See {!section-requests}.
+*)
 
 and response = server message
 (** HTTP responses, such as [200 OK]. See {!section-responses}. *)
@@ -22,41 +20,37 @@ and response = server message
 and handler = request -> response promise
 (** Handlers are asynchronous functions from requests to responses. Example
     {{:https://github.com/camlworks/dream/tree/master/example/1-hello#folders-and-files}
-    [1-hello]} shows the simplest handler, an anonymous function which we pass
+     [1-hello]} shows the simplest handler, an anonymous function which we pass
     to {!Dream.run}. This creates a complete Web server! You can also see the
     Reason version in example
     {{:https://github.com/camlworks/dream/tree/master/example/r-hello#folders-and-files}
-    [r-hello]}.
+     [r-hello]}.
 
     {[
-      let () =
-        Dream.run (fun _ ->
-          Dream.html "Good morning, world!")
+    let () = Dream.run (fun _ -> Dream.html "Good morning, world!")
     ]} *)
 
 and middleware = handler -> handler
 (** Middlewares are functions that take a {!handler}, and run some code before
     or after — producing a “bigger” handler. Example
     {{:https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files}
-    [2-middleware]} inserts the {!Dream.logger} middleware into a Web app:
+     [2-middleware]} inserts the {!Dream.logger} middleware into a Web app:
 
     {[
-      let () =
-        Dream.run
-        @@ Dream.logger
-        @@ fun _ -> Dream.html "Good morning, world!"
+    let () =
+      Dream.run @@ Dream.logger @@ fun _ -> Dream.html "Good morning, world!"
     ]}
 
     Examples
     {{:https://github.com/camlworks/dream/tree/master/example/4-counter#folders-and-files}
-    [4-counter]} and
+     [4-counter]} and
     {{:https://github.com/camlworks/dream/tree/master/example/5-promise#folders-and-files}
-    [5-promise]} show user-defined middlewares:
+     [5-promise]} show user-defined middlewares:
 
     {[
-      let count_requests inner_handler request =
-        count := !count + 1;
-        inner_handler request
+    let count_requests inner_handler request =
+      count := !count + 1;
+      inner_handler request
     ]}
 
     In case you are wondering why the example middleware [count_requests] takes
@@ -73,15 +67,17 @@ and route
 (** Routes tell {!Dream.router} which handler to select for each request. See
     {!section-routing} and example
     {{:https://github.com/camlworks/dream/tree/master/example/3-router#folders-and-files}
-    [3-router]}. Routes are created by helpers such as {!Dream.get} and
+     [3-router]}. Routes are created by helpers such as {!Dream.get} and
     {!Dream.scope}:
 
     {[
-      Dream.router [
-        Dream.scope "/admin" [Dream.memory_sessions ()] [
-          Dream.get "/" admin_handler;
-          Dream.get "/logout" admin_logout_handler;
-        ];
+    Dream.router
+      [
+        Dream.scope "/admin"
+          [Dream.memory_sessions ()]
+          [
+            Dream.get "/" admin_handler; Dream.get "/logout" admin_logout_handler;
+          ];
       ]
     ]} *)
 
@@ -97,7 +93,6 @@ and route
 
     {!Dream.scope} implements a left distributive law, making Dream a ring-like
     structure. *)
-
 (** {2 Helpers} *)
 
 and 'a message = 'a Dream_pure.Message.message
@@ -110,6 +105,7 @@ and 'a message = 'a Dream_pure.Message.message
     ]} *)
 
 and client = Dream_pure.Message.client
+
 and server = Dream_pure.Message.server
 (** Type parameters for {!message} for {!type-request} and {!type-response},
     respectively. These are “phantom” types. They have no meaning other than
@@ -123,21 +119,19 @@ and 'a promise = 'a Lwt.t
 (** Dream uses {{:https://github.com/ocsigen/lwt} Lwt} for promises and
     asynchronous I/O. See example
     {{:https://github.com/camlworks/dream/tree/master/example/5-promise#folders-and-files}
-    [5-promise]}.
+     [5-promise]}.
 
     Use [raise] to reject promises. If you are writing a library, you may prefer
     using
     {{:https://github.com/ocsigen/lwt/blob/9943ba77a5508feaea5e1fb60b011db4179f9c61/src/core/lwt.mli#L459}
-    [Lwt.fail]} in some places, in order to avoid clobbering your user's current
-    exception backtrace — though, in most cases, you should still extend it with
-    [raise] and [let%lwt], instead. *)
-
-
+     [Lwt.fail]} in some places, in order to avoid clobbering your user's
+    current exception backtrace — though, in most cases, you should still extend
+    it with [raise] and [let%lwt], instead. *)
 
 (** {1 Methods} *)
 
-type method_ = [
-  | `GET
+type method_ =
+  [ `GET
   | `POST
   | `PUT
   | `DELETE
@@ -146,85 +140,79 @@ type method_ = [
   | `OPTIONS
   | `TRACE
   | `PATCH
-  | `Method of string
-]
+  | `Method of string ]
 (** HTTP request methods. See
     {{:https://tools.ietf.org/html/rfc7231#section-4.3} RFC 7231 §4.2},
     {{:https://tools.ietf.org/html/rfc5789#page-2} RFC 5789 §2}, and
     {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods} MDN}. *)
 
-val method_to_string : [< method_ ] -> string
+val method_to_string : [< method_] -> string
 (** Evaluates to a string representation of the given method. For example,
     [`GET] is converted to ["GET"]. *)
 
 val string_to_method : string -> method_
-(** Evaluates to the {!type-method_} corresponding to the given method
-    string. *)
+(** Evaluates to the {!type-method_} corresponding to the given method string.
+*)
 
-val methods_equal : [< method_ ] -> [< method_ ] -> bool
+val methods_equal : [< method_] -> [< method_] -> bool
 (** Compares two methods, such that equal methods are detected even if one is
     represented as a string. For example,
 
     {[
-      Dream.methods_equal `GET (`Method "GET") = true
+    Dream.methods_equal `GET (`Method "GET") = true
     ]} *)
 
-val normalize_method : [< method_ ] -> method_
+val normalize_method : [< method_] -> method_
 (** Converts methods represented as strings to variants. Methods generated by
     Dream are always normalized.
 
     {[
-      Dream.normalize_method (`Method "GET") = `GET
+    Dream.normalize_method (`Method "GET") = `GET
     ]} *)
-
-
 
 (** {1:status_codes Status codes} *)
 
-type informational = [
-  | `Continue
-  | `Switching_Protocols
-]
+type informational =
+  [ `Continue
+  | `Switching_Protocols ]
 (** Informational ([1xx]) status codes. See
     {{:https://tools.ietf.org/html/rfc7231#section-6.2} RFC 7231 §6.2} and
     {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses}
-    MDN}. [101 Switching Protocols] is generated internally by
+     MDN}. [101 Switching Protocols] is generated internally by
     {!Dream.val-websocket}. It is usually not necessary to use it directly. *)
 
-type successful = [
-  | `OK
+type successful =
+  [ `OK
   | `Created
   | `Accepted
   | `Non_Authoritative_Information
   | `No_Content
   | `Reset_Content
-  | `Partial_Content
-]
+  | `Partial_Content ]
 (** Successful ([2xx]) status codes. See
     {{:https://tools.ietf.org/html/rfc7231#section-6.3} RFC 7231 §6.3},
     {{:https://tools.ietf.org/html/rfc7233#section-4.1} RFC 7233 §4.1} and
     {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#successful_responses}
-    MDN}. The most common is [200 OK]. *)
+     MDN}. The most common is [200 OK]. *)
 
-type redirection = [
-  | `Multiple_Choices
+type redirection =
+  [ `Multiple_Choices
   | `Moved_Permanently
   | `Found
   | `See_Other
   | `Not_Modified
   | `Temporary_Redirect
-  | `Permanent_Redirect
-]
+  | `Permanent_Redirect ]
 (** Redirection ([3xx]) status codes. See
     {{:https://tools.ietf.org/html/rfc7231#section-6.4} RFC 7231 §6.4} and
     {{:https://tools.ietf.org/html/rfc7538#section-3} RFC 7538 §3}, and
     {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#redirection_messages}
-    MDN}. Use [303 See Other] to direct clients to follow up with a [GET]
-    request, especially after a form submission. Use [301 Moved Permanently]
-    for permanent redirections. *)
+     MDN}. Use [303 See Other] to direct clients to follow up with a [GET]
+    request, especially after a form submission. Use [301 Moved Permanently] for
+    permanent redirections. *)
 
-type client_error = [
-  | `Bad_Request
+type client_error =
+  [ `Bad_Request
   | `Unauthorized
   | `Payment_Required
   | `Forbidden
@@ -248,14 +236,13 @@ type client_error = [
   | `Precondition_Required
   | `Too_Many_Requests
   | `Request_Header_Fields_Too_Large
-  | `Unavailable_For_Legal_Reasons
-]
+  | `Unavailable_For_Legal_Reasons ]
 (** Client error ([4xx]) status codes. The most common are [400 Bad Request],
     [401 Unauthorized], [403 Forbidden], and, of course, [404 Not Found].
 
     See
     {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#client_error_responses}
-    MDN}, and
+     MDN}, and
 
     - {{:https://tools.ietf.org/html/rfc7231#section-6.5} RFC 7231 §6.5} for
       most client error status codes.
@@ -266,94 +253,89 @@ type client_error = [
     - {{:https://tools.ietf.org/html/rfc8470#section-5.2} RFC 8470 §5.2} for
       [425 Too Early].
     - {{:https://tools.ietf.org/html/rfc6585} RFC 6585} for
-      [428 Precondition Required], [429 Too Many Requests], and [431 Request
-      Headers Too Large].
+      [428 Precondition Required], [429 Too Many Requests], and
+      [431 Request Headers Too Large].
     - {{:https://tools.ietf.org/html/rfc7725} RFC 7725} for
       [451 Unavailable For Legal Reasons]. *)
 
-type server_error = [
-  | `Internal_Server_Error
+type server_error =
+  [ `Internal_Server_Error
   | `Not_Implemented
   | `Bad_Gateway
   | `Service_Unavailable
   | `Gateway_Timeout
-  | `HTTP_Version_Not_Supported
-]
+  | `HTTP_Version_Not_Supported ]
 (** Server error ([5xx]) status codes. See
     {{:https://tools.ietf.org/html/rfc7231#section-6.6} RFC 7231 §6.6} and
     {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#server_error_responses}
-    MDN}. The most common of these is [500 Internal Server Error]. *)
+     MDN}. The most common of these is [500 Internal Server Error]. *)
 
-type standard_status = [
-  | informational
+type standard_status =
+  [ informational
   | successful
   | redirection
   | client_error
-  | server_error
-]
+  | server_error ]
 (** Sum of all the status codes declared above. *)
 
-type status = [
-  | standard_status
-  | `Status of int
-]
+type status =
+  [ standard_status
+  | `Status of int ]
 (** Status codes, including codes directly represented as integers. See the
     types above for the full list and references. *)
 
-val status_to_string : [< status ] -> string
+val status_to_string : [< status] -> string
 (** Evaluates to a string representation of the given status. For example,
     [`Not_Found] and [`Status 404] are both converted to ["Not Found"]. Numbers
     are used for unknown status codes. For example, [`Status 567] is converted
     to ["567"]. *)
 
-val status_to_reason : [< status ] -> string option
+val status_to_reason : [< status] -> string option
 (** Converts known status codes to their string representations. Evaluates to
     [None] for unknown status codes. *)
 
-val status_to_int : [< status ] -> int
+val status_to_int : [< status] -> int
 (** Evaluates to the numeric value of the given status code. *)
 
 val int_to_status : int -> status
 (** Evaluates to the symbolic representation of the status code with the given
     number. *)
 
-val is_informational : [< status ] -> bool
+val is_informational : [< status] -> bool
 (** Evaluates to [true] if the given status is either from type
     {!Dream.informational}, or is in the range [`Status 100] — [`Status 199]. *)
 
-val is_successful : [< status ] -> bool
+val is_successful : [< status] -> bool
 (** Like {!Dream.is_informational}, but for type {!Dream.successful} and numeric
     codes [2xx]. *)
 
-val is_redirection : [< status ] -> bool
+val is_redirection : [< status] -> bool
 (** Like {!Dream.is_informational}, but for type {!Dream.redirection} and
     numeric codes [3xx]. *)
 
-val is_client_error : [< status ] -> bool
+val is_client_error : [< status] -> bool
 (** Like {!Dream.is_informational}, but for type {!Dream.client_error} and
     numeric codes [4xx]. *)
 
-val is_server_error : [< status ] -> bool
+val is_server_error : [< status] -> bool
 (** Like {!Dream.is_informational}, but for type {!Dream.server_error} and
     numeric codes [5xx]. *)
 
-val status_codes_equal : [< status ] -> [< status ] -> bool
+val status_codes_equal : [< status] -> [< status] -> bool
 (** Compares two status codes, such that equal codes are detected even if one is
     represented as a number. For example,
 
     {[
-      Dream.status_codes_equal `Not_Found (`Status 404) = true
+    Dream.status_codes_equal `Not_Found (`Status 404) = true
     ]} *)
 
-val normalize_status : [< status ] -> status
+val normalize_status : [< status] -> status
 (** Converts status codes represented as numbers to variants. Status codes
     generated by Dream are always normalized.
 
     {[
-      Dream.normalize_status (`Status 404) = `Not_Found
+    Dream.normalize_status (`Status 404) = `Not_Found
     ]} *)
-
-
 
 (** {1 Requests} *)
 
@@ -375,32 +357,36 @@ val site_prefix : request -> string
     prefix. Cookies are scoped to this prefix by default. *)
 
 (**/**)
+
 val prefix : request -> string
+
 (**/**)
 
 (**/**)
+
 val path : request -> string list
 [@@ocaml.deprecated
-"Router path access is being removed from the API. Comment at
-https://github.com/camlworks/dream/issues
-"]
+  "Router path access is being removed from the API. Comment at\n\
+   https://github.com/camlworks/dream/issues\n"]
 (** Parsed request path. For example, ["foo"; "bar"]. *)
+
 (* TODO If not removing this, move it to section Routing. *)
 (**/**)
 
 val set_client : request -> string -> unit
 (** Replaces the client. See {!Dream.val-client}. *)
 
-val set_method_ : request -> [< method_ ] -> unit
+val set_method_ : request -> [< method_] -> unit
 (** Replaces the method. See {!Dream.type-method_}. *)
 
 (**/**)
+
 val with_path : string list -> request -> request
 [@@ocaml.deprecated
-"Router path access is being removed from the API. Comment at
-https://github.com/camlworks/dream/issues
-"]
+  "Router path access is being removed from the API. Comment at\n\
+   https://github.com/camlworks/dream/issues\n"]
 (** Replaces the path. See {!Dream.val-path}. *)
+
 (**/**)
 
 val query : request -> string -> string option
@@ -408,7 +394,7 @@ val query : request -> string -> string option
     {{:https://tools.ietf.org/html/rfc3986#section-3.4} RFC 3986 §3.4} and
     example
     {{:https://github.com/camlworks/dream/tree/master/example/w-query#folders-and-files}
-    [w-query]}. *)
+     [w-query]}. *)
 
 val queries : request -> string -> string list
 (** All query parameters with the given name. *)
@@ -416,15 +402,14 @@ val queries : request -> string -> string list
 val all_queries : request -> (string * string) list
 (** Entire query string as a name-value list. *)
 
-
-
 (** {1 Responses} *)
 
 val response :
-  ?status:[< status ] ->
+  ?status:[< status] ->
   ?code:int ->
   ?headers:(string * string) list ->
-    string -> response
+  string ->
+  response
 (** Creates a new {!type-response} with the given string as body. [~code] and
     [~status] are two ways to specify the {!type-status} code, which is [200 OK]
     by default. The headers are empty by default.
@@ -437,42 +422,47 @@ val response :
     [text/html; charset=utf-8]. See {!Dream.text_html}. *)
 
 val respond :
-  ?status:[< status ] ->
+  ?status:[< status] ->
   ?code:int ->
   ?headers:(string * string) list ->
-    string -> response promise
+  string ->
+  response promise
 (** Same as {!Dream.val-response}, but the new {!type-response} is wrapped in a
     {!type-promise}. *)
 
 val html :
-  ?status:[< status ] ->
+  ?status:[< status] ->
   ?code:int ->
   ?headers:(string * string) list ->
-    string -> response promise
+  string ->
+  response promise
 (** Same as {!Dream.respond}, but adds [Content-Type: text/html; charset=utf-8].
     See {!Dream.text_html}.
 
     As your Web app develops, consider adding [Content-Security-Policy] headers,
     as described in example
     {{:https://github.com/camlworks/dream/tree/master/example/w-content-security-policy#folders-and-files}
-    [w-content-security-policy]}. These headers are completely optional, but
+     [w-content-security-policy]}. These headers are completely optional, but
     they can provide an extra layer of defense for a mature app. *)
 
 val json :
-  ?status:[< status ] ->
+  ?status:[< status] ->
   ?code:int ->
   ?headers:(string * string) list ->
-    string -> response promise
+  string ->
+  response promise
 (** Same as {!Dream.respond}, but adds [Content-Type: application/json]. See
     {!Dream.application_json} and example
     {{:https://github.com/camlworks/dream/tree/master/example/e-json#folders-and-files}
-    [e-json]}. *)
+     [e-json]}. *)
 
 val redirect :
-  ?status:[< redirection ] ->
+  ?status:[< redirection] ->
   ?code:int ->
   ?headers:(string * string) list ->
-    request -> string -> response promise
+  request ->
+  string ->
+  response promise
 (** Creates a new {!type-response}. Adds a [Location:] header with the given
     string. The default status code is [303 See Other], for a temporary
     redirection. Use [~status:`Moved_Permanently] or [~code:301] for a permanent
@@ -486,9 +476,7 @@ val redirect :
     relative references are left unchanged. Most applications don't have a site
     prefix. *)
 
-val empty :
-  ?headers:(string * string) list ->
-    status -> response promise
+val empty : ?headers:(string * string) list -> status -> response promise
 (** Same as {!Dream.val-response} with the empty string for a body. *)
 
 val status : response -> status
@@ -496,8 +484,6 @@ val status : response -> status
 
 val set_status : response -> status -> unit
 (** Sets the response status. *)
-
-
 
 (** {1 Headers} *)
 
@@ -526,27 +512,25 @@ val drop_header : 'a message -> string -> unit
 val set_header : 'a message -> string -> string -> unit
 (** Equivalent to {!Dream.drop_header} followed by {!Dream.add_header}. *)
 
-
-
 (** {1 Cookies}
 
     {!Dream.set_cookie} and {!Dream.cookie} are designed for round-tripping
     secure cookies. The most secure settings applicable to the current server
     are inferred automatically. See example
     {{:https://github.com/camlworks/dream/tree/master/example/c-cookie#folders-and-files}
-    [c-cookie]}.
+     [c-cookie]}.
 
     {[
-      Dream.set_cookie response request "my.cookie" "foo"
-      Dream.cookie request "my.cookie"
+    Dream.set_cookie response request "my.cookie" "foo" Dream.cookie request
+      "my.cookie"
     ]}
 
     The {!Dream.cookie} call evaluates to [Some "foo"], but the actual cookie
     that is exchanged may look like:
 
     {v
-__Host-my.cookie=AL7NLA8-so3e47uy0R5E2MpEQ0TtTWztdhq5pTEUT7KSFg; \
-  Path=/; Secure; HttpOnly; SameSite=Strict
+    __Host-my.cookie=AL7NLA8-so3e47uy0R5E2MpEQ0TtTWztdhq5pTEUT7KSFg; \
+      Path=/; Secure; HttpOnly; SameSite=Strict
     v}
 
     {!Dream.set_cookie} has a large number of optional arguments for tweaking
@@ -554,7 +538,7 @@ __Host-my.cookie=AL7NLA8-so3e47uy0R5E2MpEQ0TtTWztdhq5pTEUT7KSFg; \
     {!Dream.cookie} to automatically undo the result. *)
 
 val set_cookie :
-  ?prefix:[< `Host | `Secure ] option ->
+  ?prefix:[< `Host | `Secure] option ->
   ?encrypt:bool ->
   ?expires:float ->
   ?max_age:float ->
@@ -562,13 +546,17 @@ val set_cookie :
   ?path:string option ->
   ?secure:bool ->
   ?http_only:bool ->
-  ?same_site:[< `Strict | `Lax | `None ] option ->
-    response -> request -> string -> string -> unit
+  ?same_site:[< `Strict | `Lax | `None] option ->
+  response ->
+  request ->
+  string ->
+  string ->
+  unit
 (** Appends a [Set-Cookie:] header to the {!type-response}. Infers the most
     secure defaults from the {!type-request}.
 
     {[
-      Dream.set_cookie response request "my.cookie" "value"
+    Dream.set_cookie response request "my.cookie" "value"
     ]}
 
     Use the {!Dream.set_secret} middleware, or the Web app will not be able to
@@ -576,7 +564,7 @@ val set_cookie :
 
     See example
     {{:https://github.com/camlworks/dream/tree/master/example/c-cookie#folders-and-files}
-    [c-cookie]}.
+     [c-cookie]}.
 
     Most of the optional arguments are for overriding inferred defaults.
     [~expires] and [~max_age] are independently useful. In particular, to delete
@@ -588,66 +576,69 @@ val set_cookie :
       By default, {!Dream.set_cookie} chooses the most restrictive prefix based
       on the other settings and the {!type-request}. See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.3}
-      RFC 6265bis §4.1.3} and
+       RFC 6265bis §4.1.3} and
       {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Cookie_prefixes}
-      MDN}.
+       MDN}.
     - [~encrypt:false] disables cookie encryption. In that case, you must make
       sure that the cookie value does not contain [=], [;], or newlines. The
       easiest way to do so is to pass the value through an encoder like
       {!Dream.to_base64url}. See {!Dream.set_secret}.
     - [~expires] sets the [Expires=] attribute. The value is compatible with
       {{:https://v2.ocaml.org/api/Unix.html#VALgettimeofday}
-      [Unix.gettimeofday]}. See
+       [Unix.gettimeofday]}. See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.1}
-      RFC 6265bis §4.1.2.1} and
+       RFC 6265bis §4.1.2.1} and
       {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie}
-      MDN}.
+       MDN}.
     - [~max_age] sets the [Max-Age=] attribute. See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.2}
-      RFC 6265bis §4.1.2.2} and
+       RFC 6265bis §4.1.2.2} and
       {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie}
-      MDN}.
+       MDN}.
     - [~domain] sets the [Domain=] attribute. See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.3}
-      RFC 6265bis §4.1.2.3} and
+       RFC 6265bis §4.1.2.3} and
       {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Domain_attribute}
-      MDN}.
+       MDN}.
     - [~path] sets the [Path=] attribute. By default, [Path=] set to the site
       prefix in the {!type-request}, which is usually [/]. See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.4}
-      RFC 6265bis §4.1.2.4} and
+       RFC 6265bis §4.1.2.4} and
       {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Path_attribute}
-      MDN}.
+       MDN}.
     - [~secure] sets the [Secure] attribute. By default, [Secure] is set if
       {!Dream.tls} is [true] for the {!type-request}. See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.5}
-      RFC 6265bis §4.1.2.5} and
+       RFC 6265bis §4.1.2.5} and
       {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#restrict_access_to_cookies}
-      MDN}.
+       MDN}.
     - [~http_only] sets the [HttpOnly] attribute. [HttpOnly] is set by default.
       See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.6}
-      RFC 6265bis §4.1.2.6} and
+       RFC 6265bis §4.1.2.6} and
       {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#restrict_access_to_cookies}
-      MDN}.
+       MDN}.
     - [~same_site] sets the [SameSite=] attribute. [SameSite] is set to [Strict]
       by default. See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.7}
-      RFC 6265bis §4.1.2.7} and
+       RFC 6265bis §4.1.2.7} and
       {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#SameSite_attribute}
-      MDN}.
+       MDN}.
 
     {!Dream.to_set_cookie} is a “raw” version of this function that does not do
     any inference. *)
 
- val drop_cookie :
-   ?prefix:[< `Host | `Secure ] option ->
-   ?domain:string ->
-   ?path:string option ->
-   ?secure:bool ->
-   ?http_only:bool ->
-   ?same_site:[< `Strict | `Lax | `None ] option ->
-     response -> request -> string -> unit
+val drop_cookie :
+  ?prefix:[< `Host | `Secure] option ->
+  ?domain:string ->
+  ?path:string option ->
+  ?secure:bool ->
+  ?http_only:bool ->
+  ?same_site:[< `Strict | `Lax | `None] option ->
+  response ->
+  request ->
+  string ->
+  unit
 (** Deletes the given cookie.
 
     This function works by calling {!Dream.set_cookie}, and setting the cookie
@@ -655,18 +646,20 @@ val set_cookie :
     to {!Dream.set_cookie} to make sure that the same cookie is deleted. *)
 
 val cookie :
-  ?prefix:[< `Host | `Secure ] option ->
+  ?prefix:[< `Host | `Secure] option ->
   ?decrypt:bool ->
   ?domain:string ->
   ?path:string option ->
   ?secure:bool ->
-    request -> string -> string option
+  request ->
+  string ->
+  string option
 (** First cookie with the given name. See example
     {{:https://github.com/camlworks/dream/tree/master/example/c-cookie#folders-and-files}
-    [c-cookie]}.
+     [c-cookie]}.
 
     {[
-      Dream.cookie request "my.cookie"
+    Dream.cookie request "my.cookie"
     ]}
 
     Pass the same optional arguments as to {!Dream.set_cookie} for the same
@@ -677,14 +670,12 @@ val cookie :
 val all_cookies : request -> (string * string) list
 (** All cookies, with raw names and values. *)
 
-
-
 (** {1 Bodies} *)
 
 val body : 'a message -> string promise
 (** Retrieves the entire body. See example
     {{:https://github.com/camlworks/dream/tree/master/example/6-echo#folders-and-files}
-    [6-echo]}. *)
+     [6-echo]}. *)
 
 val set_body : 'a message -> string -> unit
 (** Replaces the body. *)
@@ -694,21 +685,19 @@ val body_size_limit : int -> middleware
     responding with [413 Payload Too Large].
 
     If the request declares a [Content-Length:] larger than the limit, it is
-    rejected immediately, before the handler runs, even if the handler would
-    not have read the body. Otherwise, the limit is enforced as the body is
-    read, so a handler that doesn't read a streamed body will not trigger it.
-    Once the limit is reached, the body is closed and discarded, and the
-    connection is closed (HTTP/1.1) or the request stream ends (HTTP/2) so that
-    the client stops sending.
+    rejected immediately, before the handler runs, even if the handler would not
+    have read the body. Otherwise, the limit is enforced as the body is read, so
+    a handler that doesn't read a streamed body will not trigger it. Once the
+    limit is reached, the body is closed and discarded, and the connection is
+    closed (HTTP/1.1) or the request stream ends (HTTP/2) so that the client
+    stops sending.
 
     Raises [Invalid_argument] if the limit is negative.
 
     {!Dream.run} and {!Dream.serve} install this middleware to enforce the
-    server-wide limit configured with [~max_body_size], 10 MiB by default.
-    If several {!Dream.body_size_limit}s apply to a request, the lowest limit
-    among them is enforced. *)
-
-
+    server-wide limit configured with [~max_body_size], 10 MiB by default. If
+    several {!Dream.body_size_limit}s apply to a request, the lowest limit among
+    them is enforced. *)
 
 (** {1 Streams} *)
 
@@ -719,20 +708,19 @@ val body_stream : request -> stream
 (** A stream that can be used to gradually read the request's body. *)
 
 val stream :
-  ?status:[< status ] ->
+  ?status:[< status] ->
   ?code:int ->
   ?headers:(string * string) list ->
   ?close:bool ->
-    (stream -> unit promise) -> response promise
+  (stream -> unit promise) ->
+  response promise
 (** Creates a response with a {!type-stream} open for writing, and passes the
     stream to the callback when it is ready. See example
     {{:https://github.com/camlworks/dream/tree/master/example/j-stream#folders-and-files}
-    [j-stream]}.
+     [j-stream]}.
 
     {[
-      fun request ->
-        Dream.stream (fun stream ->
-          Dream.write stream "foo")
+    fun request -> Dream.stream (fun stream -> Dream.write stream "foo")
     ]}
 
     [Dream.stream] automatically closes the stream when the callback returns or
@@ -741,7 +729,7 @@ val stream :
 val read : stream -> string option promise
 (** Retrieves a body chunk. See example
     {{:https://github.com/camlworks/dream/tree/master/example/j-stream#folders-and-files}
-    [j-stream]}. *)
+     [j-stream]}. *)
 (* TODO Document difference between receiving a request and receiving on a
    WebSocket. *)
 
@@ -768,10 +756,10 @@ type buffer =
     functions can be used with {!Dream.buffer}:
 
     - {{:https://github.com/inhabitedtype/bigstringaf/blob/353cb283aef4c261597f68154eb27a138e7ef112/lib/bigstringaf.mli}
-      [Bigstringaf.t]} in bigstringaf.
+       [Bigstringaf.t]} in bigstringaf.
     - {{:https://ocsigen.org/lwt/latest/api/Lwt_bytes} [Lwt_bytes.t]} in Lwt.
     - {{:https://github.com/mirage/ocaml-cstruct/blob/9a8b9a79bdfa2a1b8455bc26689e0228cc6fac8e/lib/cstruct.mli#L139}
-      [Cstruct.buffer]} in Cstruct. *)
+       [Cstruct.buffer]} in Cstruct. *)
 
 (* TODO Probably even close can be made optional. exn can be made optional. *)
 (* TODO Argument order? *)
@@ -783,11 +771,11 @@ val read_stream :
   pong:(buffer -> int -> int -> unit) ->
   close:(int -> unit) ->
   exn:(exn -> unit) ->
-    unit
+  unit
 (** Waits for the next stream event, and calls:
 
-    - [~data] with an offset and length, if a {!type-buffer} is received,
-    ~ [~flush] if a flush request is received,
+    - [~data] with an offset and length, if a {!type-buffer} is received, ~
+      [~flush] if a flush request is received,
     - [~ping] if a ping is received (WebSockets only),
     - [~pong] if a pong is received (WebSockets only),
     - [~close] if the stream is closed, and
@@ -795,16 +783,19 @@ val read_stream :
 
 val write_stream :
   stream ->
-  buffer -> int -> int ->
-  bool -> bool ->
+  buffer ->
+  int ->
+  int ->
+  bool ->
+  bool ->
   close:(int -> unit) ->
   exn:(exn -> unit) ->
   (unit -> unit) ->
-    unit
+  unit
 (** Writes a {!type-buffer} into the stream:
 
     {[
-      write_stream stream buffer offset length binary fin ~close ~exn callback
+    write_stream stream buffer offset length binary fin ~close ~exn callback
     ]}
 
     [write_stream] calls one of its three callback functions, depending on what
@@ -821,31 +812,31 @@ val write_stream :
     streams. *)
 
 val flush_stream :
-  stream ->
-  close:(int -> unit) ->
-  exn:(exn -> unit) ->
-  (unit -> unit) ->
-    unit
+  stream -> close:(int -> unit) -> exn:(exn -> unit) -> (unit -> unit) -> unit
 (** Requests the stream be flushed. The callbacks have the same meaning as in
     {!write_stream}. *)
 
 val ping_stream :
   stream ->
-  buffer -> int -> int ->
+  buffer ->
+  int ->
+  int ->
   close:(int -> unit) ->
   exn:(exn -> unit) ->
   (unit -> unit) ->
-    unit
+  unit
 (** Sends a ping frame on the WebSocket stream. The buffer is typically empty,
     but may contain up to 125 bytes of data. *)
 
 val pong_stream :
   stream ->
-  buffer -> int -> int ->
+  buffer ->
+  int ->
+  int ->
   close:(int -> unit) ->
   exn:(exn -> unit) ->
   (unit -> unit) ->
-    unit
+  unit
 (** Like {!ping_stream}, but sends a pong event. *)
 
 val close_stream : stream -> int -> unit
@@ -858,24 +849,23 @@ val abort_stream : stream -> exn -> unit
 
 (* TODO Ergonomics of this stream surface API. *)
 
-
-
 (** {1 WebSockets} *)
 
 type websocket
-(** A WebSocket connection. See {{:https://tools.ietf.org/html/rfc6455} RFC
-    6455} and
+(** A WebSocket connection. See
+    {{:https://tools.ietf.org/html/rfc6455} RFC 6455} and
     {{:https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API} MDN}. *)
 
 val websocket :
   ?headers:(string * string) list ->
   ?close:bool ->
-    (websocket -> unit promise) -> response promise
+  (websocket -> unit promise) ->
+  response promise
 (** Creates a fresh [101 Switching Protocols] response. Once this response is
     returned to Dream's HTTP layer, the callback is passed a new
     {!type-websocket}, and the application can begin using it. See example
     {{:https://github.com/camlworks/dream/tree/master/example/k-websocket#folders-and-files}
-    [k-websocket]}.
+     [k-websocket]}.
 
     {[
       let my_handler = fun request ->
@@ -887,16 +877,22 @@ val websocket :
     returns or raises an exception. Pass [~close:false] to suppress this
     behavior. *)
 
-type text_or_binary = [ `Text | `Binary ]
+type text_or_binary =
+  [ `Text
+  | `Binary ]
 (** See {!send} and {!receive_fragment}. *)
 
-type end_of_message = [ `End_of_message | `Continues ]
+type end_of_message =
+  [ `End_of_message
+  | `Continues ]
 (** See {!send} and {!receive_fragment}. *)
 
 val send :
-  ?text_or_binary:[< text_or_binary ] ->
-  ?end_of_message:[< end_of_message ] ->
-    websocket -> string -> unit promise
+  ?text_or_binary:[< text_or_binary] ->
+  ?end_of_message:[< end_of_message] ->
+  websocket ->
+  string ->
+  unit promise
 (** Sends a single WebSocket message. The WebSocket is ready for another message
     when the promise resolves.
 
@@ -907,7 +903,7 @@ val send :
     With [~text_or_binary:`Binary], the message will be received unmodified, as
     either a [Blob] or an [ArrayBuffer]. See
     {{:https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/binaryType}
-    MDN, [WebSocket.binaryType]}.
+     MDN, [WebSocket.binaryType]}.
 
     [~end_of_message] is ignored for now, as the WebSocket library underlying
     Dream does not support sending message fragments yet. *)
@@ -925,8 +921,6 @@ val close_websocket : ?code:int -> websocket -> unit promise
     some protocols based on WebSockets. See
     {{:https://tools.ietf.org/html/rfc6455#section-7.4} RFC 6455 §7.4}. *)
 
-
-
 (** {1 JSON}
 
     Dream presently recommends using
@@ -936,7 +930,7 @@ val close_websocket : ?code:int -> websocket -> unit promise
 
     See example
     {{:https://github.com/camlworks/dream/tree/master/example/e-json#folders-and-files}
-    [e-json]}. *)
+     [e-json]}. *)
 
 val origin_referrer_check : middleware
 (** CSRF protection for AJAX requests. Either the method must be [`GET] or
@@ -947,11 +941,11 @@ val origin_referrer_check : middleware
 
     Responds with [400 Bad Request] if the check fails. See example
     {{:https://github.com/camlworks/dream/tree/master/example/e-json#security}
-    [e-json]}.
+     [e-json]}.
 
     Implements the
     {{:https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#verifying-origin-with-standard-headers}
-    OWASP {i Verifying Origin With Standard Headers}} CSRF defense-in-depth
+     OWASP {i Verifying Origin With Standard Headers}} CSRF defense-in-depth
     technique, which is good enough for basic usage. Do not allow [`GET] or
     [`HEAD] requests to trigger important side effects if relying only on
     {!Dream.origin_referrer_check}.
@@ -962,8 +956,6 @@ val origin_referrer_check : middleware
     For more thorough protection, generate CSRF tokens with {!Dream.csrf_token},
     send them to the client (for instance, in [<meta>] tags of a single-page
     application), and require their presence in an [X-CSRF-Token:] header. *)
-
-
 
 (** {1 Forms}
 
@@ -988,21 +980,20 @@ val origin_referrer_check : middleware
 
     See example
     {{:https://github.com/camlworks/dream/tree/master/example/d-form#folders-and-files}
-    [d-form]}. *)
+     [d-form]}. *)
 
-type 'a form_result = [
-  | `Ok            of 'a
-  | `Expired       of 'a * float
+type 'a form_result =
+  [ `Ok of 'a
+  | `Expired of 'a * float
   | `Wrong_session of 'a
   | `Invalid_token of 'a
   | `Missing_token of 'a
-  | `Many_tokens   of 'a
-  | `Wrong_content_type
-]
+  | `Many_tokens of 'a
+  | `Wrong_content_type ]
 (** Form CSRF checking results, in order from least to most severe. See
     {!Dream.val-form} and example
     {{:https://github.com/camlworks/dream/tree/master/example/d-form#folders-and-files}
-    [d-form]}.
+     [d-form]}.
 
     The first three constructors, [`Ok], [`Expired], and [`Wrong_session] can
     occur in regular usage.
@@ -1017,7 +1008,7 @@ val form : ?csrf:bool -> request -> (string * string) list form_result promise
     {!Dream.csrf_tag} in a form template to transparently generate forms that
     will pass these checks. See {!section-templates} and example
     {{:https://github.com/camlworks/dream/tree/master/example/d-form#readme}
-    [d-form]}.
+     [d-form]}.
 
     - [Content-Type:] must be [application/x-www-form-urlencoded].
     - The form must have a field named [dream.csrf]. {!Dream.csrf_tag} adds such
@@ -1055,39 +1046,38 @@ val form : ?csrf:bool -> request -> (string * string) list form_result promise
 
     The remaining cases, including unexpected field sets and the remaining
     constructors of {!Dream.type-form_result}, usually indicate either bugs or
-    attacks. It's usually fine to respond to all of them with [400 Bad
-    Request]. *)
+    attacks. It's usually fine to respond to all of them with [400 Bad Request].
+*)
 
 (** {2 Upload} *)
 
-type multipart_form =
-  (string * ((string option * string) list)) list
+type multipart_form = (string * (string option * string) list) list
 (** Submitted file upload forms, [<form enctype="multipart/form-data">]. For
     example, if a form
 
     {v
-<input name="files" type="file" multiple>
-<input name="text">
+    <input name="files" type="file" multiple>
+    <input name="text">
     v}
 
     is submitted with two files and a text value, it will be received by
     {!Dream.multipart} as
 
     {[
-      [
-        "files", [
-          Some "file1.ext", "file1-content";
-          Some "file2.ext", "file2-content";
-        ];
-        "text", [
-          None, "text-value"
-        ];
-      ]
+    [
+      ( "files",
+        [
+          (Some "file1.ext", "file1-content");
+          (Some "file2.ext", "file2-content");
+        ] );
+      ("text", [(None, "text-value")]);
+    ]
     ]}
 
     See example
     {{:https://github.com/camlworks/dream/tree/master/example/g-upload#folders-and-files}
-    [g-upload]} and {{:https://datatracker.ietf.org/doc/html/rfc7578} RFC 7578}.
+     [g-upload]} and
+    {{:https://datatracker.ietf.org/doc/html/rfc7578} RFC 7578}.
 
     Note that clients such as curl can send files with no filename ([None]),
     though most browsers seem to insert at least an empty filename ([Some ""]).
@@ -1103,7 +1093,7 @@ type multipart_form =
 
     See
     {{:https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html}
-    OWASP {i File Upload Cheat Sheet}} for security precautions for upload
+     OWASP {i File Upload Cheat Sheet}} for security precautions for upload
     forms. *)
 
 val multipart : ?csrf:bool -> request -> multipart_form form_result promise
@@ -1117,7 +1107,7 @@ val multipart : ?csrf:bool -> request -> multipart_form form_result promise
 
     See section {!section-templates}, and example
     {{:https://github.com/camlworks/dream/tree/master/example/g-upload#folders-and-files}
-    [g-upload]}.
+     [g-upload]}.
 
     Note that, like {!Dream.form}, this function sorts form fields by field
     name.
@@ -1128,12 +1118,12 @@ val multipart : ?csrf:bool -> request -> multipart_form form_result promise
 
 (** {2 Streaming uploads} *)
 
-type part = string option * string option * ((string * string) list)
+type part = string option * string option * (string * string) list
 (** Upload form parts.
 
     A value [Some (name, filename, headers)] received by {!Dream.val-upload}
-    begins a {e part} in the stream. A part represents either a form field, or
-    a single, complete file.
+    begins a {e part} in the stream. A part represents either a form field, or a
+    single, complete file.
 
     Note that, in the general case, [filename] and [headers] are not reliable.
     [name] is the form field name. *)
@@ -1153,9 +1143,10 @@ val upload : request -> part option promise
     - Generate a CSRF token with {!Dream.csrf_tag}. Check for
       [`Field ("dream.csrf", token)] during upload and call
       {!Dream.verify_csrf_token}.
-    - Use {{:https://developer.mozilla.org/en-US/docs/Web/API/FormData}
-      [FormData]} in the client to submit [multipart/form-data] by AJAX, and
-      include a custom header. *)
+    - Use
+      {{:https://developer.mozilla.org/en-US/docs/Web/API/FormData} [FormData]}
+      in the client to submit [multipart/form-data] by AJAX, and include a
+      custom header. *)
 
 val upload_part : request -> string option promise
 (** Retrieves a part chunk. *)
@@ -1172,14 +1163,13 @@ val upload_part : request -> string option promise
     CSRF functions are exposed for creating custom schemes, and for
     defense-in-depth purposes. See
     {{:https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html}
-    OWASP {i Cross-Site Request Forgery Prevention Cheat Sheet}}. *)
+     OWASP {i Cross-Site Request Forgery Prevention Cheat Sheet}}. *)
 
-type csrf_result = [
-  | `Ok
+type csrf_result =
+  [ `Ok
   | `Expired of float
   | `Wrong_session
-  | `Invalid
-]
+  | `Invalid ]
 (** CSRF token verification outcomes.
 
     [`Expired] and [`Wrong_session] can occur in normal usage, when a user's
@@ -1202,36 +1192,34 @@ val csrf_token : ?valid_for:float -> request -> string
 val verify_csrf_token : request -> string -> csrf_result promise
 (** Checks that the CSRF token is valid for the {!type-request}'s session. *)
 
-
-
 (** {1 Templates}
 
     Dream includes a template preprocessor that allows interleaving OCaml and
     HTML in the same file:
 
     {v
-let render message =
-  <html>
-    <body>
-      <p>The message is <b><%s message %></b>!</p>
-    </body>
-  </html>
+    let render message =
+      <html>
+        <body>
+          <p>The message is <b><%s message %></b>!</p>
+        </body>
+      </html>
     v}
 
     See examples
     {{:https://github.com/camlworks/dream/tree/master/example/7-template#folders-and-files}
-    [7-template]} and
+     [7-template]} and
     {{:https://github.com/camlworks/dream/tree/master/example/r-template#folders-and-files}
-    [r-template]}.
+     [r-template]}.
 
     There is also a typed alternative, provided by an external library,
     {{:https://github.com/ocsigen/tyxml} TyXML}. It is shown in example
     {{:https://github.com/camlworks/dream/tree/master/example/w-tyxml#folders-and-files}
-    [w-tyxml]}. If you are using Reason syntax, TyXML can be used with
+     [w-tyxml]}. If you are using Reason syntax, TyXML can be used with
     {{:https://ocsigen.org/tyxml/latest/manual/jsx} server-side JSX}. See
     example
     {{:https://github.com/camlworks/dream/tree/master/example/r-tyxml#folders-and-files}
-    [r-tyxml]}.
+     [r-tyxml]}.
 
     Another alternative, {{:https://github.com/ocaml-mlx/mlx} mlx}, provides a
     middle ground between a fully type-checked HTML representation and the
@@ -1241,10 +1229,10 @@ let render message =
     To use the built-in templates, add this to [dune]:
 
     {v
-(rule
- (targets template.ml)
- (deps template.eml.ml)
- (action (run dream_eml %{deps} --workspace %{workspace_root})))
+    (rule
+     (targets template.ml)
+     (deps template.eml.ml)
+     (action (run dream_eml %{deps} --workspace %{workspace_root})))
     v}
 
     A template begins...
@@ -1259,9 +1247,9 @@ let render message =
     {!Dream.write}, to a {!type-response} that is in scope. This is shown in
     examples
     {{:https://github.com/camlworks/dream/tree/master/example/w-template-stream#folders-and-files}
-    [w-template-stream]} and
+     [w-template-stream]} and
     {{:https://github.com/camlworks/dream/tree/master/example/r-template-stream#folders-and-files}
-    [r-template-stream]}.
+     [r-template-stream]}.
 
     A template ends...
 
@@ -1314,10 +1302,8 @@ val csrf_tag : request -> string
 
     It is
     {{:https://portswigger.net/web-security/csrf/tokens#how-should-csrf-tokens-be-transmitted}
-    recommended} to put the CSRF tag immediately after the starting [<form>]
+     recommended} to put the CSRF tag immediately after the starting [<form>]
     tag, to prevent certain kinds of DOM manipulation-based attacks. *)
-
-
 
 (** {1 Middleware}
 
@@ -1330,10 +1316,10 @@ val no_middleware : middleware
     conditionally during application startup:
 
     {[
-      if development then
-        my_middleware
-      else
-        Dream.no_middleware
+    if development then
+      my_middleware
+    else
+      Dream.no_middleware
     ]} *)
 
 val livereload : middleware
@@ -1351,12 +1337,8 @@ val pipeline : middleware list -> middleware
 (** Combines a sequence of middlewares into one, such that these two lines are
     equivalent:
 
-    {v
-Dream.pipeline [middleware_1; middleware_2] @@ handler
-    v}
-    {v
-               middleware_1 @@ middleware_2 @@ handler
-    v} *)
+    {v Dream.pipeline [middleware_1; middleware_2] @@ handler v}
+    {v            middleware_1 @@ middleware_2 @@ handler v} *)
 
 (* TODO Need a way to create fresh streams. *)
 (** {2 Stream transformers}
@@ -1376,14 +1358,12 @@ val server_stream : 'a message -> stream
 (** The stream that servers interact with. *)
 
 val set_client_stream : response -> stream -> unit
-(** Replaces the stream that the client will use when it receives the
-    response. *)
+(** Replaces the stream that the client will use when it receives the response.
+*)
 
 val set_server_stream : request -> stream -> unit
-(** Replaces the stream that the server will use when it receives the
-    request. *)
-
-
+(** Replaces the stream that the server will use when it receives the request.
+*)
 
 (** {1 Routing} *)
 
@@ -1392,36 +1372,34 @@ val router : route list -> handler
     responds with [404 Not Found]. Route components starting with [:] are
     parameters, which can be retrieved with {!Dream.param}. See example
     {{:https://github.com/camlworks/dream/tree/master/example/3-router#folders-and-files}
-    [3-router]}.
+     [3-router]}.
 
     {[
-      let () =
-        Dream.run
-        @@ Dream.router [
-          Dream.get "/echo/:word" @@ fun request ->
-            Dream.html (Dream.param request "word");
-        ]
+    let () =
+      Dream.run
+      @@ Dream.router
+           [
+             ( Dream.get "/echo/:word" @@ fun request ->
+               Dream.html (Dream.param request "word") );
+           ]
     ]}
 
     {!Dream.scope} is the main form of site composition. However, Dream also
     supports full subsites with [**]:
 
     {[
-      let () =
-        Dream.run
-        @@ Dream.router [
-          Dream.get "/static/**" @@ Dream.static "www/static";
-        ]
+    let () =
+      Dream.run
+      @@ Dream.router [Dream.get "/static/**" @@ Dream.static "www/static"]
     ]}
 
-    [**] causes the request's path to be trimmed up to the [**] so that the
-    next handler only sees the part of the path which matches the [**]. This
-    prefix is stored in the request and can be retrieved using
-    {!Dream.prefix}. It is mainly useful for “mounting” {!Dream.static} as a
-    subsite.
+    [**] causes the request's path to be trimmed up to the [**] so that the next
+    handler only sees the part of the path which matches the [**]. This prefix
+    is stored in the request and can be retrieved using {!Dream.prefix}. It is
+    mainly useful for “mounting” {!Dream.static} as a subsite.
 
-    Route paths are matched against the decoded request path. In route
-    literals, write decoded characters such as ["/photos/södermalm/"], not the
+    Route paths are matched against the decoded request path. In route literals,
+    write decoded characters such as ["/photos/södermalm/"], not the
     percent-encoded wire form such as ["/photos/s%C3%B6dermalm/"]. The original
     target, returned by {!Dream.target} and printed by the logger, remains
     percent-encoded so it can be recorded without interpreting arbitrary client
@@ -1435,35 +1413,35 @@ val router : route list -> handler
 
     Note: routes that end with [/] and routes that don't end with [/] are
     {{:https://github.com/camlworks/dream/issues/244#issuecomment-1511624682}
-    different}. *)
+     different}. *)
 
-val get     : string -> handler -> route
+val get : string -> handler -> route
 (** Forwards [`GET] requests for the given path to the handler.
 
     {[
-      Dream.get "/home" home_template
+    Dream.get "/home" home_template
     ]} *)
 
-val post    : string -> handler -> route
-val put     : string -> handler -> route
-val delete  : string -> handler -> route
-val head    : string -> handler -> route
+val post : string -> handler -> route
+val put : string -> handler -> route
+val delete : string -> handler -> route
+val head : string -> handler -> route
 val connect : string -> handler -> route
 val options : string -> handler -> route
-val trace   : string -> handler -> route
-val patch   : string -> handler -> route
+val trace : string -> handler -> route
+
+val patch : string -> handler -> route
 (** Like {!Dream.get}, but for each of the other {{!type-method_} methods}. *)
 
-val any     : string -> handler -> route
+val any : string -> handler -> route
 (** Like {!Dream.get}, but does not check the method. *)
 
 (**/**)
+
 val not_found : handler
-[@@ocaml.deprecated
-"Use
-fun _ -> Dream.empty `Not_Found
-"]
+[@@ocaml.deprecated "Use\nfun _ -> Dream.empty `Not_Found\n"]
 (** Always responds with [404 Not Found]. *)
+
 (**/**)
 
 (* :((( *)
@@ -1476,8 +1454,10 @@ val scope : string -> middleware list -> route list -> route
     run only if a route matches.
 
     {[
-      Dream.scope "/api" [Dream.origin_referrer_check] [
-        Dream.get  "/widget" get_widget_handler;
+    Dream.scope "/api"
+      [Dream.origin_referrer_check]
+      [
+        Dream.get "/widget" get_widget_handler;
         Dream.post "/widget" set_widget_handler;
       ]
     ]}
@@ -1485,17 +1465,13 @@ val scope : string -> middleware list -> route list -> route
     To prefix routes without applying any more middleware, use the empty list:
 
     {[
-      Dream.scope "/api" [] [
-        (* ...routes... *)
-      ]
+    Dream.scope "/api" [] [ (* ...routes... *) ]
     ]}
 
     To apply middleware without prefixing the routes, use ["/"]:
 
     {[
-      Dream.scope "/" [Dream.origin_referrer_check] [
-        (* ...routes... *)
-      ]
+    Dream.scope "/" [Dream.origin_referrer_check] [ (* ...routes... *) ]
     ]}
 
     Scopes can be nested.
@@ -1509,36 +1485,35 @@ val no_route : route
     router. Useful for disabling routes conditionally during application start:
 
     {[
-      Dream.router [
-        if development then
-          Dream.get "/graphiql" (Dream.graphiql "/graphql")
-        else
-          Dream.no_route;
+    Dream.router
+      [
+        (if development then
+           Dream.get "/graphiql" (Dream.graphiql "/graphql")
+         else
+           Dream.no_route);
       ]
     ]} *)
 
 val trailing_slash :
-  ?status:[< redirection ] ->
-  [< `Strict | `Drop | `Append | `Redirect_drop | `Redirect_append ] ->
+  ?status:[< redirection] ->
+  [< `Strict | `Drop | `Append | `Redirect_drop | `Redirect_append] ->
   middleware
-(** Middleware that applies a uniform trailing-slash policy to requests,
-    so that an application need not declare both [/foo] and [/foo/] for every
-    route.
+(** Middleware that applies a uniform trailing-slash policy to requests, so that
+    an application need not declare both [/foo] and [/foo/] for every route.
 
     The policies are:
     - [`Strict] leaves [/foo] and [/foo/] as distinct paths.
     - [`Drop] rewrites [/foo/] to [/foo] internally, then runs the next handler.
-    - [`Append] rewrites [/foo] to [/foo/] internally, then runs the next handler.
+    - [`Append] rewrites [/foo] to [/foo/] internally, then runs the next
+      handler.
     - [`Redirect_drop] redirects [/foo/] to [/foo].
     - [`Redirect_append] redirects [/foo] to [/foo/].
 
     {[
-      let () =
-        Dream.run
-        @@ Dream.trailing_slash `Redirect_drop
-        @@ Dream.router [
-          Dream.get "/widget" handler;
-        ]
+    let () =
+      Dream.run
+      @@ Dream.trailing_slash `Redirect_drop
+      @@ Dream.router [Dream.get "/widget" handler]
     ]}
 
     The right policy depends on the application: a content site typically wants
@@ -1557,16 +1532,12 @@ val trailing_slash :
     the matching canonical form (without or with the trailing slash,
     respectively). *)
 
-
-
 (** {1 Static files} *)
 
-val static :
-  ?loader:(string -> string -> handler) ->
-    string -> handler
+val static : ?loader:(string -> string -> handler) -> string -> handler
 (** Serves static files from a local directory. See example
     {{:https://github.com/camlworks/dream/tree/master/example/f-static#folders-and-files}
-    [f-static]}.
+     [f-static]}.
 
     {[
       let () =
@@ -1579,11 +1550,11 @@ val static :
     [Dream.static local_directory] validates the path substituted for [**] by
     checking that it is (1) relative, (2) does not contain parent directory
     references ([..]), and (3) does not contain separators ([/]) within
-    components. If these checks fail, {!Dream.static} responds with [404 Not
-    Found].
+    components. If these checks fail, {!Dream.static} responds with
+    [404 Not Found].
 
-    If the checks succeed, {!Dream.static} calls [~loader local_directory path
-    request], where
+    If the checks succeed, {!Dream.static} calls
+    [~loader local_directory path request], where
 
     - [local_directory] is the same directory that was passed to
       {!Dream.static}.
@@ -1591,7 +1562,7 @@ val static :
 
     The default loader is {!Dream.from_filesystem}. See example
     {{:https://github.com/camlworks/dream/tree/master/example/w-one-binary#folders-and-files}
-    [w-one-binary]} for a loader that serves files from memory instead.
+     [w-one-binary]} for a loader that serves files from memory instead.
 
     If the loader's response carries an [ETag:] or [Last-Modified:] header (as
     {!Dream.from_filesystem} does), {!Dream.static} performs conditional-request
@@ -1605,14 +1576,14 @@ val static :
 
 val from_filesystem : string -> string -> handler
 (** [Dream.from_filesystem local_directory path request] responds with a file
-    from the file system found at [local_directory ^ "/" ^ path].
-    If such a file does not exist, it responds with [404 Not Found].
+    from the file system found at [local_directory ^ "/" ^ path]. If such a file
+    does not exist, it responds with [404 Not Found].
 
     To serve single files like [sitemap.xml] from the file system, use routes
     like
 
     {[
-      Dream.get "/sitemap.xml" (Dream.from_filesystem "assets" "sitemap.xml")
+    Dream.get "/sitemap.xml" (Dream.from_filesystem "assets" "sitemap.xml")
     ]}
 
     {!Dream.from_filesystem} calls {!Dream.mime_lookup} to guess a
@@ -1620,8 +1591,8 @@ val from_filesystem : string -> string -> handler
 
     The response also carries an [ETag:] (a strong validator derived from the
     file's contents) and a [Last-Modified:] header (the file's modification
-    time), which {!Dream.static} uses to answer conditional requests with [304
-    Not Modified]. No [Cache-Control:] is emitted: whether assets are
+    time), which {!Dream.static} uses to answer conditional requests with
+    [304 Not Modified]. No [Cache-Control:] is emitted: whether assets are
     fingerprinted and thus immutable is application-specific, so freshness
     lifetimes are left to the application to add. *)
 
@@ -1631,18 +1602,13 @@ val mime_lookup : string -> (string * string) list
     However, if the result is [text/html], {!Dream.mime_lookup} replaces it with
     [text/html; charset=utf-8], so as to match {!Dream.html}. *)
 
-
-
 (** {1 Sessions}
 
     Dream's default sessions contain string-to-string dictionaries for
     application data. For example, a logged-in session might have
 
     {[
-      [
-        "user", "someone";
-        "lang", "ut-OP";
-      ]
+    [("user", "someone"); ("lang", "ut-OP")]
     ]}
 
     Sessions also have three pieces of metadata:
@@ -1665,7 +1631,7 @@ val mime_lookup : string -> (string * string) list
 
     See example
     {{:https://github.com/camlworks/dream/tree/master/example/b-session#folders-and-files}
-    [b-session]}. *)
+     [b-session]}. *)
 
 val session_field : request -> string -> string option
 (** Value from the request's session. *)
@@ -1687,9 +1653,9 @@ val invalidate_session : request -> unit promise
 (** {2 Back ends} *)
 
 val memory_sessions : ?lifetime:float -> unit -> middleware
-(** Stores sessions in server memory and requires initialization before
-    usage. Passes session IDs to clients in cookies. Session data is lost when
-    the server process exits. *)
+(** Stores sessions in server memory and requires initialization before usage.
+    Passes session IDs to clients in cookies. Session data is lost when the
+    server process exits. *)
 
 val cookie_sessions : ?lifetime:float -> middleware
 (** Stores sessions in encrypted cookies. Use {!Dream.set_secret} to be able to
@@ -1700,12 +1666,12 @@ val sql_sessions : ?lifetime:float -> middleware
     cookies. Must be used under {!Dream.sql_pool}. Expects a table
 
     {v
-CREATE TABLE dream_session (
-  id TEXT PRIMARY KEY,
-  label TEXT NOT NULL,
-  expires_at REAL NOT NULL,
-  payload TEXT NOT NULL
-)
+    CREATE TABLE dream_session (
+      id TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      expires_at REAL NOT NULL,
+      payload TEXT NOT NULL
+    )
     v} *)
 
 (** {2 Metadata} *)
@@ -1719,15 +1685,13 @@ val session_label : request -> string
 val session_expires_at : request -> float
 (** Time at which the session will expire. *)
 
-
-
 (** {1 Flash messages}
 
     Flash messages are short strings which are stored in cookies during one
     request, to be made available for the next request. The typical use case is
     to provide form feedback across a redirect. See example
     {{:https://github.com/camlworks/dream/tree/master/example/w-flash#folders-and-files}
-    [w-flash]}. *)
+     [w-flash]}. *)
 
 val flash : middleware
 (** Implements storing flash messages in cookies. *)
@@ -1738,41 +1702,41 @@ val flash_messages : request -> (string * string) list
 val add_flash_message : request -> string -> string -> unit
 (** Adds a flash message to the request. *)
 
-
-
 (** {1 GraphQL}
 
-    Dream integrates {{:https://github.com/andreas/ocaml-graphql-server#readme}
-    ocaml-graphql-server}. See examples:
+    Dream integrates
+    {{:https://github.com/andreas/ocaml-graphql-server#readme}
+     ocaml-graphql-server}. See examples:
 
     - {{:https://github.com/camlworks/dream/tree/master/example/i-graphql#folders-and-files}
-      [i-graphql]}
+       [i-graphql]}
     - {{:https://github.com/camlworks/dream/tree/master/example/r-graphql#folders-and-files}
-      [r-graphql]}
+       [r-graphql]}
     - {{:https://github.com/camlworks/dream/tree/master/example/w-graphql-subscription#folders-and-files}
-      [w-graphql-subscription]}.
+       [w-graphql-subscription]}.
 
     If you are also
     {{:https://github.com/camlworks/dream/tree/master/example#full-stack}
-    writing a client in a flavor of OCaml}, consider
+     writing a client in a flavor of OCaml}, consider
     {{:https://github.com/reasonml-community/graphql-ppx} graphql-ppx} for
     generating GraphQL queries.
 
     See
     {{:https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html}
-    OWASP {i GraphQL Cheat Sheet}} for an overview of security topics related to
-    GraphQL. *)
+     OWASP {i GraphQL Cheat Sheet}} for an overview of security topics related
+    to GraphQL. *)
 
 val graphql : (request -> 'a promise) -> 'a Graphql_lwt.Schema.schema -> handler
 (** [Dream.graphql make_context schema] serves the GraphQL [schema].
 
     {[
-      let () =
-        Dream.run
-        @@ Dream.router [
-          Dream.any "/graphql"  (Dream.graphql Lwt.return schema);
-          Dream.get "/graphiql" (Dream.graphiql "/graphql");
-        ]
+    let () =
+      Dream.run
+      @@ Dream.router
+           [
+             Dream.any "/graphql" (Dream.graphql Lwt.return schema);
+             Dream.get "/graphiql" (Dream.graphiql "/graphql");
+           ]
     ]}
 
     [make_context] is called by {!Dream.val-graphql} on every {!type-request} to
@@ -1780,25 +1744,23 @@ val graphql : (request -> 'a promise) -> 'a Graphql_lwt.Schema.schema -> handler
     schema. Passing [Lwt.return], the same as
 
     {[
-      fun request -> Lwt.return request
+    fun request -> Lwt.return request
     ]}
 
     causes the {!type-request} itself to be used as the context:
 
     {[
-      field "name"
-        ~doc:"User name"
-        ~typ:(non_null string)
-        ~args:Arg.[]
-        ~resolve:(fun info user ->
-          (* The context is in info.ctx *)
-          user.name);
+    field "name" ~doc:"User name" ~typ:(non_null string)
+      ~args:Arg.[]
+      ~resolve:(fun info user ->
+        (* The context is in info.ctx *)
+        user.name)
     ]} *)
 
 val graphiql : ?default_query:string -> string -> handler
 (** Serves
     {{:https://github.com/graphql/graphiql/tree/main/packages/graphiql#readme}
-    GraphiQL}, a GraphQL query editor. The string gives the GraphQL endpoint
+     GraphiQL}, a GraphQL query editor. The string gives the GraphQL endpoint
     that the editor will work with.
 
     [~default_query] sets the query that appears upon the first visit to the
@@ -1817,43 +1779,41 @@ val graphiql : ?default_query:string -> string -> handler
     Use {!Dream.no_route} to disable GraphiQL conditionally outside of
     development. *)
 
-
-
 (** {1 SQL}
 
     Dream provides thin convenience functions over
     {{:https://github.com/paurkedal/ocaml-caqti/#readme} Caqti}, an SQL
     interface with several back ends. See example
     {{:https://github.com/camlworks/dream/tree/master/example/h-sql#folders-and-files}
-    [h-sql]}.
+     [h-sql]}.
 
     Dream installs the core {{:https://opam.ocaml.org/packages/caqti/} [caqti]}
     package, but you should also install at least one of:
 
     - {{:https://opam.ocaml.org/packages/caqti-driver-sqlite3/}
-      [caqti-driver-sqlite3]}
+       [caqti-driver-sqlite3]}
     - {{:https://opam.ocaml.org/packages/caqti-driver-postgresql/}
-      [caqti-driver-postgresql]}
+       [caqti-driver-postgresql]}
     - {{:https://opam.ocaml.org/packages/caqti-driver-mariadb/}
-      [caqti-driver-mariadb]}
+       [caqti-driver-mariadb]}
 
     They are separated because each has its own system library dependencies.
     Regardless of which you install, usage on the OCaml level is the same. The
     differences are in SQL syntax, and in external SQL server or file setup. See
 
     - {{:https://sqlite.org/lang.html} SQLite3, {i SQL As Understood By SQLite}}
-    - {{:https://www.postgresql.org/docs/13/sql.html} PostgreSQL, {i The SQL
-      Language}}
-    - {{:https://mariadb.com/kb/en/sql-statements-structure/} MariaDB, {i SQL
-      Statements & Structure}}
+    - {{:https://www.postgresql.org/docs/13/sql.html} PostgreSQL,
+       {i The SQL Language}}
+    - {{:https://mariadb.com/kb/en/sql-statements-structure/} MariaDB,
+       {i SQL Statements & Structure}}
 
     For an introductory overview of database security, see
     {{:https://cheatsheetseries.owasp.org/cheatsheets/Database_Security_Cheat_Sheet.html}
-    OWASP {i Database Security Cheat Sheet}}. *)
+     OWASP {i Database Security Cheat Sheet}}. *)
 
 val sql_pool :
   ?size:int ->
-  ?post_connect: (Caqti_lwt.connection -> unit promise) ->
+  ?post_connect:(Caqti_lwt.connection -> unit promise) ->
   string ->
   middleware
 (** Makes an SQL connection pool available to its inner handler. [?size] is the
@@ -1865,7 +1825,7 @@ val sql_pool :
 val sql : request -> (Caqti_lwt.connection -> 'a promise) -> 'a promise
 (** Runs the callback with a connection from the SQL pool. See example
     {{:https://github.com/camlworks/dream/tree/master/example/h-sql#folders-and-files}
-    [h-sql]}.
+     [h-sql]}.
 
     {[
       let () =
@@ -1876,49 +1836,45 @@ val sql : request -> (Caqti_lwt.connection -> 'a promise) -> 'a promise
             (* ... *) |> Dream.html)
     ]} *)
 
-
-
 (** {1 Logging}
 
-    Dream uses the {{:https://erratique.ch/software/logs/doc/Logs/index.html}
-    Logs} library internally, and integrates with all other libraries in your
-    project that are also using it. Dream provides a slightly simplified
-    interface to Logs.
+    Dream uses the
+    {{:https://erratique.ch/software/logs/doc/Logs/index.html} Logs} library
+    internally, and integrates with all other libraries in your project that are
+    also using it. Dream provides a slightly simplified interface to Logs.
 
     All log output is written to [stderr].
 
     See
     {{:https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html}
-    OWASP {i Logging Cheat Sheet}} for a survey of security topics related to
+     OWASP {i Logging Cheat Sheet}} for a survey of security topics related to
     logging. *)
 
 type ('a, 'b) conditional_log =
-  ((?request:request ->
-   ('a, Format.formatter, unit, 'b) format4 -> 'a) -> 'b) ->
-    unit
-(** Loggers. This type is difficult to read — instead, see {!Dream.val-error} for
-    usage. *)
+  ((?request:request -> ('a, Format.formatter, unit, 'b) format4 -> 'a) -> 'b) ->
+  unit
+(** Loggers. This type is difficult to read — instead, see {!Dream.val-error}
+    for usage. *)
 
-type log_level = [
-  | `Error
+type log_level =
+  [ `Error
   | `Warning
   | `Info
-  | `Debug
-]
+  | `Debug ]
 (** Log levels, in order from most urgent to least. *)
 
 type sub_log = {
-  error   : 'a. ('a, unit) conditional_log;
+  error : 'a. ('a, unit) conditional_log;
   warning : 'a. ('a, unit) conditional_log;
-  info    : 'a. ('a, unit) conditional_log;
-  debug   : 'a. ('a, unit) conditional_log;
+  info : 'a. ('a, unit) conditional_log;
+  debug : 'a. ('a, unit) conditional_log;
 }
 (** Sub-logs. See {!Dream.val-sub_log} below. *)
 
 val logger : ?log:sub_log -> middleware
 (** Logs and times requests. Time spent logging is included. See example
     {{:https://github.com/camlworks/dream/tree/master/example/2-middleware#folders-and-files}
-    [2-middleware]}.
+     [2-middleware]}.
 
     [~log] can be used to choose the sub-log used by this middleware. By
     default, request logs use the ["dream.logger"] source. *)
@@ -1930,47 +1886,47 @@ val log : ('a, Format.formatter, unit, unit) format4 -> 'a
     {{:https://v2.ocaml.org/api/Format.html#VALfprintf} [Format]}. The rest of
     the arguments are determined by the format string. See example
     {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
-    [a-log]}.
+     [a-log]}.
 
     {[
-      Dream.log "Counter is now: %i" counter;
-      Dream.log "Client: %s" (Dream.client request);
+    Dream.log "Counter is now: %i" counter;
+    Dream.log "Client: %s" (Dream.client request)
     ]} *)
 
-val error     : ('a, unit) conditional_log
+val error : ('a, unit) conditional_log
 (** Formats a message and writes it to the log at level [`Error]. The inner
-    formatting function is called only if the {{!initialize_log} current log
-    level} is [`Error] or higher. See example
+    formatting function is called only if the
+    {{!initialize_log} current log level} is [`Error] or higher. See example
     {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
-    [a-log]}.
+     [a-log]}.
 
     {[
-      Dream.error (fun log ->
-        log ~request "My message, details: %s" details);
+    Dream.error (fun log -> log ~request "My message, details: %s" details)
     ]}
 
     Pass the optional argument [~request] to {!Dream.val-error} to associate the
     message with a specific request. If not passed, {!Dream.val-error} will try
     to guess the request. This usually works, but not always. *)
 
-val warning   : ('a, unit) conditional_log
-val info      : ('a, unit) conditional_log
-val debug     : ('a, unit) conditional_log
-(** Like {!Dream.val-error}, but for each of the other {{!log_level} log
-    levels}. *)
+val warning : ('a, unit) conditional_log
+val info : ('a, unit) conditional_log
+
+val debug : ('a, unit) conditional_log
+(** Like {!Dream.val-error}, but for each of the other
+    {{!log_level} log levels}. *)
 
 val sub_log : ?level:[< log_level] -> string -> sub_log
 (** Creates a new sub-log with the given name. For example,
 
     {[
-      let log = Dream.sub_log "myapp.ajax"
+    let log = Dream.sub_log "myapp.ajax"
     ]}
 
     ...creates a logger that can be used like {!Dream.val-error} and the other
     default loggers, but prefixes ["myapp.ajax"] to each log message.
 
     {[
-      log.error (fun log -> log ~request "Validation failed")
+    log.error (fun log -> log ~request "Validation failed")
     ]}
 
     [?level] sets the log level threshold for this sub-log only. If not
@@ -1979,14 +1935,15 @@ val sub_log : ?level:[< log_level] -> string -> sub_log
 
     See [README] of example
     {{:https://github.com/camlworks/dream/tree/master/example/a-log#folders-and-files}
-    [a-log]}. *)
+     [a-log]}. *)
 
 val initialize_log :
   ?backtraces:bool ->
   ?async_exception_hook:bool ->
-  ?level:[< log_level ] ->
+  ?level:[< log_level] ->
   ?enable:bool ->
-    unit -> unit
+  unit ->
+  unit
 (** Initializes Dream's log with the given settings.
 
     Dream initializes its logging back end lazily. This is so that if a Dream
@@ -1998,11 +1955,11 @@ val initialize_log :
 
     - [~backtraces:true], the default, causes Dream to call
       {{:https://v2.ocaml.org/api/Printexc.html#VALrecord_backtrace}
-      [Printexc.record_backtrace]}, which makes exception backtraces available.
+       [Printexc.record_backtrace]}, which makes exception backtraces available.
 
     - [~async_exception_hook:true], the default, causes Dream to set
       {{:https://ocsigen.org/lwt/latest/api/Lwt#VALasync_exception_hook}
-      [Lwt.async_exception_hook]} so as to forward all asynchronous exceptions
+       [Lwt.async_exception_hook]} so as to forward all asynchronous exceptions
       to the logger, and not terminate the process.
 
     - [~level] sets the log level threshold for the entire binary. The default
@@ -2011,10 +1968,8 @@ val initialize_log :
     - [~enable:false] disables Dream logging completely. This can help sanitize
       output during testing. *)
 
-val set_log_level : string -> [< log_level ] -> unit
+val set_log_level : string -> [< log_level] -> unit
 (** Set the log level threshold of the given sub-log. *)
-
-
 
 (** {1 Errors}
 
@@ -2032,32 +1987,19 @@ val set_log_level : string -> [< log_level ] -> unit
     Use {!Dream.error_template} and pass the result to {!Dream.run}
     [~error_handler] to customize the error template.
 
-    The default error handler logs errors and its template generates
-    completely empty responses, to avoid internationalization issues. In
-    addition, this conforms to the recommendations in
+    The default error handler logs errors and its template generates completely
+    empty responses, to avoid internationalization issues. In addition, this
+    conforms to the recommendations in
     {{:https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html}
-    OWASP {i Error Handling Cheat Sheet}}.
+     OWASP {i Error Handling Cheat Sheet}}.
 
     For full control over error handling, including logging, you can define an
     {!type-error_handler} directly. *)
 
 type error = {
-  condition : [
-    | `Response of response
-    | `String of string
-    | `Exn of exn
-  ];
-  layer : [
-    | `App
-    | `HTTP
-    | `HTTP2
-    | `TLS
-    | `WebSocket
-  ];
-  caused_by : [
-    | `Server
-    | `Client
-  ];
+  condition : [`Response of response | `String of string | `Exn of exn];
+  layer : [`App | `HTTP | `HTTP2 | `TLS | `WebSocket];
+  caused_by : [`Server | `Client];
   request : request option;
   response : response option;
   client : string option;
@@ -2067,76 +2009,65 @@ type error = {
 (** Detailed errors. Ignore this type if only using {!Dream.error_template}.
 
     {ul
-    {li
-    [condition] describes the error itself.
+     {- [condition] describes the error itself.
 
-    - [`Response] is a [4xx] or [5xx] response.
-    - [`String] is an error that has only an English-language description.
-    - [`Exn] is a caught exception.
+        - [`Response] is a [4xx] or [5xx] response.
+        - [`String] is an error that has only an English-language description.
+        - [`Exn] is a caught exception.
 
-    The default error handler logs [`Exn] and [`Strings], but not [`Response].
-    [`Response] is assumed to be deliberate, and already logged by
-    {!Dream.logger}.
-    }
+        The default error handler logs [`Exn] and [`Strings], but not
+        [`Response]. [`Response] is assumed to be deliberate, and already logged
+        by {!Dream.logger}.
+     }
+     {- [layer] is which part of the Dream stack detected the error.
 
-    {li
-    [layer] is which part of the Dream stack detected the error.
+        - [`App] is for application exceptions, rejections, and [4xx], [5xx]
+          responses.
+        - [`HTTP] and [`HTTP2] are for low-level HTTP protocol errors.
+        - [`TLS] is for low-level TLS errors.
+        - [`WebSocket] is for WebSocket errors.
 
-    - [`App] is for application exceptions, rejections, and [4xx], [5xx]
-      responses.
-    - [`HTTP] and [`HTTP2] are for low-level HTTP protocol errors.
-    - [`TLS] is for low-level TLS errors.
-    - [`WebSocket] is for WebSocket errors.
+        The default error handler uses this to just prepend a prefix to its log
+        messages.
+     }
+     {- [caused_by] is the party likely to have caused the error.
 
-    The default error handler uses this to just prepend a prefix to its log
-    messages.
-    }
+        - [`Server] errors suggest bugs, and correspond to [5xx] responses.
+        - [`Client] errors suggest user errors, network failure, buggy clients,
+          and sometimes attacks. They correspond to [4xx] responses.
+     }
+     {- [request] is a {!type-request} associated with the error, if there is
+        one.
 
-    {li
-    [caused_by] is the party likely to have caused the error.
+        As examples, a request might not be available if the error is a failure
+        to parse an HTTP/1.1 request at all, or failure to perform a TLS
+        handshake.
 
-    - [`Server] errors suggest bugs, and correspond to [5xx] responses.
-    - [`Client] errors suggest user errors, network failure, buggy clients, and
-      sometimes attacks. They correspond to [4xx] responses.
-    }
+        In case of a [`WebSocket] error, the request is the client's original
+        request to establish the WebSocket connection.
+     }
+     {- [response] is a {!type-response} that was either generated by the
+        application, or suggested by the error context.
 
-    {li
-    [request] is a {!type-request} associated with the error, if there is one.
+        In case of a [`WebSocket] error, the response is the application's
+        original connection agreement response created by
+        {!Dream.val-websocket}.
 
-    As examples, a request might not be available if the error is a failure to
-    parse an HTTP/1.1 request at all, or failure to perform a TLS handshake.
+        See {!Dream.error_template}.
+     }
+     {- [client] is the client's address, if available. For example,
+        [127.0.0.1:56001].
+     }
+     {- Suggested {{!type-log_level} log level} for the error. Usually [`Error]
+        for [`Server] errors and [`Warning] for client errors.
+     }
+     {- [will_send_response] is [true] in error contexts where Dream will still
+        send a response.
 
-    In case of a [`WebSocket] error, the request is the client's original
-    request to establish the WebSocket connection.
-    }
-
-    {li
-    [response] is a {!type-response} that was either generated by the
-    application, or suggested by the error context.
-
-    In case of a [`WebSocket] error, the response is the application's original
-    connection agreement response created by {!Dream.val-websocket}.
-
-    See {!Dream.error_template}.
-    }
-
-    {li
-    [client] is the client's address, if available. For example,
-    [127.0.0.1:56001].
-    }
-
-    {li
-    Suggested {{!type-log_level} log level} for the error. Usually [`Error] for
-    [`Server] errors and [`Warning] for client errors.
-    }
-
-    {li
-    [will_send_response] is [true] in error contexts where Dream will still send
-    a response.
-
-    The default handler calls the error template only if [will_send_response] is
-    [true].
-    }} *)
+        The default handler calls the error template only if
+        [will_send_response] is [true].
+     }
+    } *)
 
 type error_handler = error -> response option promise
 (** Error handlers log errors and convert them into responses. Ignore if using
@@ -2157,20 +2088,18 @@ val error_template :
   (error -> string -> response -> response promise) -> error_handler
 (** Builds an {!error_handler} from a template. See example
     {{:https://github.com/camlworks/dream/tree/master/example/9-error#folders-and-files}
-    [9-error]}.
+     [9-error]}.
 
     {[
-      let my_error_handler =
-        Dream.error_template (fun _error debug_dump suggested_response ->
+    let my_error_handler =
+      Dream.error_template (fun _error debug_dump suggested_response ->
           let body =
             match debug_dump with
             | Some string -> Dream.html_escape string
             | None -> Dream.status_to_string (Dream.status suggested_response)
           in
 
-          suggested_response
-          |> Dream.with_body body
-          |> Lwt.return)
+          suggested_response |> Dream.with_body body |> Lwt.return)
     ]}
 
     The error's context suggests a response. Usually, its only valid field is
@@ -2192,8 +2121,9 @@ val error_template :
     status code is hardcoded, but the headers and body from the template's
     response will still be used.
 
-    If the template itself raises an exception or rejects, an empty [500
-    Internal Server Error] will be sent in contexts that require a response. *)
+    If the template itself raises an exception or rejects, an empty
+    [500 Internal Server Error] will be sent in contexts that require a
+    response. *)
 
 val debug_error_handler : error_handler
 (** An {!error_handler} for showing extra information about requests and
@@ -2204,8 +2134,6 @@ val catch : (error -> response promise) -> middleware
     application to the error handler. See {!section-errors}. *)
 (* TODO Error handler should not return an option, and then the type can be
    used here. *)
-
-
 
 (** {1 Servers} *)
 
@@ -2223,18 +2151,21 @@ val run :
   ?greeting:bool ->
   ?adjust_terminal:bool ->
   ?ignore_sigpipe:bool ->
-    handler -> unit
+  handler ->
+  unit
 (** Runs the Web application represented by the {!handler}, by default at
     {{:http://localhost:8080} http://localhost:8080}.
 
-    This function calls {{:https://ocsigen.org/lwt/latest/api/Lwt_main#VALrun}
-    [Lwt_main.run]} internally, so it is intended to be the main loop of a
-    program. {!Dream.serve} is a version that does not call [Lwt_main.run].
+    This function calls
+    {{:https://ocsigen.org/lwt/latest/api/Lwt_main#VALrun} [Lwt_main.run]}
+    internally, so it is intended to be the main loop of a program.
+    {!Dream.serve} is a version that does not call [Lwt_main.run].
 
     - [~interface] is the network interface to listen on. Defaults to
       ["localhost"]. Use ["0.0.0.0"] to listen on all interfaces.
     - [~port] is the port to listen on. If not set, defaults to the value of the
-      environment variable [DREAM_PORT] and, if neither are set, falls back to [8080].
+      environment variable [DREAM_PORT] and, if neither are set, falls back to
+      [8080].
     - If [~socket_path] is specified, Dream will listen on a Unix domain socket
       at the given path, and ignore [~interface] and [~port].
     - [~stop] is a promise that causes the server to stop accepting new
@@ -2244,30 +2175,29 @@ val run :
     - [~error_handler] handles all errors, both from the application, and
       low-level errors. See {!section-errors} and example
       {{:https://github.com/camlworks/dream/tree/master/example/9-error#folders-and-files}
-      [9-error]}.
-      {!Dream.debug_error_handler} is a default error handler that can be passed
-      here to help debug Web apps. See example
+       [9-error]}. {!Dream.debug_error_handler} is a default error handler that
+      can be passed here to help debug Web apps. See example
       {{:https://github.com/camlworks/dream/tree/master/example/8-debug#folders-and-files}
-      [8-debug]}.
+       [8-debug]}.
     - [~tls:true] enables TLS. You should also specify [~certificate_file] and
       [~key_file]. However, for development, Dream includes an insecure
       compiled-in
       {{:https://github.com/camlworks/dream/tree/master/src/certificate#folders-and-files}
-      localhost certificate}. Enabling HTTPS also enables transparent upgrading
+       localhost certificate}. Enabling HTTPS also enables transparent upgrading
       of connections to HTTP/2. See example
       {{:https://github.com/camlworks/dream/tree/master/example/l-https#folders-and-files}
-      [l-https]}.
+       [l-https]}.
     - [~certificate_file] and [~key_file] specify the certificate and key file,
       respectively, when using [~tls]. They are not required for development,
       but are required for production. Dream will write a warning to the log if
       you are using [~tls], don't provide [~certificate_file] and [~key_file],
       and [~interface] is not ["localhost"].
     - [~builtins:false] disables {!section-builtin}.
-    - [~max_body_size] sets a server-wide request body size limit.
-      See {!Dream.body_size_limit} for more details.
-      Defaults to 10 MiB. Pass [~max_body_size:max_int] to disable the limit.
-      This is applied independently of [~builtins], so setting a limit with
-      [~builtins:false] still enforces it.
+    - [~max_body_size] sets a server-wide request body size limit. See
+      {!Dream.body_size_limit} for more details. Defaults to 10 MiB. Pass
+      [~max_body_size:max_int] to disable the limit. This is applied
+      independently of [~builtins], so setting a limit with [~builtins:false]
+      still enforces it.
 
     The remaining arguments can be used to gradually disable convenience
     features of [Dream.run]. If these are disabled, you may as well switch to
@@ -2277,11 +2207,11 @@ val run :
       the Web application.
     - [~adjust_terminal:false] disables adjusting the terminal to disable echo
       and line wrapping.
-    - [~ignore_sigpipe:false] does not set the process-wide [SIGPIPE]
-      handler. By default, Dream ignores [SIGPIPE] so that writing a response
-      to a client that has already disconnected does not terminate the program.
-      Set it to [false] if the program wants to own [SIGPIPE] handling,
-      for example because it relies on the default behavior for other pipes. *)
+    - [~ignore_sigpipe:false] does not set the process-wide [SIGPIPE] handler.
+      By default, Dream ignores [SIGPIPE] so that writing a response to a client
+      that has already disconnected does not terminate the program. Set it to
+      [false] if the program wants to own [SIGPIPE] handling, for example
+      because it relies on the default behavior for other pipes. *)
 
 val serve :
   ?interface:string ->
@@ -2295,7 +2225,8 @@ val serve :
   ?builtins:bool ->
   ?max_body_size:int ->
   ?ignore_sigpipe:bool ->
-    handler -> unit promise
+  handler ->
+  unit promise
 (** Like {!Dream.run}, but returns a promise that does not resolve until the
     server stops listening, instead of calling
     {{:https://ocsigen.org/lwt/latest/api/Lwt_main#VALrun} [Lwt_main.run]}.
@@ -2315,15 +2246,13 @@ val serve :
     order, so
 
     {[
-      Dream.run my_app
+    Dream.run my_app
     ]}
 
     is the same as
 
     {[
-      Dream.run ~builtins:false
-      @@ Dream.catch ~error_handler
-      @@ my_app
+    Dream.run ~builtins:false @@ Dream.catch ~error_handler @@ my_app
     ]}
 
     The middleware can be replaced with work-alikes, or omitted to use Dream as
@@ -2343,11 +2272,11 @@ val with_site_prefix : string -> middleware
     The middleware is a translation layer between externally visible, prefixed
     URLs and the application's internal, unprefixed world. On the way out, the
     site prefix is added to root-relative [Location] response headers, i.e.
-    those beginning with [/]. "Root-relative" means relative to the
-    application root, so the site prefix is added even if the path happens to
-    begin with the same string as the site prefix. This includes locations
-    produced by {!Dream.redirect}, as well as headers set directly, for example
-    on a [201 Created] response. Absolute URLs and relative references are left
+    those beginning with [/]. "Root-relative" means relative to the application
+    root, so the site prefix is added even if the path happens to begin with the
+    same string as the site prefix. This includes locations produced by
+    {!Dream.redirect}, as well as headers set directly, for example on a
+    [201 Created] response. Absolute URLs and relative references are left
     unchanged.
 
     URLs inside a response body, such as [<a href=/foo>] in rendered HTML, are
@@ -2356,20 +2285,18 @@ val with_site_prefix : string -> middleware
 (* TODO Clarify that this isn't included with the built-ins, but is something on
    topic that one might want to use. *)
 
-
-
 (** {1:web_formats Web formats} *)
 
 val html_escape : string -> string
-(** Escapes a string so that it is suitable for use as text inside HTML
-    elements and quoted attribute values. Implements
+(** Escapes a string so that it is suitable for use as text inside HTML elements
+    and quoted attribute values. Implements
     {{:https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html#rule-1-html-encode-before-inserting-untrusted-data-into-html-element-content}
-    OWASP {i Cross-Site Scripting Prevention Cheat Sheet RULE #1}}.
+     OWASP {i Cross-Site Scripting Prevention Cheat Sheet RULE #1}}.
 
     This function is {e not} suitable for use with unquoted attributes, inline
     scripts, or inline CSS. See {i Security} in example
     {{:https://github.com/camlworks/dream/tree/master/example/7-template#security}
-    [7-template]}. *)
+     [7-template]}. *)
 
 val to_base64url : string -> string
 (** Converts the given string its base64url encoding, as specified in
@@ -2401,19 +2328,19 @@ val from_percent_encoded : string -> string
 (** Inverse of {!Dream.to_percent_encoded}. *)
 
 val to_form_urlencoded : (string * string) list -> string
-(** Inverse of {!Dream.from_form_urlencoded}. Percent-encodes names and
-    values. *)
+(** Inverse of {!Dream.from_form_urlencoded}. Percent-encodes names and values.
+*)
 
 val from_form_urlencoded : string -> (string * string) list
 (** Converts form data or a query string from
     [application/x-www-form-urlencoded] format to a list of name-value pairs.
-    See {{:https://tools.ietf.org/html/rfc1866#section-8.2.1} RFC 1866
-    §8.2.1}. Reverses the percent-encoding of names and values. *)
+    See {{:https://tools.ietf.org/html/rfc1866#section-8.2.1} RFC 1866 §8.2.1}.
+    Reverses the percent-encoding of names and values. *)
 
 val from_cookie : string -> (string * string) list
 (** Converts a [Cookie:] header value to key-value pairs. See
     {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.2.1}
-    RFC 6265bis §4.2.1}. Does not apply any decoding to names and values. *)
+     RFC 6265bis §4.2.1}. Does not apply any decoding to names and values. *)
 
 val to_set_cookie :
   ?expires:float ->
@@ -2422,12 +2349,14 @@ val to_set_cookie :
   ?path:string ->
   ?secure:bool ->
   ?http_only:bool ->
-  ?same_site:[ `Strict | `Lax | `None ] ->
-    string -> string -> string
+  ?same_site:[`Strict | `Lax | `None] ->
+  string ->
+  string ->
+  string
 (** [Dream.to_set_cookie name value] formats a [Set-Cookie:] header value. The
     optional arguments correspond to the attributes specified in
     {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-5.3}
-    RFC 6265bis §5.3}, and are documented at {!Dream.set_cookie}.
+     RFC 6265bis §5.3}, and are documented at {!Dream.set_cookie}.
 
     Does not apply any encoding to names and values. Be sure to encode so that
     names and values cannot contain `=`, `;`, or newline characters. *)
@@ -2472,8 +2401,6 @@ val text_html : string
 val application_json : string
 (** The string ["application/json"] for [Content-Type:] headers. *)
 
-
-
 (** {1 Cryptography} *)
 
 val set_secret : ?old_secrets:string list -> string -> middleware
@@ -2490,7 +2417,7 @@ val set_secret : ?old_secrets:string list -> string -> middleware
     For production, generate a 256-bit key with
 
     {[
-      Dream.to_base64url (Dream.random 32)
+    Dream.to_base64url (Dream.random 32)
     ]}
 
     [~old_secrets] is a list of previous secrets that will not be used for
@@ -2502,11 +2429,9 @@ val set_secret : ?old_secrets:string list -> string -> middleware
 val random : int -> string
 (** Generates the requested number of bytes using a
     {{:https://github.com/mirage/mirage-crypto} cryptographically secure random
-    number generator}. *)
+     number generator}. *)
 
-val encrypt :
-  ?associated_data:string ->
-    request -> string -> string
+val encrypt : ?associated_data:string -> request -> string -> string
 (** Signs and encrypts the string using the secret set by {!Dream.set_secret}.
 
     [~associated_data] is included when computing the signature, but not
@@ -2532,20 +2457,16 @@ val encrypt :
     than credentials. For password or other credential storage, see package
     {{:https://github.com/Khady/ocaml-argon2} [argon2]}. See
     {{:https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html}
-    OWASP {i Cryptographic Storage Cheat Sheet}} and
+     OWASP {i Cryptographic Storage Cheat Sheet}} and
     {{:https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html}
-    OWASP {i Password Storage Cheat Sheet}}. *)
+     OWASP {i Password Storage Cheat Sheet}}. *)
 
-val decrypt :
-  ?associated_data:string ->
-    request -> string -> string option
+val decrypt : ?associated_data:string -> request -> string -> string option
 (** Reverses {!Dream.encrypt}.
 
     To support secret rotation, this function first tries to decrypt the string
     using the main secret set by {!Dream.set_secret}, and then each of the old
     secrets passed to {!Dream.set_secret} in [~old_secrets]. *)
-
-
 
 (** {1 Variables}
 
@@ -2565,20 +2486,19 @@ val field : 'b message -> 'a field -> 'a option
 val set_field : 'b message -> 'a field -> 'a -> unit
 (** Sets the per-message variable to the value. *)
 
-
-
 (** {1 Testing} *)
 
 val request :
-  ?method_:[< method_ ] ->
+  ?method_:[< method_] ->
   ?target:string ->
   ?headers:(string * string) list ->
-    string -> request
+  string ->
+  request
 (** [Dream.request body] creates a fresh request with the given body for
-    testing. The optional arguments set the corresponding {{!requests} request
-    fields}. *)
+    testing. The optional arguments set the corresponding
+    {{!requests} request fields}. *)
 
-val test : ?prefix:string -> handler -> (request -> response)
+val test : ?prefix:string -> handler -> request -> response
 (** [Dream.test handler] runs a handler the same way the HTTP server
     ({!Dream.run}) would — assigning it a request id and noting the site root
     prefix, which is used by routers. [Dream.test] calls

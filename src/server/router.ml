@@ -3,13 +3,9 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 module Formats = Dream_pure.Formats
 module Message = Dream_pure.Message
 module Method = Dream_pure.Method
-
-
 
 (* TODO Limit character set to permit future extensions. *)
 (* TODO Document *. *)
@@ -27,58 +23,44 @@ type token =
   | Wildcard of string
 
 let rec validate route = function
-  | (Param "")::_ ->
+  | Param "" :: _ ->
     Printf.ksprintf failwith "Empty path parameter name in '%s'" route
-  | [Wildcard "*"] ->
-    ()
-  | (Wildcard "*")::_ ->
-    failwith "Path wildcard must be last"
-  | (Wildcard _)::_ ->
-    failwith "Path wildcard must be just '**'"
-  | _::tokens ->
-    validate route tokens
-  | [] ->
-    ()
+  | [Wildcard "*"] -> ()
+  | Wildcard "*" :: _ -> failwith "Path wildcard must be last"
+  | Wildcard _ :: _ -> failwith "Path wildcard must be just '**'"
+  | _ :: tokens -> validate route tokens
+  | [] -> ()
 
 let make_star_or_wildcard = function
   | "" -> Literal "*"
   | s -> Wildcard s
 
 let parse string =
-
   let rec parse_separator tokens index =
     match string.[index] with
-    | '/' ->
-      parse_component_start tokens (index + 1)
-    | _ ->
-      parse_component_start tokens index
-    | exception Invalid_argument _ ->
-      List.rev tokens
-
+    | '/' -> parse_component_start tokens (index + 1)
+    | _ -> parse_component_start tokens index
+    | exception Invalid_argument _ -> List.rev tokens
   and parse_component_start tokens index =
     match string.[index] with
-    | '/' ->
-      parse_component_start tokens (index + 1)
-    | ':' ->
-      parse_component tokens (fun s -> Param s) (index + 1) (index + 1)
-    | '*' ->
-      parse_component tokens make_star_or_wildcard (index + 1) (index + 1)
-    | _ | exception Invalid_argument _ ->
+    | '/' -> parse_component_start tokens (index + 1)
+    | ':' -> parse_component tokens (fun s -> Param s) (index + 1) (index + 1)
+    | '*' -> parse_component tokens make_star_or_wildcard (index + 1) (index + 1)
+    | _ | (exception Invalid_argument _) ->
       parse_component tokens (fun s -> Literal s) index index
-
   and parse_component tokens constructor start_index index =
     match string.[index] with
     | exception Invalid_argument _ ->
       let token =
-        constructor (String.sub string start_index (index - start_index)) in
-      List.rev (token::tokens)
+        constructor (String.sub string start_index (index - start_index))
+      in
+      List.rev (token :: tokens)
     | '/' ->
       let token =
-        constructor (String.sub string start_index (index - start_index)) in
-      parse_separator (token::tokens) index
-    | _ ->
-      parse_component tokens constructor start_index (index + 1)
-
+        constructor (String.sub string start_index (index - start_index))
+      in
+      parse_separator (token :: tokens) index
+    | _ -> parse_component tokens constructor start_index (index + 1)
   in
 
   let tokens = parse_separator [] 0 in
@@ -88,14 +70,11 @@ let parse string =
 let rec strip_empty_trailing_token = function
   | [] -> []
   | [Literal ""] -> []
-  | token::tokens -> token::(strip_empty_trailing_token tokens)
+  | token :: tokens -> token :: strip_empty_trailing_token tokens
 
-
-
-type method_set = [
-  | Method.method_
-  | `Any
-]
+type method_set =
+  [ Method.method_
+  | `Any ]
 
 let method_matches method_set method_ =
   match method_set with
@@ -108,66 +87,51 @@ type node =
 
 and route = (token list * node) list
 
-let get pattern handler =
-  [parse pattern, Handler (`GET, handler)]
+let get pattern handler = [(parse pattern, Handler (`GET, handler))]
 
-let post pattern handler =
-  [parse pattern, Handler (`POST, handler)]
+let post pattern handler = [(parse pattern, Handler (`POST, handler))]
 
-let put pattern handler =
-  [parse pattern, Handler (`PUT, handler)]
+let put pattern handler = [(parse pattern, Handler (`PUT, handler))]
 
-let delete pattern handler =
-  [parse pattern, Handler (`DELETE, handler)]
+let delete pattern handler = [(parse pattern, Handler (`DELETE, handler))]
 
-let head pattern handler =
-  [parse pattern, Handler (`HEAD, handler)]
+let head pattern handler = [(parse pattern, Handler (`HEAD, handler))]
 
-let connect pattern handler =
-  [parse pattern, Handler (`CONNECT, handler)]
+let connect pattern handler = [(parse pattern, Handler (`CONNECT, handler))]
 
-let options pattern handler =
-  [parse pattern, Handler (`OPTIONS, handler)]
+let options pattern handler = [(parse pattern, Handler (`OPTIONS, handler))]
 
-let trace pattern handler =
-  [parse pattern, Handler (`TRACE, handler)]
+let trace pattern handler = [(parse pattern, Handler (`TRACE, handler))]
 
-let patch pattern handler =
-  [parse pattern, Handler (`PATCH, handler)]
+let patch pattern handler = [(parse pattern, Handler (`PATCH, handler))]
 
-let any pattern handler =
-  [parse pattern, Handler (`Any, handler)]
+let any pattern handler = [(parse pattern, Handler (`Any, handler))]
 
-let no_route =
-  []
+let no_route = []
 
 let rec apply middlewares routes =
   let rec compose handler = function
     | [] -> handler
-    | middleware::more -> middleware @@ compose handler more
+    | middleware :: more -> middleware @@ compose handler more
   in
   routes
   |> List.flatten
   |> List.map (fun (pattern, node) ->
-    let node =
-      match node with
-      | Handler (method_, handler) ->
-        Handler (method_, compose handler middlewares)
-      | Scope route -> Scope (apply middlewares [route])
-    in
-    pattern, node)
+      let node =
+        match node with
+        | Handler (method_, handler) ->
+          Handler (method_, compose handler middlewares)
+        | Scope route -> Scope (apply middlewares [route])
+      in
+      (pattern, node))
 
 let under prefix routes =
-  [strip_empty_trailing_token (parse prefix), Scope (List.flatten routes)]
+  [(strip_empty_trailing_token (parse prefix), Scope (List.flatten routes))]
 
-let scope prefix middlewares routes =
-  under prefix [apply middlewares routes]
-
-
+let scope prefix middlewares routes = under prefix [apply middlewares routes]
 
 let path_field : string list Message.field =
-  Message.new_field
-    ~name:"dream.path"
+  Message.new_field ~name:"dream.path"
     ~show_value:(fun path -> String.concat "/" path)
     ()
 
@@ -177,24 +141,22 @@ let path_field : string list Message.field =
 let path the_request =
   match Message.field the_request path_field with
   | Some path -> path
-  | None ->
+  | None -> (
     let path =
-      Message.(Formats.(
-        the_request |> target |> split_target |> fst |> from_path))
+      Message.(
+        Formats.(the_request |> target |> split_target |> fst |> from_path))
     in
     (* HTTP treats an empty path as equivalent to [/]. *)
     match path with
     | [] -> [""]
-    | _ -> path
+    | _ -> path)
 
 (* TODO Move site_prefix into this file and remove with_path from the API. *)
-let set_path request path =
-  Message.set_field request path_field path
+let set_path request path = Message.set_field request path_field path
 
 (* Wildcard prefix is stored backwards. *)
 let wildcard_prefix_field : string list Message.field =
-  Message.new_field
-    ~name:"dream.wildcard_prefix"
+  Message.new_field ~name:"dream.wildcard_prefix"
     ~show_value:(fun prefix -> String.concat "/" (List.rev prefix))
     ()
 
@@ -206,16 +168,14 @@ let internal_wildcard_prefix request =
 let wildcard_prefix request =
   Formats.to_path (List.rev (internal_wildcard_prefix request))
 
-let wildcard_prefix_path request =
-  List.rev (internal_wildcard_prefix request)
+let wildcard_prefix_path request = List.rev (internal_wildcard_prefix request)
 
 let set_wildcard_prefix request prefix =
   Message.set_field request wildcard_prefix_field prefix
 
 (* Site prefix is stored forwards *)
 let site_prefix_field : string list Message.field =
-  Message.new_field
-    ~name:"dream.site_prefix"
+  Message.new_field ~name:"dream.site_prefix"
     ~show_value:(fun prefix -> Formats.to_path prefix)
     ()
 
@@ -224,8 +184,7 @@ let internal_site_prefix request =
   | Some prefix -> prefix
   | None -> []
 
-let site_prefix request =
-  Formats.to_path (internal_site_prefix request)
+let site_prefix request = Formats.to_path (internal_site_prefix request)
 
 let set_site_prefix request prefix =
   Message.set_field request site_prefix_field prefix
@@ -234,22 +193,17 @@ let set_site_prefix request prefix =
    [Dream.prefix]. *)
 let full_prefix request =
   Formats.to_path
-    (internal_site_prefix request
-     @ List.rev (internal_wildcard_prefix request))
+    (internal_site_prefix request @ List.rev (internal_wildcard_prefix request))
 
 let params_field : (string * string) list Message.field =
-  Message.new_field
-    ~name:"dream.params"
+  Message.new_field ~name:"dream.params"
     ~show_value:(fun params ->
       params
       |> List.map (fun (param, value) -> Printf.sprintf "%s=%s" param value)
       |> String.concat ", ")
     ()
 
-
-
-let log =
-  Log.sub_log "dream.router"
+let log = Log.sub_log "dream.router"
 
 let missing_param request name =
   let message = Printf.sprintf "Dream.param: missing path parameter %S" name in
@@ -259,59 +213,48 @@ let missing_param request name =
 let param request name =
   match Message.field request params_field with
   | None -> missing_param request name
-  | Some params ->
-    try List.assoc name params
-    with _ -> missing_param request name
+  | Some params -> (
+    try List.assoc name params with _ -> missing_param request name)
 
 let router routes =
   let routes = List.flatten routes in
 
   fun request ->
-
     (* TODO Probably unnecessary (because it's better to just convert this to a
        trie), but the method can be checked before descending down the route. *)
-
     let rec try_routes bindings prefix path routes ok fail =
       match routes with
       | [] -> fail ()
-      | (pattern, node)::routes ->
+      | (pattern, node) :: routes ->
         try_route bindings prefix path pattern node ok (fun () ->
-          try_routes bindings prefix path routes ok fail)
-
+            try_routes bindings prefix path routes ok fail)
     and try_route bindings prefix path pattern node ok fail =
-      match pattern, path with
-      | [], _ ->
-        try_node bindings prefix path node false ok fail
-      | _,  [] -> fail ()
-      | Literal  s :: pattern, s' :: path when s = s' ->
-        try_route bindings            (s'::prefix) path pattern node ok fail
-      | Literal  _ :: _,       _                      -> fail ()
-      | Param    _ :: _,       s' :: _ when s' = ""   -> fail ()
-      | Param    s :: pattern, s' :: path ->
-        try_route ((s, s')::bindings) (s'::prefix) path pattern node ok fail
-      | Wildcard _ :: _,       _ ->
-        try_node bindings prefix path node true ok fail
-
+      match (pattern, path) with
+      | [], _ -> try_node bindings prefix path node false ok fail
+      | _, [] -> fail ()
+      | Literal s :: pattern, s' :: path when s = s' ->
+        try_route bindings (s' :: prefix) path pattern node ok fail
+      | Literal _ :: _, _ -> fail ()
+      | Param _ :: _, s' :: _ when s' = "" -> fail ()
+      | Param s :: pattern, s' :: path ->
+        try_route ((s, s') :: bindings) (s' :: prefix) path pattern node ok fail
+      | Wildcard _ :: _, _ -> try_node bindings prefix path node true ok fail
     and try_node bindings prefix path node is_wildcard ok fail =
       match node with
       | Handler (method_, handler)
-          when method_matches method_ (Message.method_ request) ->
+        when method_matches method_ (Message.method_ request) ->
         Message.set_field request params_field bindings;
-        if is_wildcard then begin
-          (* prefix was built in reverse order *)
+        if is_wildcard then begin (* prefix was built in reverse order *)
           set_wildcard_prefix request prefix;
           set_path request path;
           ok handler request
         end
+        else if path = [] then
+          ok handler request
         else
-          if path = [] then
-            ok handler request
-          else
-            fail ()
-
+          fail ()
       | Handler _ -> fail ()
       | Scope routes -> try_routes bindings prefix path routes ok fail
-
     in
 
     let params =
@@ -328,9 +271,8 @@ let router routes =
     (* match match_site_prefix next_prefix path with
     | None -> next_handler request
     | Some path -> *)
-      (* TODO The initial bindings and prefix should be taken from the request
+    (* TODO The initial bindings and prefix should be taken from the request
          context when there is indirect nested router support. *)
-    try_routes
-      params prefix path routes
+    try_routes params prefix path routes
       (fun handler request -> handler request)
       (fun () -> Helpers.not_found request)

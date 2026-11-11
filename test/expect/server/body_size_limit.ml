@@ -3,10 +3,7 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
-let () =
-  ignore Initialize.require
+let () = ignore Initialize.require
 
 (* Reads the whole body, so the size limit is actually enforced, and reports the
    number of bytes it received. *)
@@ -15,8 +12,7 @@ let echo_handler request =
   Dream.respond (string_of_int (String.length body))
 
 (* Ignores the body entirely. *)
-let ignore_handler _request =
-  Dream.respond "ok"
+let ignore_handler _request = Dream.respond "ok"
 
 let run ?(handler = echo_handler) ?headers ~limit body =
   let request = Dream.request ?headers body in
@@ -43,13 +39,13 @@ let%expect_test _ =
 (* An advertised Content-Length past the limit is rejected immediately, without
    reading the body. *)
 let%expect_test _ =
-  run ~limit:5 ~headers:["Content-Length", "1000000"] "";
+  run ~limit:5 ~headers:[("Content-Length", "1000000")] "";
   [%expect {| 413 |}]
 
 (* An advertised Content-Length within the limit does not trigger the fast-path
    rejection; the body is read normally. *)
 let%expect_test _ =
-  run ~limit:10 ~headers:["Content-Length", "5"] "hello";
+  run ~limit:10 ~headers:[("Content-Length", "5")] "hello";
   [%expect {| 200 5 |}]
 
 (* A handler that never reads the body is not affected by an over-limit body
@@ -65,6 +61,6 @@ let%expect_test _ =
        (Dream.body_size_limit (-1) echo_handler)
        (Dream.request "hello")
    with
-   | _ -> print_endline "accepted"
-   | exception Invalid_argument message -> print_endline message);
+  | _ -> print_endline "accepted"
+  | exception Invalid_argument message -> print_endline message);
   [%expect {| Dream.body_size_limit: negative limit |}]

@@ -3,8 +3,6 @@
 
    Copyright 2022 Anton Bachin *)
 
-
-
 let%expect_test "default status is OK" =
   Dream.status (Dream.response "") |> Dream.status_to_string |> print_endline;
   [%expect {| OK |}]
@@ -32,15 +30,10 @@ let%expect_test "middleware runs sequentially onion-style" =
     print_endline "outer middleware: response";
     Lwt.return response
   in
-  let server =
-    Dream.pipeline [
-      outer_middleware;
-      inner_middleware
-    ]
-    @@ handler
-  in
+  let server = Dream.pipeline [outer_middleware; inner_middleware] @@ handler in
   ignore (Lwt_main.run (server (Dream.request "")));
-  [%expect {|
+  [%expect
+    {|
     outer middleware: request
     inner middleware: request
     handler

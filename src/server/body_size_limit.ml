@@ -3,12 +3,8 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 module Message = Dream_pure.Message
 module Stream = Dream_pure.Stream
-
-
 
 (* Raised internally when a request body exceeds the configured limit. It is
    caught by the middleware below and turned into a 413 response. It travels
@@ -23,13 +19,10 @@ let default_max_body_size = 10 * 1024 * 1024
 (* Marks a request whose body exceeded the size limit. Adapters use this to
    stop reading the body and to choose the protocol-specific response. *)
 let exceeded_field =
-  Message.new_field
-    ~name:"dream.body_size_limit.exceeded"
-    ~show_value:string_of_bool
-    ()
+  Message.new_field ~name:"dream.body_size_limit.exceeded"
+    ~show_value:string_of_bool ()
 
-let exceeded request =
-  Message.field request exceeded_field = Some true
+let exceeded request = Message.field request exceeded_field = Some true
 
 (* Wraps a request body stream's reader so that it counts the bytes read, and
    raises [Payload_too_large] through [~exn] as soon as the running total would
@@ -48,8 +41,7 @@ let limit_reader max_length stream =
           data buffer offset length binary fin)
       ~flush ~ping ~pong ~close ~exn
   in
-  Stream.reader
-    ~read:read_fn
+  Stream.reader ~read:read_fn
     ~close:(fun code -> Stream.close stream code)
     ~abort:(fun exn -> Stream.abort stream exn)
 

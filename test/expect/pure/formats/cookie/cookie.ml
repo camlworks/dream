@@ -3,8 +3,6 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 let parse string =
   string
   |> Dream.from_cookie
@@ -18,13 +16,15 @@ let%expect_test _ =
   parse " a ";
   parse "a=b";
   parse " a = b ";
-  parse "a=\"b\""; (* TODO This appears to parse incorrectly w.r.t RFC. *)
+  parse "a=\"b\"";
+  (* TODO This appears to parse incorrectly w.r.t RFC. *)
   parse "a=b;c=d";
   parse "a=b; c=d";
   parse "a=b ; c=d";
   parse "a=b;c";
   parse "a;c=d";
-  [%expect {|
+  [%expect
+    {|
     []
     []
     []
@@ -37,8 +37,7 @@ let%expect_test _ =
     ["a"="b"]
     ["c"="d"] |}]
 
-let show =
-  Printf.printf "%S\n"
+let show = Printf.printf "%S\n"
 
 let%expect_test _ =
   show @@ Dream.to_set_cookie "a" "b";
@@ -62,23 +61,24 @@ let%expect_test _ =
   show @@ Dream.to_set_cookie "a" "b" ~expires:1616431310.;
   show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. -. day);
   show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. day);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 2. *. day);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 3. *. day);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 4. *. day);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 5. *. day);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 6. *. day);
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (2. *. day));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (3. *. day));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (4. *. day));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (5. *. day));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (6. *. day));
   show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. -. month);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. -. 2. *. month);
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. -. (2. *. month));
   show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. month);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 2. *. month);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 3. *. month);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 4. *. month);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 5. *. month);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 6. *. month);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 7. *. month);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 8. *. month);
-  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. 9. *. month);
-  [%expect {|
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (2. *. month));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (3. *. month));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (4. *. month));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (5. *. month));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (6. *. month));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (7. *. month));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (8. *. month));
+  show @@ Dream.to_set_cookie "a" "b" ~expires:(1616431310. +. (9. *. month));
+  [%expect
+    {|
     "a=b; Expires=Mon, 22 Mar 2021 16:41:50 GMT"
     "a=b; Expires=Sun, 21 Mar 2021 16:41:50 GMT"
     "a=b; Expires=Tue, 23 Mar 2021 16:41:50 GMT"
@@ -108,7 +108,8 @@ let%expect_test _ =
   show @@ Dream.to_set_cookie "a" "b" ~max_age:1.6;
   show @@ Dream.to_set_cookie "a" "b" ~max_age:(-1.4);
   show @@ Dream.to_set_cookie "a" "b" ~max_age:(-1.6);
-  [%expect {|
+  [%expect
+    {|
     "a=b; Max-Age=1"
     "a=b; Max-Age=42"
     "a=b; Max-Age=-1"
@@ -143,7 +144,8 @@ let%expect_test _ =
   show @@ Dream.to_set_cookie "a" "b" ~same_site:`Strict;
   show @@ Dream.to_set_cookie "a" "b" ~same_site:`Lax;
   show @@ Dream.to_set_cookie "a" "b" ~same_site:`None;
-  [%expect {|
+  [%expect
+    {|
     "a=b; SameSite=Strict"
     "a=b; SameSite=Lax"
     "a=b; SameSite=None" |}]
