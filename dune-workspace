@@ -1,0 +1,7 @@
+(lang dune 3.22)
+
+; refmt does not work with .eml.re templates.
+(env
+ (_
+  (formatting
+   (enabled_for dune ocaml))))

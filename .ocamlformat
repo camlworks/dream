@@ -1,4 +1,4 @@
-version = 0.25.1
+version = 0.29.0
 profile = conventional
 
 leading-nested-match-parens = false
@@ -14,3 +14,6 @@ exp-grouping = preserve
 if-then-else = fit-or-vertical
 let-and = sparse
 type-decl = sparse
+module-item-spacing = preserve
+break-fun-decl = smart
+break-fun-sig = smart

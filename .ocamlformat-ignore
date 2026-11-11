@@ -1,0 +1,6 @@
+# EML templates contain markup and directives that are not OCaml syntax.
+**/*.eml.ml
+
+# Examples intentionally use hand-formatted layout.
+example/**/*.ml
+example/**/*.mli
