@@ -81,6 +81,7 @@ depends: [
 
   # Testing, development.
   "alcotest" {with-test}
+  "ocamlformat" {with-dev-setup & = "0.29.0"}
   "bisect_ppx" {with-test & >= "2.5.0"}  # --instrument-with.
   "caqti-driver-postgresql" {with-test}
   "caqti-driver-sqlite3" {with-test}
