@@ -138,9 +138,9 @@ let wrap_handler
               let error_handler =
                 Error_handler.websocket user's_error_handler request response
               in
+              (* TODO *)
               ignore error_handler;
 
-              (* TODO *)
               let proceed () =
                 Httpun_ws.Server_connection.create_websocket
                   (Dream_httpaf.Websocket.websocket_handler client_stream)
