@@ -1,11 +1,8 @@
 (library
  (public_name dream.cipher)
  (name dream__cipher)
- (libraries
-  digestif
-  dream-pure
-  mirage-crypto
-  mirage-crypto-rng
- )
- (preprocess (pps lwt_ppx))
- (instrumentation (backend bisect_ppx)))
+ (libraries digestif dream-pure mirage-crypto mirage-crypto-rng)
+ (preprocess
+  (pps lwt_ppx))
+ (instrumentation
+  (backend bisect_ppx)))

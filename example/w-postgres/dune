@@ -1,9 +1,11 @@
 (executable
  (name postgres)
  (libraries caqti-driver-postgresql dream)
- (preprocess (pps lwt_ppx)))
+ (preprocess
+  (pps lwt_ppx)))
 
 (rule
  (targets postgres.ml)
  (deps postgres.eml.ml)
- (action (run dream_eml %{deps} --workspace %{workspace_root})))
+ (action
+  (run dream_eml %{deps} --workspace %{workspace_root})))

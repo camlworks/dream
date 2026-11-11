@@ -5,4 +5,5 @@
 (rule
  (targets server.re)
  (deps server.eml.re)
- (action (run dream_eml %{deps} --workspace %{workspace_root})))
+ (action
+  (run dream_eml %{deps} --workspace %{workspace_root})))

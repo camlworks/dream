@@ -1,4 +1,5 @@
 (executable
  (name mlx)
  (libraries dream html_of_jsx)
- (preprocess (pps html_of_jsx.ppx)))
+ (preprocess
+  (pps html_of_jsx.ppx)))

@@ -1,4 +1,4 @@
- (executable
+(executable
  (name index)
  (modules index)
  (libraries common lambdasoup str))

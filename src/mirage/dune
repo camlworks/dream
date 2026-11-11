@@ -15,7 +15,8 @@
   tcpip
   paf
   paf.alpn
-  paf.mirage
- )
- (preprocess (pps lwt_ppx))
- (instrumentation (backend bisect_ppx)))
+  paf.mirage)
+ (preprocess
+  (pps lwt_ppx))
+ (instrumentation
+  (backend bisect_ppx)))

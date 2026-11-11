@@ -16,5 +16,4 @@
     (echo "|ssl}\n\n")
     (echo "let localhost_certificate_key = {key|")
     (cat %{key})
-    (echo "|key}\n")
-   ))))
+    (echo "|key}\n")))))

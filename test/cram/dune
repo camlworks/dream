@@ -34,8 +34,8 @@
   %{bin:bash}
   %{bin:node}
   websocket_client.js)
-  (setup_scripts common.sh)
-  (shell bash))
+ (setup_scripts common.sh)
+ (shell bash))
 
 (env
  (_

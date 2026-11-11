@@ -1,4 +1,5 @@
 (executable
  (name promise)
  (libraries dream)
- (preprocess (pps lwt_ppx)))
+ (preprocess
+  (pps lwt_ppx)))

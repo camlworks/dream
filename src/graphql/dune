@@ -9,7 +9,8 @@
   graphql-lwt
   lwt
   stringext
-  yojson
- )
- (preprocess (pps lwt_ppx))
- (instrumentation (backend bisect_ppx)))
+  yojson)
+ (preprocess
+  (pps lwt_ppx))
+ (instrumentation
+  (backend bisect_ppx)))

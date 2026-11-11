@@ -1,4 +1,5 @@
 (melange.emit
  (target client)
- (preprocess (pps melange.ppx))
+ (preprocess
+  (pps melange.ppx))
  (libraries common melange-webapi))

@@ -17,5 +17,4 @@
   lwt
   lwt.unix
   mirage-crypto-rng.unix
-  ptime.clock.os
- ))
+  ptime.clock.os))

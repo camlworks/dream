@@ -18,7 +18,8 @@
   lwt
   lwt.unix
   lwt_ssl
-  ssl
- )
- (preprocess (pps lwt_ppx))
- (instrumentation (backend bisect_ppx)))
+  ssl)
+ (preprocess
+  (pps lwt_ppx))
+ (instrumentation
+  (backend bisect_ppx)))

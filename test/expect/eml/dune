@@ -1,10 +1,6 @@
 (library
  (name test_expect_eml)
- (libraries
-  base
-  eml
-  ppx_inline_test.config
-  ppx_expect.config_types
- )
+ (libraries base eml ppx_inline_test.config ppx_expect.config_types)
  (inline_tests)
- (preprocess (pps ppx_expect)))
+ (preprocess
+  (pps ppx_expect)))
