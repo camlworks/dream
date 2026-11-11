@@ -3,10 +3,7 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
-let escape string =
-  Printf.printf "%S\n" (Dream.html_escape string)
+let escape string = Printf.printf "%S\n" (Dream.html_escape string)
 
 let%expect_test _ =
   escape "";
@@ -15,7 +12,8 @@ let%expect_test _ =
   escape "&amp;";
   escape "<foo bar=\"baz\">";
   escape "<foo bar=\'baz\'>";
-  [%expect {|
+  [%expect
+    {|
     ""
     "foo"
     "&lt;foo&gt;"

@@ -3,10 +3,7 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
-let show method_ =
-  Printf.printf "%S\n" (Dream.method_to_string method_)
+let show method_ = Printf.printf "%S\n" (Dream.method_to_string method_)
 
 let%expect_test _ =
   show `GET;
@@ -20,7 +17,8 @@ let%expect_test _ =
   show `PATCH;
   show (`Method "FOO");
   show (`Method "");
-  [%expect {|
+  [%expect
+    {|
     "GET"
     "POST"
     "PUT"
@@ -51,7 +49,8 @@ let%expect_test _ =
   of_string "";
   of_string "get";
   of_string "FOO";
-  [%expect {|
+  [%expect
+    {|
     "GET"
     "POST"
     "PUT"
@@ -68,10 +67,8 @@ let%expect_test _ =
 let normalize method_ =
   let result = Dream.normalize_method method_ in
   match result with
-  | `Method method_ ->
-    Printf.printf "%S\n" method_
-  | _ ->
-    Printf.printf "`%s\n" (Dream.method_to_string result)
+  | `Method method_ -> Printf.printf "%S\n" method_
+  | _ -> Printf.printf "`%s\n" (Dream.method_to_string result)
 
 let%expect_test _ =
   normalize `GET;
@@ -93,7 +90,8 @@ let%expect_test _ =
   normalize (`Method "TRACE");
   normalize `PATCH;
   normalize (`Method "PATCH");
-  [%expect {|
+  [%expect
+    {|
     `GET
     `GET
     "get"
@@ -125,7 +123,8 @@ let%expect_test _ =
   equal `GET (`Method "GET");
   equal (`Method "GET") `GET;
   equal `GET (`Method "get");
-  [%expect {|
+  [%expect
+    {|
     true
     true
     false

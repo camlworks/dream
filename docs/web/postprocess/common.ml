@@ -3,8 +3,6 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 open Soup.Infix
 
 let if_expected expected test f =
@@ -24,12 +22,12 @@ let if_expected expected test f =
 
     prerr_endline "The actual found content has been written to";
     prerr_newline ();
-    prerr_endline ("  " ^ (Filename.concat (Sys.getcwd ()) "actual"));
+    prerr_endline ("  " ^ Filename.concat (Sys.getcwd ()) "actual");
     prerr_newline ();
 
     begin match String.split_on_char '\n' actual with
     | [] -> ()
-    | first_line::_ ->
+    | first_line :: _ ->
       prerr_endline "Hint:";
       prerr_newline ();
       prerr_endline ("  " ^ first_line);
@@ -46,11 +44,10 @@ let if_expected expected test f =
 
 let add_backing_lines soup =
   let add_backing_line element =
-    Soup.create_element ~class_:"backing" "div"
-    |> Soup.prepend_child element
+    Soup.create_element ~class_:"backing" "div" |> Soup.prepend_child element
   in
   soup $$ "h2" |> Soup.iter add_backing_line;
   soup $$ "h3" |> Soup.iter add_backing_line;
   soup $$ ".spec[id]" |> Soup.iter add_backing_line;
-  Soup.prepend_child
-    (soup $ ".odoc-content") (Soup.create_element ~class_:"background" "div")
+  Soup.prepend_child (soup $ ".odoc-content")
+    (Soup.create_element ~class_:"background" "div")

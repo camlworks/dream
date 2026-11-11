@@ -3,12 +3,8 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 module Message = Dream_pure.Message
 module Stream = Dream_pure.Stream
-
-
 
 (* Conditional-request handling for [Dream.static], shared by the Unix and
    MirageOS backends. It evaluates the request's preconditions against whatever
@@ -47,11 +43,15 @@ let if_modified_since request last_modified =
    response happens to carry. *)
 let is_fresh request response =
   if Message.has_header request "If-None-Match" then
-    match Message.header response "ETag" with
+    match
+      Message.header response "ETag"
+    with
     | Some etag -> if_none_match request etag
     | None -> false
   else
-    match Message.header response "Last-Modified" with
+    match
+      Message.header response "Last-Modified"
+    with
     | Some last_modified -> if_modified_since request last_modified
     | None -> false
 
@@ -61,15 +61,17 @@ let is_fresh request response =
    original body is closed, since a custom loader may have given it a streamed
    body that would otherwise be left open. *)
 let not_modified response =
-  let allowed = [
-    "cache-control";
-    "content-location";
-    "date";
-    "etag";
-    "expires";
-    "last-modified";
-    "vary";
-  ] in
+  let allowed =
+    [
+      "cache-control";
+      "content-location";
+      "date";
+      "etag";
+      "expires";
+      "last-modified";
+      "vary";
+    ]
+  in
   let is_allowed (name, _) = List.mem (String.lowercase_ascii name) allowed in
   let headers = List.filter is_allowed (Message.all_headers response) in
   let%lwt () = Message.close (Message.client_stream response) in

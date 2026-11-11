@@ -3,16 +3,12 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 module Conditional = Dream__server.Conditional
 module Formats = Dream_pure.Formats
 module Message = Dream_pure.Message
 module Method = Dream_pure.Method
 module Router = Dream__server.Router
 module Stream = Dream_pure.Stream
-
-
 
 (* TODO Not at all efficient; can at least stream the file, maybe even cache. *)
 (* TODO Also mind newlines on Windows. *)
@@ -25,7 +21,7 @@ let mime_lookup filename =
     | "text/html" -> Formats.text_html
     | content_type -> content_type
   in
-  ["Content-Type", content_type]
+  [("Content-Type", content_type)]
 
 (* A strong ETag derived from the file's contents, so that a redeploy that
    rewrites a file without changing it (same bytes, new mtime) still validates.
@@ -40,21 +36,19 @@ let from_filesystem local_root path _ =
     (fun () ->
       let%lwt stats = Lwt_unix.stat file in
       Lwt_io.(with_file ~mode:Input file) (fun channel ->
-        let%lwt content = Lwt_io.read channel in
-        let last_modified =
-          match Formats.to_http_date stats.Unix.st_mtime with
-          | Some date -> ["Last-Modified", date]
-          | None -> []
-        in
-        let headers =
-          mime_lookup path @ ["ETag", etag content] @ last_modified
-        in
-        Message.response
-          ~headers (Stream.string content) Stream.null
-        |> Lwt.return))
+          let%lwt content = Lwt_io.read channel in
+          let last_modified =
+            match Formats.to_http_date stats.Unix.st_mtime with
+            | Some date -> [("Last-Modified", date)]
+            | None -> []
+          in
+          let headers =
+            mime_lookup path @ [("ETag", etag content)] @ last_modified
+          in
+          Message.response ~headers (Stream.string content) Stream.null
+          |> Lwt.return))
     (fun _exn ->
-      Message.response ~status:`Not_Found Stream.empty Stream.null
-      |> Lwt.return)
+      Message.response ~status:`Not_Found Stream.empty Stream.null |> Lwt.return)
 
 (* TODO Add Content-Length handling? *)
 (* TODO Support HEAD requests? *)
@@ -68,19 +62,15 @@ let validate_path request =
   let has_backslash component = String.contains component '\\' in
   let has_slash = List.exists has_slash path in
   let has_backslash = List.exists has_backslash path in
-  let has_dot = List.exists ((=) Filename.current_dir_name) path in
-  let has_dotdot = List.exists ((=) Filename.parent_dir_name) path in
-  let has_empty = List.exists ((=) "") path in
+  let has_dot = List.exists (( = ) Filename.current_dir_name) path in
+  let has_dotdot = List.exists (( = ) Filename.parent_dir_name) path in
+  let has_empty = List.exists (( = ) "") path in
   let is_empty = path = [] in
 
-  if has_slash ||
-     has_backslash ||
-     has_dot ||
-     has_dotdot ||
-     has_empty ||
-     is_empty then
+  if
+    has_slash || has_backslash || has_dot || has_dotdot || has_empty || is_empty
+  then
     None
-
   else
     let path = String.concat Filename.dir_sep path in
     if Filename.is_relative path then
@@ -88,29 +78,28 @@ let validate_path request =
     else
       None
 
-let static ?(loader = from_filesystem) local_root = fun request ->
-
+let static ?(loader = from_filesystem) local_root =
+ fun request ->
   if not @@ Method.methods_equal (Message.method_ request) `GET then
-    Message.response ~status:`Not_Found Stream.empty Stream.null
-    |> Lwt.return
-
+    Message.response ~status:`Not_Found Stream.empty Stream.null |> Lwt.return
   else
-    match validate_path request with
+    match
+      validate_path request
+    with
     | None ->
-      Message.response ~status:`Not_Found Stream.empty Stream.null
-      |> Lwt.return
-
+      Message.response ~status:`Not_Found Stream.empty Stream.null |> Lwt.return
     | Some path ->
       let%lwt response = loader local_root path request in
-      if not (Message.has_header response "Content-Type") then begin
-        match Message.status response with
+      if not (Message.has_header response "Content-Type") then
+        begin match
+          Message.status response
+        with
         | `OK
         | `Non_Authoritative_Information
         | `No_Content
         | `Reset_Content
         | `Partial_Content ->
           Message.add_header response "Content-Type" (Magic_mime.lookup path)
-        | _ ->
-          ()
+        | _ -> ()
       end;
       Conditional.respond request response

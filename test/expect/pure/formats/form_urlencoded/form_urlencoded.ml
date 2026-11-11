@@ -3,25 +3,22 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 let encode dictionary =
-  dictionary
-  |> Dream.to_form_urlencoded
-  |> Printf.printf "%S\n"
+  dictionary |> Dream.to_form_urlencoded |> Printf.printf "%S\n"
 
 let%expect_test _ =
   encode [];
-  encode ["a", ""];
-  encode ["", "a"];
-  encode ["", ""];
-  encode ["a", "b"];
-  encode ["a b", "c d"];
-  encode ["a+=&", "b+=&"];
-  encode ["λ", "Λ"];
-  encode ["a", "b"; "a", "c"];
-  encode ["a", "b,c"];
-  [%expect {|
+  encode [("a", "")];
+  encode [("", "a")];
+  encode [("", "")];
+  encode [("a", "b")];
+  encode [("a b", "c d")];
+  encode [("a+=&", "b+=&")];
+  encode [("λ", "Λ")];
+  encode [("a", "b"); ("a", "c")];
+  encode [("a", "b,c")];
+  [%expect
+    {|
     ""
     "a="
     "=a"
@@ -32,8 +29,6 @@ let%expect_test _ =
     "%CE%BB=%CE%9B"
     "a=b&a=c"
     "a=b%2Cc" |}]
-
-
 
 let decode string =
   string

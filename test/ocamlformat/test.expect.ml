@@ -47,12 +47,12 @@ let () =
 (* Failure: begin...end indented strangely. *)
 let () =
   match true with
-  | true -> begin
-    match () with
+  | true ->
+    begin match () with
     | () ->
       print_endline "foo";
       print_endline "bar"
-  end
+    end
   | () ->
     print_endline "foo";
     print_endline "bar"

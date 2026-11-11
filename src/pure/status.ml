@@ -3,35 +3,30 @@
 
    Copyright 2021 Anton Bachin *)
 
+type informational =
+  [ `Continue
+  | `Switching_Protocols ]
 
-
-type informational = [
-  | `Continue
-  | `Switching_Protocols
-]
-
-type successful = [
-  | `OK
+type successful =
+  [ `OK
   | `Created
   | `Accepted
   | `Non_Authoritative_Information
   | `No_Content
   | `Reset_Content
-  | `Partial_Content
-]
+  | `Partial_Content ]
 
-type redirection = [
-  | `Multiple_Choices
+type redirection =
+  [ `Multiple_Choices
   | `Moved_Permanently
   | `Found
   | `See_Other
   | `Not_Modified
   | `Temporary_Redirect
-  | `Permanent_Redirect
-]
+  | `Permanent_Redirect ]
 
-type client_error = [
-  | `Bad_Request
+type client_error =
+  [ `Bad_Request
   | `Unauthorized
   | `Payment_Required
   | `Forbidden
@@ -55,30 +50,26 @@ type client_error = [
   | `Precondition_Required
   | `Too_Many_Requests
   | `Request_Header_Fields_Too_Large
-  | `Unavailable_For_Legal_Reasons
-]
+  | `Unavailable_For_Legal_Reasons ]
 
-type server_error = [
-  | `Internal_Server_Error
+type server_error =
+  [ `Internal_Server_Error
   | `Not_Implemented
   | `Bad_Gateway
   | `Service_Unavailable
   | `Gateway_Timeout
-  | `HTTP_Version_Not_Supported
-]
+  | `HTTP_Version_Not_Supported ]
 
-type standard_status = [
-  | informational
+type standard_status =
+  [ informational
   | successful
   | redirection
   | client_error
-  | server_error
-]
+  | server_error ]
 
-type status = [
-  | standard_status
-  | `Status of int
-]
+type status =
+  [ standard_status
+  | `Status of int ]
 
 let is_informational = function
   | #informational -> true
@@ -280,10 +271,11 @@ let status_to_reason status =
 
 let status_to_string status =
   let status = (status :> status) in
-  match status_to_reason status, status with
+  match (status_to_reason status, status) with
   | Some reason, _ -> reason
   | None, `Status code -> string_of_int code
-  | _ -> "Unknown" [@coverage off] (* Should be impossible. *)
+  | _ -> ("Unknown" [@coverage off])
+(* Should be impossible. *)
 
 let normalize_status status =
   match (status :> status) with

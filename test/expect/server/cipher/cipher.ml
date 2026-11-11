@@ -3,23 +3,17 @@
 
    Copyright 2021 Anton Bachin *)
 
+let secret_1 = "abc"
 
+let secret_2 = "def"
 
-let secret_1 =
-  "abc"
+let nonce_1 = "abcdefghijkl"
 
-let secret_2 =
-  "def"
-
-let nonce_1 =
-  "abcdefghijkl"
-
-let nonce_2 =
-  "opqrstuvwxyz"
+let nonce_2 = "opqrstuvwxyz"
 
 let encrypt secret nonce plaintext associated_data =
-  Dream__cipher.Cipher.AEAD_AES_256_GCM.test_encrypt
-    ~associated_data ~secret ~nonce plaintext
+  Dream__cipher.Cipher.AEAD_AES_256_GCM.test_encrypt ~associated_data ~secret
+    ~nonce plaintext
   |> Dream.to_base64url
   |> print_endline
 
@@ -40,7 +34,8 @@ let%expect_test _ =
   encrypt secret_2 nonce_1 "fon" "bar";
   encrypt secret_2 nonce_2 "foo" "bar";
   encrypt secret_2 nonce_2 "fon" "bar";
-  [%expect {|
+  [%expect
+    {|
     AGFiY2RlZmdoaWprbAzPcSEY4l7tSiDwIkk8ZfrFQQk
     AGFiY2RlZmdoaWprbAzPcCTJ-mJdrOKmcXtgqKJjGrI
     AG9wcXJzdHV2d3h5eqAJLHQ4dESlArPNBNiZza-USfI
@@ -58,8 +53,6 @@ let%expect_test _ =
     AG9wcXJzdHV2d3h5etiGF4BcHGzW5HQAYUATKQ5cqtk
     AG9wcXJzdHV2d3h5etiGFmE7Cep91IW7jS5u345BrY0 |}]
 
-
-
 let encrypt secret plaintext =
   Dream__cipher.Cipher.AEAD_AES_256_GCM.encrypt ~secret plaintext
   |> Dream.to_base64url
@@ -68,19 +61,18 @@ let%expect_test _ =
   Printf.printf "%B\n%!" (encrypt secret_1 "foo" = encrypt secret_1 "foo");
   [%expect {| false |}]
 
-
-
 let decrypt secret associated_data ciphertext =
   let result =
-    Dream__cipher.Cipher.AEAD_AES_256_GCM.decrypt
-      ~associated_data ~secret ciphertext in
+    Dream__cipher.Cipher.AEAD_AES_256_GCM.decrypt ~associated_data ~secret
+      ciphertext
+  in
   match result with
   | None -> print_endline "None"
   | Some plaintext -> Printf.printf "%S\n" plaintext
 
 let encrypt secret nonce plaintext associated_data =
-  Dream__cipher.Cipher.AEAD_AES_256_GCM.test_encrypt
-    ~associated_data ~secret ~nonce plaintext
+  Dream__cipher.Cipher.AEAD_AES_256_GCM.test_encrypt ~associated_data ~secret
+    ~nonce plaintext
 
 let%expect_test _ =
   decrypt secret_1 "" (encrypt secret_1 nonce_1 "foo" "");
@@ -95,7 +87,8 @@ let%expect_test _ =
   decrypt secret_1 "" "ab";
   decrypt secret_1 "" "\x00abcdefghijklmnopqrstuvwxyz";
   decrypt secret_1 "" "\x01abcdefghijklmnopqrstuvwxyz";
-  [%expect {|
+  [%expect
+    {|
     "foo"
     "foo"
     None
@@ -108,8 +101,6 @@ let%expect_test _ =
     None
     None
     None |}]
-
-
 
 (* Decryption tries the main secret and then each of [~old_secrets] in turn (key
    rotation), and must carry [associated_data] through to every attempt.
@@ -125,7 +116,8 @@ let request_with_secrets ?old_secrets secret =
   let request = Dream.request "" in
   let _ : Dream.response Lwt.t =
     Dream.set_secret ?old_secrets secret
-      (fun _ -> Lwt.return (Dream.response "")) request
+      (fun _ -> Lwt.return (Dream.response ""))
+      request
   in
   request
 
@@ -136,15 +128,15 @@ let decrypt_result = function
 let%expect_test _ =
   (* Encrypt with associated data under the pre-rotation secret. *)
   let ciphertext =
-    Dream.encrypt ~associated_data:"bar" (request_with_secrets secret_2) "foo" in
+    Dream.encrypt ~associated_data:"bar" (request_with_secrets secret_2) "foo"
+  in
   (* Post-rotation: new main secret, the old one kept for decryption. The main
      secret fails, so decryption must fall back to the old secret and still
      carry the associated data. *)
   let rotated = request_with_secrets ~old_secrets:[secret_2] secret_1 in
   decrypt_result (Dream.decrypt ~associated_data:"bar" rotated ciphertext);
   (* Control: rotation without associated data already worked. *)
-  let plain =
-    Dream.encrypt (request_with_secrets secret_2) "foo" in
+  let plain = Dream.encrypt (request_with_secrets secret_2) "foo" in
   decrypt_result (Dream.decrypt rotated plain);
   (* Without the old secret, the ciphertext is correctly rejected. *)
   let no_rotation = request_with_secrets secret_1 in

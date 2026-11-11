@@ -1,30 +1,29 @@
 (* This file is part of Dream, released under the MIT license. See LICENSE.md
    for details, or visit https://github.com/camlworks/dream. *)
 
-
-
-let () =
-  ignore Initialize.require
+let () = ignore Initialize.require
 
 let router =
-  Dream.router [
-    Dream.get "/" (fun _ -> Dream.respond "root");
-    Dream.get "/one" (fun _ -> Dream.respond "one");
-    Dream.get "/two/" (fun _ -> Dream.respond "two");
-    Dream.options "*" (fun request ->
-      let path = Dream__server.Router.path request |> String.concat "/" in
-      Dream.respond ("options-star:" ^ path));
-  ]
+  Dream.router
+    [
+      Dream.get "/" (fun _ -> Dream.respond "root");
+      Dream.get "/one" (fun _ -> Dream.respond "one");
+      Dream.get "/two/" (fun _ -> Dream.respond "two");
+      Dream.options "*" (fun request ->
+          let path = Dream__server.Router.path request |> String.concat "/" in
+          Dream.respond ("options-star:" ^ path));
+    ]
 
 (* Print the resulting status, any [Location] header, and the body of whichever
    handler ran. *)
 let print_response target response =
   let status = Dream.status response in
-  Printf.printf "%s -> %i %s"
-    target (Dream.status_to_int status) (Dream.status_to_string status);
+  Printf.printf "%s -> %i %s" target
+    (Dream.status_to_int status)
+    (Dream.status_to_string status);
   (match Dream.header response "Location" with
-   | Some location -> Printf.printf "  Location: %s" location
-   | None -> ());
+  | Some location -> Printf.printf "  Location: %s" location
+  | None -> ());
   print_newline ();
   let body =
     Dream.client_stream response
@@ -38,10 +37,7 @@ let print_response target response =
    print the resulting status, any [Location] header, and the response body. *)
 let show ?status ?(method_ = `GET) policy target =
   let app = Dream.trailing_slash ?status policy @@ router in
-  let response =
-    Dream.request ~method_ ~target ""
-    |> Dream.test app
-  in
+  let response = Dream.request ~method_ ~target "" |> Dream.test app in
   print_response target response
 
 (* Strict: /one and /two/ are matched only in their declared form. *)
@@ -50,7 +46,8 @@ let%expect_test _ =
   show `Strict "/one/";
   show `Strict "/two/";
   show `Strict "/two";
-  [%expect {|
+  [%expect
+    {|
     /one -> 200 OK
     one
     /one/ -> 404 Not Found
@@ -86,7 +83,8 @@ let%expect_test _ =
   show `Redirect_drop "/one";
   show `Redirect_drop "/one/";
   show `Redirect_drop "/one/?a=1&b=2";
-  [%expect {|
+  [%expect
+    {|
     /one -> 200 OK
     one
     /one/ -> 301 Moved Permanently  Location: /one
@@ -96,7 +94,8 @@ let%expect_test _ =
 let%expect_test _ =
   show `Redirect_append "/two/";
   show `Redirect_append "/two";
-  [%expect {|
+  [%expect
+    {|
     /two/ -> 200 OK
     two
     /two -> 301 Moved Permanently  Location: /two/ |}]
@@ -105,7 +104,8 @@ let%expect_test _ =
 let%expect_test _ =
   show ~status:`Permanent_Redirect `Redirect_drop "/one/";
   show ~status:`Permanent_Redirect ~method_:`POST `Redirect_drop "/one/";
-  [%expect {|
+  [%expect
+    {|
     /one/ -> 308 Permanent Redirect  Location: /one
     /one/ -> 308 Permanent Redirect  Location: /one |}]
 
@@ -115,7 +115,8 @@ let%expect_test _ =
   show `Drop "/";
   show `Append "/";
   show `Redirect_append "/";
-  [%expect {|
+  [%expect
+    {|
     / -> 200 OK
     root
     / -> 200 OK
@@ -130,7 +131,8 @@ let%expect_test _ =
 let%expect_test _ =
   show ~method_:`OPTIONS `Append "*";
   show ~method_:`OPTIONS `Redirect_append "*";
-  [%expect {|
+  [%expect
+    {|
     * -> 200 OK
     options-star:*
     * -> 200 OK
@@ -141,10 +143,13 @@ let%expect_test _ =
    relative path. *)
 let%expect_test _ =
   let app policy =
-    Dream.router [
-      Dream.get "/static/**" @@ Dream.trailing_slash policy @@ fun request ->
-        Dream.respond (String.concat "/" (Dream__server.Router.path request));
-    ]
+    Dream.router
+      [
+        (Dream.get "/static/**"
+        @@ Dream.trailing_slash policy
+        @@ fun request ->
+        Dream.respond (String.concat "/" (Dream__server.Router.path request)));
+      ]
   in
   let show policy target =
     Dream.request ~target "" |> Dream.test (app policy) |> print_response target
@@ -152,7 +157,8 @@ let%expect_test _ =
   show `Redirect_drop "/static/a/b/?x=1";
   show `Redirect_append "/static/a/b";
   show `Drop "/static/a/b/";
-  [%expect {|
+  [%expect
+    {|
     /static/a/b/?x=1 -> 301 Moved Permanently  Location: /static/a/b?x=1
     /static/a/b -> 301 Moved Permanently  Location: /static/a/b/
     /static/a/b/ -> 200 OK
@@ -166,17 +172,19 @@ let%expect_test _ =
   let app =
     Dream.trailing_slash `Redirect_drop
     @@ Dream.with_site_prefix "/app"
-    @@ Dream.router [
-      Dream.get "/" (fun request ->
-        Dream.respond ("root in " ^ Dream.site_prefix request));
-    ]
+    @@ Dream.router
+         [
+           Dream.get "/" (fun request ->
+               Dream.respond ("root in " ^ Dream.site_prefix request));
+         ]
   in
   let show target =
     Dream.request ~target "" |> Dream.test app |> print_response target
   in
   show "/app/";
   show "/app";
-  [%expect {|
+  [%expect
+    {|
     /app/ -> 301 Moved Permanently  Location: /app
     /app -> 200 OK
     root in /app |}]

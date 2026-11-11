@@ -3,11 +3,7 @@
 
    Copyright 2022 Anton Bachin *)
 
-
-
 module Stream = Dream_pure.Stream
-
-
 
 let websocket_handler stream socket =
   (* Queue of received frames. There doesn't appear to be a nice way to achieve
@@ -22,14 +18,10 @@ let websocket_handler stream socket =
      https://github.com/anmonteiro/websocketaf/issues/34. *)
   let frame ~opcode ~is_fin ~len:_ payload =
     match opcode with
-    | `Connection_close ->
-      push_frame (Some (`Close, payload))
-    | `Ping ->
-      push_frame (Some (`Ping, payload))
-    | `Pong ->
-      push_frame (Some (`Pong, payload))
-    | `Other _ ->
-      push_frame (Some (`Other, payload))
+    | `Connection_close -> push_frame (Some (`Close, payload))
+    | `Ping -> push_frame (Some (`Ping, payload))
+    | `Pong -> push_frame (Some (`Pong, payload))
+    | `Other _ -> push_frame (Some (`Other, payload))
     | `Text ->
       message_is_binary := `Text;
       push_frame (Some (`Data (`Text, is_fin), payload))
@@ -40,8 +32,7 @@ let websocket_handler stream socket =
       push_frame (Some (`Data (!message_is_binary, is_fin), payload))
   in
 
-  let eof ?error:_ () =
-    push_frame None in
+  let eof ?error:_ () = push_frame None in
 
   (* The reader retrieves the next frame. If it is a data frame, it keeps a
      reference to the payload across multiple reader calls, until the payload is
@@ -64,8 +55,7 @@ let websocket_handler stream socket =
   let first_chunk_offset = ref 0 in
   let first_chunk_length = ref 0 in
   let rec drain_payload payload continuation =
-    Httpun_ws.Payload.schedule_read
-      payload
+    Httpun_ws.Payload.schedule_read payload
       ~on_read:(fun buffer ~off ~len ->
         if not !first_chunk_received then begin
           first_chunk := buffer;
@@ -96,48 +86,46 @@ let websocket_handler stream socket =
     if !closed then
       close !close_code
     else
-      match !current_payload with
+      match
+        !current_payload
+      with
       | None ->
         Lwt.on_success (Lwt_stream.get frames) begin function
-        | None ->
-          if not !closed then begin
-            closed := true;
-            close_code := 1005
-          end;
-          Httpun_ws.Wsd.close socket;
-          close !close_code
-        | Some (`Close, payload) ->
-          drain_payload payload @@ fun buffer offset length ->
-          let code =
-            if length < 2 then
-              1005
-            else
-              let high_byte = Char.code buffer.{offset}
-              and low_byte = Char.code buffer.{offset + 1} in
-              high_byte lsl 8 lor low_byte
-          in
-          if not !closed then
-            close_code := code;
-          close !close_code
-        | Some (`Ping, payload) ->
-          drain_payload payload @@
-          ping
-        | Some (`Pong, payload) ->
-          drain_payload payload @@
-          pong
-        | Some (`Other, payload) ->
-          drain_payload payload @@ fun _buffer _offset length ->
-          ignore length; (* TODO log instead *)
-          (* websocket_log.warning (fun log ->
+            | None ->
+              if not !closed then begin
+                closed := true;
+                close_code := 1005
+              end;
+              Httpun_ws.Wsd.close socket;
+              close !close_code
+            | Some (`Close, payload) ->
+              drain_payload payload @@ fun buffer offset length ->
+              let code =
+                if length < 2 then
+                  1005
+                else
+                  let high_byte = Char.code buffer.{offset}
+                  and low_byte = Char.code buffer.{offset + 1} in
+                  (high_byte lsl 8) lor low_byte
+              in
+              if not !closed then
+                close_code := code;
+              close !close_code
+            | Some (`Ping, payload) -> drain_payload payload @@ ping
+            | Some (`Pong, payload) -> drain_payload payload @@ pong
+            | Some (`Other, payload) ->
+              drain_payload payload @@ fun _buffer _offset length ->
+              ignore length;
+              (* TODO log instead *)
+              (* websocket_log.warning (fun log ->
             log "Unknown frame type with length %i" length); *)
-          read ~data ~flush ~ping ~pong ~close ~exn
-        | Some (`Data properties, payload) ->
-          current_payload := Some (properties, payload);
-          read ~data ~flush ~ping ~pong ~close ~exn
-        end
+              read ~data ~flush ~ping ~pong ~close ~exn
+            | Some (`Data properties, payload) ->
+              current_payload := Some (properties, payload);
+              read ~data ~flush ~ping ~pong ~close ~exn
+          end
       | Some ((binary, fin), payload) ->
-        Httpun_ws.Payload.schedule_read
-          payload
+        Httpun_ws.Payload.schedule_read payload
           ~on_read:(fun buffer ~off ~len ->
             match !last_chunk with
             | None ->
@@ -150,8 +138,7 @@ let websocket_handler stream socket =
           ~on_eof:(fun () ->
             current_payload := None;
             match !last_chunk with
-            | None ->
-              read ~data ~flush ~ping ~pong ~close ~exn
+            | None -> read ~data ~flush ~ping ~pong ~close ~exn
             | Some (last_buffer, last_offset, last_length) ->
               last_chunk := None;
               let binary = binary = `Binary in
@@ -183,15 +170,14 @@ let websocket_handler stream socket =
   Stream.forward reader stream;
 
   let rec outgoing_loop () =
-    Stream.read
-      stream
+    Stream.read stream
       ~data:(fun buffer offset length binary fin ->
         let kind = if binary then `Binary else `Text in
         if !closed then
           close !close_code
         else begin
-          Httpun_ws.Wsd.schedule
-            socket ~is_fin:fin ~kind buffer ~off:offset ~len:length;
+          Httpun_ws.Wsd.schedule socket ~is_fin:fin ~kind buffer ~off:offset
+            ~len:length;
           bytes_since_flush := !bytes_since_flush + length;
           if !bytes_since_flush >= 4096 then
             flush ~close outgoing_loop
@@ -229,8 +215,7 @@ let websocket_handler stream socket =
               socket;
           outgoing_loop ()
         end)
-      ~close
-      ~exn:abort
+      ~close ~exn:abort
   in
   outgoing_loop ();
 

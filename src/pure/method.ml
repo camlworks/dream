@@ -3,16 +3,14 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 (* See also:
 
    - SEARCH, https://tools.ietf.org/html/draft-snell-search-method-02
    - Other WebDAV methods: COPY, LOCK, MKCOL, MOVE, PROPFIND, PROPPATCH,
      UNLOCK. *)
 
-type method_ = [
-  | `GET
+type method_ =
+  [ `GET
   | `POST
   | `PUT
   | `DELETE
@@ -21,8 +19,7 @@ type method_ = [
   | `OPTIONS
   | `TRACE
   | `PATCH
-  | `Method of string
-]
+  | `Method of string ]
 
 let method_to_string = function
   | `GET -> "GET"

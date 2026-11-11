@@ -3,8 +3,6 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 let decode string =
   string
   |> Dream.from_path
@@ -30,7 +28,8 @@ let%expect_test _ =
   decode "/%cg";
   decode "/%";
   decode "/%/";
-  [%expect {|
+  [%expect
+    {|
     []
     [""]
     ["abc"]
@@ -68,8 +67,7 @@ let%expect_test _ =
     ["a" "b"] |}]
 
 let encode ?relative ?international components =
-  Dream.to_path ?relative ?international components
-  |> Printf.printf "%S\n"
+  Dream.to_path ?relative ?international components |> Printf.printf "%S\n"
 
 let%expect_test _ =
   encode [];
@@ -86,7 +84,8 @@ let%expect_test _ =
   encode ~relative:true ["a"; ""];
   encode ~relative:true [""; "a"];
   encode ~international:false ["λ"];
-  [%expect {|
+  [%expect
+    {|
     "/"
     "/"
     "/a"

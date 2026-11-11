@@ -3,21 +3,18 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 let html_escape s =
   let buffer = Buffer.create (String.length s * 2) in
-  s |> String.iter begin function
-    | '&' -> Buffer.add_string buffer "&amp;"
-    | '<' -> Buffer.add_string buffer "&lt;"
-    | '>' -> Buffer.add_string buffer "&gt;"
-    | '"' -> Buffer.add_string buffer "&quot;"
-    | '\'' -> Buffer.add_string buffer "&#x27;"
-    | c -> Buffer.add_char buffer c
+  s
+  |> String.iter begin function
+      | '&' -> Buffer.add_string buffer "&amp;"
+      | '<' -> Buffer.add_string buffer "&lt;"
+      | '>' -> Buffer.add_string buffer "&gt;"
+      | '"' -> Buffer.add_string buffer "&quot;"
+      | '\'' -> Buffer.add_string buffer "&#x27;"
+      | c -> Buffer.add_char buffer c
     end;
   Buffer.contents buffer
-
-
 
 let to_base64url string =
   Base64.encode_string ~pad:false ~alphabet:Base64.uri_safe_alphabet string
@@ -27,18 +24,18 @@ let from_base64url string =
   | Error _ -> None
   | Ok result -> Some result
 
-
-
 let from_cookie s =
   let pairs =
-    s
-    |> String.split_on_char ';'
-    |> List.map (String.split_on_char '=')
+    s |> String.split_on_char ';' |> List.map (String.split_on_char '=')
   in
 
-  pairs |> List.fold_left (fun pairs -> function
-    | [name; value] -> (String.trim name, String.trim value)::pairs
-    | _ -> pairs) []
+  pairs
+  |> List.fold_left
+       (fun pairs -> function
+         | [name; value] -> (String.trim name, String.trim value) :: pairs
+         | _ -> pairs)
+       []
+
 (* Note: found ocaml-cookie and http-cookie libraries, but they appear to have
    equivalent code for parsing Cookie: headers, so there is no point in using
    them yet, especially as they have stringent OCaml version constraints for
@@ -58,15 +55,29 @@ let to_http_date seconds =
   | Some time ->
     let weekday =
       match Ptime.weekday time with
-      | `Sun -> "Sun" | `Mon -> "Mon" | `Tue -> "Tue" | `Wed -> "Wed"
-      | `Thu -> "Thu" | `Fri -> "Fri" | `Sat -> "Sat"
+      | `Sun -> "Sun"
+      | `Mon -> "Mon"
+      | `Tue -> "Tue"
+      | `Wed -> "Wed"
+      | `Thu -> "Thu"
+      | `Fri -> "Fri"
+      | `Sat -> "Sat"
     in
-    let ((y, m, d), ((hh, mm, ss), _tz_offset_s)) = Ptime.to_date_time time in
+    let (y, m, d), ((hh, mm, ss), _tz_offset_s) = Ptime.to_date_time time in
     let month =
       match m with
-      | 1 -> "Jan" | 2 -> "Feb" | 3 -> "Mar" | 4 -> "Apr" | 5 -> "May"
-      | 6 -> "Jun" | 7 -> "Jul" | 8 -> "Aug" | 9 -> "Sep" | 10 -> "Oct"
-      | 11 -> "Nov" | 12 -> "Dec"
+      | 1 -> "Jan"
+      | 2 -> "Feb"
+      | 3 -> "Mar"
+      | 4 -> "Apr"
+      | 5 -> "May"
+      | 6 -> "Jun"
+      | 7 -> "Jul"
+      | 8 -> "Aug"
+      | 9 -> "Sep"
+      | 10 -> "Oct"
+      | 11 -> "Nov"
+      | 12 -> "Dec"
       | _ -> assert false
     in
     (* [Ptime.to_date_time] docs give range 0..60 for [ss], accounting for
@@ -83,17 +94,13 @@ let to_http_date seconds =
        Even though [Ptime.to_date_time] time does not return leap seconds, in
        case I misunderstood the gmtime API, of system differences, or future
        refactoring, make sure no leap seconds creep into the output. *)
-    let seconds =
-      if ss < 60 then ss else 59 [@coverage off]
-    in
-    Some (Printf.sprintf "%s, %02i %s %i %02i:%02i:%02i GMT"
-      weekday d month y hh mm seconds)
-
-
+    let seconds = if ss < 60 then ss else (59 [@coverage off]) in
+    Some
+      (Printf.sprintf "%s, %02i %s %i %02i:%02i:%02i GMT" weekday d month y hh
+         mm seconds)
 
 let to_set_cookie
     ?expires ?max_age ?domain ?path ?secure ?http_only ?same_site name value =
-
   let expires =
     match Option.bind expires to_http_date with
     | None -> ""
@@ -138,32 +145,27 @@ let to_set_cookie
     | Some `None -> "; SameSite=None"
   in
 
-  Printf.sprintf "%s=%s%s%s%s%s%s%s%s"
-    name value expires max_age domain path secure http_only same_site
+  Printf.sprintf "%s=%s%s%s%s%s%s%s%s" name value expires max_age domain path
+    secure http_only same_site
 
+let iri_safe_octets = String.init 128 (fun i -> Char.chr (i + 128))
 
-
-let iri_safe_octets =
-  String.init 128 (fun i -> Char.chr (i + 128))
-
-let iri_generic =
-  `Custom (`Generic, iri_safe_octets, "")
+let iri_generic = `Custom (`Generic, iri_safe_octets, "")
 
 let to_percent_encoded ?(international = true) string =
   let component =
-    if international then iri_generic
-    else `Generic
+    if international then
+      iri_generic
+    else
+      `Generic
   in
   Uri.pct_encode ~component string
 
-let from_percent_encoded string =
-  Uri.pct_decode string
-
-
+let from_percent_encoded string = Uri.pct_decode string
 
 let to_form_urlencoded dictionary =
   dictionary
-  |> List.map (fun (name, value) -> name, [value])
+  |> List.map (fun (name, value) -> (name, [value]))
   |> Uri.encoded_of_query
 
 let from_form_urlencoded string =
@@ -172,9 +174,7 @@ let from_form_urlencoded string =
   else
     string
     |> Uri.query_of_encoded
-    |> List.map (fun (name, values) -> name, String.concat "," values)
-
-
+    |> List.map (fun (name, values) -> (name, String.concat "," values))
 
 let split_origin_form string =
   (* [string] is an origin-form target (RFC 9112 §3.2.1): an absolute path,
@@ -193,17 +193,17 @@ let split_origin_form string =
   let path, query =
     match String.index_opt string '?' with
     | Some i ->
-      String.sub string 0 i,
-      String.sub string (i + 1) (String.length string - i - 1)
-    | None -> string, ""
+      ( String.sub string 0 i,
+        String.sub string (i + 1) (String.length string - i - 1) )
+    | None -> (string, "")
   in
   let path =
     String.split_on_char '/' path
     |> List.map (fun segment ->
-      Uri.pct_encode ~component:`Path (Uri.pct_decode segment))
+        Uri.pct_encode ~component:`Path (Uri.pct_decode segment))
     |> String.concat "/"
   in
-  path, query
+  (path, query)
 
 let split_target string =
   (* Only origin-form targets (the common case) begin with '/', and they are the
@@ -221,15 +221,15 @@ let split_target string =
       | Some query -> query
       | None -> ""
     in
-    Uri.path uri, query
+    (Uri.path uri, query)
 
 let from_path =
   (* Not tail-recursive. *)
   let rec filter_components = function
     | [] -> []
     | [""] as components -> components
-    | ""::components -> filter_components components
-    | component::components -> component::(filter_components components)
+    | "" :: components -> filter_components components
+    | component :: components -> component :: filter_components components
   in
 
   fun string ->
@@ -249,21 +249,20 @@ let from_path =
 let rec drop_trailing_slash = function
   | [] -> []
   | [""] -> []
-  | component::components ->
-    component::(drop_trailing_slash components)
+  | component :: components -> component :: drop_trailing_slash components
 
 let to_path ?(relative = false) ?(international = true) components =
   let rec filter_empty_components = function
-    | ""::(_::_ as path) -> filter_empty_components path
-    | component::path -> component::(filter_empty_components path)
+    | "" :: (_ :: _ as path) -> filter_empty_components path
+    | component :: path -> component :: filter_empty_components path
     | [] -> []
   in
   let components = filter_empty_components components in
 
   let components =
-    match relative, components with
+    match (relative, components) with
     | false, [] -> [""; ""]
-    | false, _ -> ""::components
+    | false, _ -> "" :: components
     | true, _ -> components
   in
 
@@ -271,10 +270,6 @@ let to_path ?(relative = false) ?(international = true) components =
   |> List.map (to_percent_encoded ~international)
   |> String.concat "/"
 
+let text_html = "text/html; charset=utf-8"
 
-
-let text_html =
-  "text/html; charset=utf-8"
-
-let application_json =
-  "application/json"
+let application_json = "application/json"

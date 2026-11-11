@@ -3,11 +3,4 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
-let () =
-  Alcotest.run "Dream" [
-    Request.tests;
-    Headers.tests;
-    Log.tests;
-  ]
+let () = Alcotest.run "Dream" [Request.tests; Headers.tests; Log.tests]

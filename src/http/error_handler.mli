@@ -3,13 +3,9 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 module Catch = Dream__server.Catch
 module Log = Dream__server.Log
 module Message = Dream_pure.Message
-
-
 
 (* User's error handlers and defaults. These actually generate error response
    templates and/or do logging. *)
@@ -18,9 +14,7 @@ val default : Catch.error_handler
 val debug_error_handler : Catch.error_handler
 val customize :
   (Catch.error -> string -> Message.response -> Message.response Lwt.t) ->
-    Catch.error_handler
-
-
+  Catch.error_handler
 
 (* Internal functions called by the framework to report errors. These translate
    various libraries' errors into Error.error and call the user's error
@@ -33,34 +27,30 @@ val customize :
   Error.error_handler ->
     Dream.middleware *)
 
-val app :
-  Catch.error_handler ->
-    (Catch.error -> Message.response Lwt.t)
+val app : Catch.error_handler -> Catch.error -> Message.response Lwt.t
 
 val httpaf :
-  Catch.error_handler ->
-    (Unix.sockaddr -> Httpun.Server_connection.error_handler)
+  Catch.error_handler -> Unix.sockaddr -> Httpun.Server_connection.error_handler
 
 val h2 :
-  Catch.error_handler ->
-    (Unix.sockaddr -> H2.Server_connection.error_handler)
+  Catch.error_handler -> Unix.sockaddr -> H2.Server_connection.error_handler
 
-val tls :
-  Catch.error_handler ->
-    (Unix.sockaddr -> exn -> unit)
+val tls : Catch.error_handler -> Unix.sockaddr -> exn -> unit
 
 val websocket :
   Catch.error_handler ->
   Message.request ->
   Message.response ->
-    (Httpun_ws.Wsd.t -> [ `Exn of exn ] -> unit)
+  Httpun_ws.Wsd.t ->
+  [`Exn of exn] ->
+  unit
 
 val websocket_handshake :
   Catch.error_handler ->
-    (Message.request -> Message.response -> string -> Message.response Lwt.t)
-
-
-
+  Message.request ->
+  Message.response ->
+  string ->
+  Message.response Lwt.t
 
 (* Logger also used by elsewhere in the HTTP integration. *)
 val log : Log.sub_log

@@ -3,13 +3,10 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 let query name string =
-  Dream.query (Dream.request ~target:("/?" ^ string) "") name
-  |> function
-    | Some value -> Printf.printf "%S\n" value
-    | None -> print_endline "None"
+  Dream.query (Dream.request ~target:("/?" ^ string) "") name |> function
+  | Some value -> Printf.printf "%S\n" value
+  | None -> print_endline "None"
 
 let%expect_test _ =
   query "a" "a=b";
@@ -21,7 +18,8 @@ let%expect_test _ =
   query "a" "a=b&a=c";
   query "c" "a=b&c=d";
   query "a b" "a+b=c";
-  [%expect {|
+  [%expect
+    {|
     "b"
     None
     None
@@ -31,8 +29,6 @@ let%expect_test _ =
     "b"
     "d"
     "c" |}]
-
-
 
 let queries name string =
   Dream.queries (Dream.request ~target:("/?" ^ string) "") name
@@ -50,7 +46,8 @@ let%expect_test _ =
   queries "a" "a=b&a=c";
   queries "c" "a=b&c=d";
   queries "a b" "a+b=c";
-  [%expect {|
+  [%expect
+    {|
     ["b"]
     []
     []
@@ -60,8 +57,6 @@ let%expect_test _ =
     ["b" "c"]
     ["d"]
     ["c"] |}]
-
-
 
 let all_queries string =
   Dream.request ~target:("/?" ^ string) ""
@@ -76,7 +71,8 @@ let%expect_test _ =
   all_queries "";
   all_queries "=";
   all_queries "a+b=c+d";
-  [%expect {|
+  [%expect
+    {|
     ["a"="b"]
     ["a"="b" "a"="c"]
     []

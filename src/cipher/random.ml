@@ -3,8 +3,6 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 (* TODO LATER Is there something with lighter dependencies? Although perhaps
    these are not so bad... *)
 
@@ -18,8 +16,7 @@ let initialized () =
 let initialize f = _initialized := Some (Lazy.from_fun f)
 
 let random_buffer n =
-  initialized () ;
+  initialized ();
   Mirage_crypto_rng.generate n
 
-let random n =
-  random_buffer n
+let random n = random_buffer n

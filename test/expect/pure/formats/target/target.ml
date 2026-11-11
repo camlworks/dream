@@ -3,12 +3,9 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 let decode string =
-  string
-  |> Dream.split_target
-  |> fun (path, query) -> Printf.printf "%S %S\n" path query
+  string |> Dream.split_target |> fun (path, query) ->
+  Printf.printf "%S %S\n" path query
 
 let%expect_test _ =
   decode "";
@@ -36,7 +33,8 @@ let%expect_test _ =
   decode "/abc%2F%26def?a=b&c=d%2B";
   decode "/abc/#foo";
   decode "/abc/?de=f#foo";
-  [%expect {|
+  [%expect
+    {|
     "" ""
     "" ""
     "/" ""

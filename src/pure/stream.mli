@@ -3,11 +3,7 @@
 
    Copyright 2021 Anton Bachin *)
 
-
-
 (* Note: this is not a stable API! *)
-
-
 
 type reader
 type writer
@@ -15,8 +11,7 @@ type stream
 
 type buffer =
   (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
-type 'a promise =
-  'a Lwt.t
+type 'a promise = 'a Lwt.t
 
 type read =
   data:(buffer -> int -> int -> bool -> bool -> unit) ->
@@ -25,16 +20,12 @@ type read =
   pong:(buffer -> int -> int -> unit) ->
   close:(int -> unit) ->
   exn:(exn -> unit) ->
-    unit
+  unit
 (** A reading function. Awaits the next event on the stream. For each call of a
     reading function, one of the callbacks will eventually be called, according
     to which event occurs next on the stream. *)
 
-type write =
-  close:(int -> unit) ->
-  exn:(exn -> unit) ->
-  (unit -> unit) ->
-    unit
+type write = close:(int -> unit) -> exn:(exn -> unit) -> (unit -> unit) -> unit
 (** A writing function. Pushes an event into a stream. May take additional
     arguments before [~ok]. *)
 
