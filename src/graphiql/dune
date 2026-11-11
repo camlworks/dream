@@ -13,4 +13,3 @@
     (echo "let content = {html|")
     (cat %{html})
     (echo "|html}")))))
-

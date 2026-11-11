@@ -1,13 +1,8 @@
 (library
  (public_name dream-pure)
  (name dream_pure)
- (libraries
-  base64
-  bigstringaf
-  hmap
-  lwt
-  uri
-  ptime
- )
- (preprocess (pps lwt_ppx))
- (instrumentation (backend bisect_ppx)))
+ (libraries base64 bigstringaf hmap lwt uri ptime)
+ (preprocess
+  (pps lwt_ppx))
+ (instrumentation
+  (backend bisect_ppx)))

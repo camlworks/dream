@@ -1,4 +1,5 @@
 (executable
  (name json)
  (libraries dream)
- (preprocess (pps lwt_ppx ppx_yojson_conv)))
+ (preprocess
+  (pps lwt_ppx ppx_yojson_conv)))

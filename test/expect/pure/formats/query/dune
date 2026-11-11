@@ -2,4 +2,5 @@
  (name test_expect_pure_query)
  (libraries test_expect_pure)
  (inline_tests)
- (preprocess (pps lwt_ppx ppx_expect)))
+ (preprocess
+  (pps lwt_ppx ppx_expect)))

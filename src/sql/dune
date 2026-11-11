@@ -10,5 +10,7 @@
   dream.server
   uri
   yojson)
- (preprocess (pps lwt_ppx))
- (instrumentation (backend bisect_ppx)))
+ (preprocess
+  (pps lwt_ppx))
+ (instrumentation
+  (backend bisect_ppx)))

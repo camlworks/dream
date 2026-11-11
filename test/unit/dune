@@ -1,12 +1,8 @@
 (executable
  (name unit)
- (libraries
-  alcotest
-  dream
-  lwt
-  lwt.unix
- ))
+ (libraries alcotest dream lwt lwt.unix))
 
 (rule
  (alias runtest)
- (action (run %{exe:unit.exe})))
+ (action
+  (run %{exe:unit.exe})))
