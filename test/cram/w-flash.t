@@ -16,10 +16,10 @@
                         Type Ctrl+C to stop
      dream.logger  INFO REQ 1 GET / <client>:<omitted> fd <omitted>
       dream.flash DEBUG REQ 1 No flash messages.
-     dream.logger  INFO REQ 1 200 in <omitted>
+     dream.logger  INFO REQ 1 200 in <omitted> μs
      dream.logger  INFO REQ 2 POST / <client>:<omitted> fd <omitted>
       dream.flash DEBUG REQ 2 No flash messages.
-     dream.logger  INFO REQ 2 303 /result in <omitted>
+     dream.logger  INFO REQ 2 303 /result in <omitted> μs
      dream.logger  INFO REQ 3 GET /result <client>:<omitted> fd <omitted>
       dream.flash DEBUG REQ 3 Flash messages: Info: Hello!
-     dream.logger  INFO REQ 3 200 in <omitted>
+     dream.logger  INFO REQ 3 200 in <omitted> μs

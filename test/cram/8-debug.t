@@ -154,7 +154,7 @@
                         Running at http://localhost:<omitted>
                         Type Ctrl+C to stop
      dream.logger  INFO REQ 1 GET /bad <client>:<omitted> fd <omitted>
-     dream.logger  WARN REQ 1 400 in <omitted>
+     dream.logger  WARN REQ 1 400 in <omitted> μs
      dream.logger  INFO REQ 2 GET /fail <client>:<omitted> fd <omitted>
      dream.logger  WARN REQ 2 Aborted by: Failure("The Web app failed!")
      dream.logger  WARN Raised at Dune__exe__Debug.(fun) in file "example/8-debug/debug.ml", line <omitted>, characters <omitted>

@@ -8,7 +8,7 @@
                         Type Ctrl+C to stop
      dream.logger  INFO REQ 1 GET / <client>:<omitted> fd <omitted>
                         REQ 1 Sending greeting to <client>:<omitted>!
-     dream.logger  INFO REQ 1 200 in <omitted>
+     dream.logger  INFO REQ 1 200 in <omitted> μs
      dream.logger  INFO REQ 2 GET /fail <client>:<omitted> fd <omitted>
                    WARN REQ 2 Raising an exception!
      dream.logger  WARN REQ 2 Aborted by: Failure("The Web app failed!")

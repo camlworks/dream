@@ -30,17 +30,27 @@ start_server() {
 # Print the captured server output with values that vary between runs and
 # machines normalized. In particular, the timestamps are removed.
 server_log() {
-  sed -E \
-    -e 's/^[0-9]{2}\.[0-9]{2}\.[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3} //' \
-    -e 's/localhost:[0-9]+/localhost:<omitted>/g' \
-    -e 's/(::1|127\.0\.0\.1):[0-9]+/<client>:<omitted>/g' \
-    -e 's/( fd )[0-9]+( .*)?$/\1<omitted>/' \
-    -e 's/ in [0-9]+ μs/ in <omitted>/g' \
-    -e 's/dream\.request_id: [0-9]+/dream.request_id: <omitted>/g' \
-    -e 's/dream\.fd: [0-9]+/dream.fd: <omitted>/g' \
-    -e 's/(in file [^,]*), lines? [0-9-]*, characters [0-9-]*/\1, line <omitted>, characters <omitted>/g' \
-    -e 's/SSL connection\(\) error: .*/SSL connection() error: <omitted>/' \
-    server.log
+  local filters=(
+    # Strip the leading date and time from every log line.
+    -e 's/^[0-9]{2}\.[0-9]{2}\.[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3} //'
+    # Omit the port in startup URLs and request targets.
+    -e 's/localhost:[0-9]+/localhost:<omitted>/g'
+    # Omit the client IP address and port.
+    -e 's/(::1|127\.0\.0\.1):[0-9]+/<client>:<omitted>/g'
+    # Omit the file descriptor and the trailing user-agent on request lines.
+    -e 's/( fd )[0-9]+( .*)?$/\1<omitted>/'
+    # Omit the elapsed time of a handled request.
+    -e 's/ in [0-9]+ μs/ in <omitted> μs/g'
+    # Omit the request id shown in request dumps.
+    -e 's/dream\.request_id: [0-9]+/dream.request_id: <omitted>/g'
+    # Omit the file descriptor shown in request dumps.
+    -e 's/dream\.fd: [0-9]+/dream.fd: <omitted>/g'
+    # Omit source line and character positions in exception backtraces.
+    -e 's/(in file [^,]*), lines? [0-9-]*, characters [0-9-]*/\1, line <omitted>, characters <omitted>/g'
+    # Omit OpenSSL error details, whose reason codes vary by connection.
+    -e 's/SSL connection\(\) error: .*/SSL connection() error: <omitted>/'
+  )
+  sed -E "${filters[@]}" server.log
 }
 
 # Wait until the server has written at least COUNT lines matching PATTERN to

@@ -18,8 +18,8 @@
                         Running at http://localhost:<omitted>
                         Type Ctrl+C to stop
      dream.logger  INFO REQ 1 GET /assets/README.md <client>:<omitted> fd <omitted>
-     dream.logger  INFO REQ 1 200 in <omitted>
+     dream.logger  INFO REQ 1 200 in <omitted> μs
      dream.logger  INFO REQ 2 GET /assets/camel.jpeg <client>:<omitted> fd <omitted>
-     dream.logger  INFO REQ 2 200 in <omitted>
+     dream.logger  INFO REQ 2 200 in <omitted> μs
      dream.logger  INFO REQ 3 GET /assets/not-a-file <client>:<omitted> fd <omitted>
-     dream.logger  WARN REQ 3 404 in <omitted>
+     dream.logger  WARN REQ 3 404 in <omitted> μs

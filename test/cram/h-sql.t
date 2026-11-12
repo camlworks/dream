@@ -24,10 +24,10 @@ Get the CSRF-token first
                         Running at http://localhost:<omitted>
                         Type Ctrl+C to stop
      dream.logger  INFO REQ 1 GET / <client>:<omitted> fd <omitted>
-     dream.logger  INFO REQ 1 200 in <omitted>
+     dream.logger  INFO REQ 1 200 in <omitted> μs
      dream.logger  INFO REQ 2 POST / <client>:<omitted> fd <omitted>
-     dream.logger  INFO REQ 2 303 / in <omitted>
+     dream.logger  INFO REQ 2 303 / in <omitted> μs
      dream.logger  INFO REQ 3 POST / <client>:<omitted> fd <omitted>
-     dream.logger  INFO REQ 3 303 / in <omitted>
+     dream.logger  INFO REQ 3 303 / in <omitted> μs
      dream.logger  INFO REQ 4 GET / <client>:<omitted> fd <omitted>
-     dream.logger  INFO REQ 4 200 in <omitted>
+     dream.logger  INFO REQ 4 200 in <omitted> μs

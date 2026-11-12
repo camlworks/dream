@@ -18,8 +18,8 @@ route like their origin-form equivalents.
                         Running at http://localhost:<omitted>
                         Type Ctrl+C to stop
      dream.logger  INFO REQ 1 GET /echo/hello-world <client>:<omitted> fd <omitted>
-     dream.logger  INFO REQ 1 200 in <omitted>
+     dream.logger  INFO REQ 1 200 in <omitted> μs
      dream.logger  INFO REQ 2 GET //echo/hello-world <client>:<omitted> fd <omitted>
-     dream.logger  INFO REQ 2 200 in <omitted>
+     dream.logger  INFO REQ 2 200 in <omitted> μs
      dream.logger  INFO REQ 3 GET http://localhost:<omitted>/echo/hello-world <client>:<omitted> fd <omitted>
-     dream.logger  INFO REQ 3 200 in <omitted>
+     dream.logger  INFO REQ 3 200 in <omitted> μs
