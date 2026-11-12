@@ -32,3 +32,13 @@
     </body>
   </html>
   
+
+  $ server_log
+                        Running at http://localhost:<omitted>
+                        Type Ctrl+C to stop
+     dream.logger  INFO REQ 1 GET / <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 1 200 in <omitted>
+     dream.logger  INFO REQ 2 GET /Profit <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 2 200 in <omitted>
+     dream.logger  INFO REQ 3 GET /Nope <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 3 200 in <omitted>

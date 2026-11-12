@@ -7,3 +7,12 @@
         <p>0</p>
         <p>1</p>
         <p>2</p>
+
+  $ wait_for_log ' 200 in ' 2
+  $ server_log
+                        Running at http://localhost:<omitted>
+                        Type Ctrl+C to stop
+     dream.logger  INFO REQ 1 GET / <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 1 200 in <omitted>
+     dream.logger  INFO REQ 2 GET / <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 2 200 in <omitted>

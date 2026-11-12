@@ -5,3 +5,7 @@
   Hello, world!
   $ curl_cmd "/?echo=%3Cscript%3E"
   &lt;script&gt;
+
+  $ server_log
+                        Running at http://localhost:<omitted>
+                        Type Ctrl+C to stop

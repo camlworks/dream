@@ -27,3 +27,13 @@ curl picks a random boundary, so filter it
   
   file-content
   --<omitted>--
+
+  $ server_log
+                        Running at http://localhost:<omitted>
+                        Type Ctrl+C to stop
+     dream.logger  INFO REQ 1 GET / <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 1 200 in <omitted>
+     dream.logger  INFO REQ 2 POST / <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 2 200 in <omitted>
+     dream.logger  INFO REQ 3 POST / <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 3 200 in <omitted>
