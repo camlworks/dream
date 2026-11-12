@@ -1,4 +1,4 @@
-  $ content_security_policy &> /dev/null &
+  $ start_server content_security_policy
   $ curl_cmd / -i
   HTTP/1.1 200 OK
   Content-Security-Policy: img-src 'none'; report-to csp-endpoint

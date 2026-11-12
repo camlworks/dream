@@ -1,4 +1,4 @@
-  $ sql &> /dev/null &
+  $ start_server sql
 Get the CSRF-token first
   $ token=$(curl_cmd / -c cookies | sed -n 's/.*value="\([^"]*\)".*/\1/p')
   $ curl_cmd / -b cookies -c cookies --data "dream.csrf=$token&text=Hello from the first test" -o /dev/null

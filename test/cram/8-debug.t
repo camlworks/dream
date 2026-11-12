@@ -1,4 +1,4 @@
-  $ debug &> /dev/null &
+  $ start_server debug
   $ curl_cmd /bad
   <!DOCTYPE html>
   <html lang="en">

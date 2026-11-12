@@ -1,4 +1,4 @@
-  $ promise &> /dev/null &
+  $ start_server promise
   $ curl_cmd /
     0 request(s) successful<br>  0 request(s) failed
   $ curl --no-progress-meter localhost:$DREAM_PORT/fail

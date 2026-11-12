@@ -1,4 +1,4 @@
-  $ upload_stream &> /dev/null &
+  $ start_server upload_stream
   $ echo "Hello, world!" > file.txt
 Save the session cookie and scrape the CSRF token from the form
   $ token=$(curl_cmd / -c cookies | sed -n 's/.*value="\([^"]*\)".*/\1/p')

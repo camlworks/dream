@@ -1,4 +1,4 @@
-  $ form &> /dev/null &
+  $ start_server form
   $ curl_cmd / -c cookies -b cookies | sed 's/value=.*/value=<omitted>/'
   <html>
   <body>

@@ -1,7 +1,7 @@
   $ mkdir testdata
   $ echo "Hello" > hello
   $ echo "World" > testdata/world
-  $ static &> /dev/null &
+  $ start_server static
   $ curl_cmd /static/hello
   Hello
   $ curl_cmd /static/testdata/world

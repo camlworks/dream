@@ -1,4 +1,4 @@
-  $ upload &> /dev/null &
+  $ start_server upload
   $ echo "Hello, world!" > file.txt
 Save the cross-site request forgery cookie and set it for the next request
   $ token=$(curl_cmd / -c cookies | sed -n 's/.*value="\([^"]*\)".*/\1/p')

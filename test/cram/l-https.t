@@ -1,4 +1,4 @@
-  $ https &> /dev/null &
+  $ start_server https
   $ curl --silent --retry 2 --retry-connrefused "https://localhost:$DREAM_PORT/" -k
   Good morning, world!
   $ curl --silent --retry 2 --retry-connrefused "https://localhost:$DREAM_PORT/" -w '%{http_code}' -o /dev/null

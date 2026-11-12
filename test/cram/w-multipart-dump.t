@@ -1,4 +1,4 @@
-  $ multipart_dump &> /dev/null &
+  $ start_server multipart_dump
   $ curl_cmd / | sed 's/value=.*/value=<omitted>/'
   <html>
   <body>

@@ -1,4 +1,4 @@
-  $ router &> /dev/null &
+  $ start_server router
   $ curl_cmd /echo/hello-world
   hello-world
 

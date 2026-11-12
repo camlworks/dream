@@ -1,4 +1,4 @@
-  $ template-logic &> /dev/null &
+  $ start_server template-logic
   $ curl_cmd /
   <html>
   <body>

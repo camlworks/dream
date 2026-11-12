@@ -1,4 +1,4 @@
-  $ one_binary &> /dev/null &
+  $ start_server one_binary
   $ curl_cmd /assets/README.md
   The [camel](camel.jpeg) image is taken from [pixabay.com][source]. The license
   states:

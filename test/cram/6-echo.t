@@ -1,4 +1,4 @@
-  $ echo-server &> /dev/null &
+  $ start_server echo-server
   $ curl_cmd /echo --data "Hello, world!"
   Hello, world!
 

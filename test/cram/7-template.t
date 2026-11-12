@@ -1,4 +1,4 @@
-  $ template &> /dev/null &
+  $ start_server template
   $ curl_cmd /hello-world
   <html>
   <body>

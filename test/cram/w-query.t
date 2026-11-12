@@ -1,4 +1,4 @@
-  $ query &> /dev/null &
+  $ start_server query
   $ curl_cmd /
   Use ?echo=foo to give a message to echo!
   $ curl_cmd "/?echo=Hello%2C%20world!"

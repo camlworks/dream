@@ -1,4 +1,4 @@
-  $ websocket &> /dev/null &
+  $ start_server websocket
   $ curl_cmd /
   <html>
   <body>

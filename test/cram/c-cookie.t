@@ -1,4 +1,4 @@
-  $ cookie &> /dev/null &
+  $ start_server cookie
 The cookie is encrypted so we cannot have set it ourselves
   $ curl_cmd / -c cookie
   Set language preference; come again!

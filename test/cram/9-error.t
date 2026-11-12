@@ -1,4 +1,4 @@
-  $ error &> /dev/null &
+  $ start_server error
   $ curl_cmd /bad
   <html>
   <body>
