@@ -31,8 +31,8 @@ start_server() {
 # machines normalized. In particular, the timestamps are removed.
 server_log() {
   local filters=(
-    # Strip the leading date and time from every log line.
-    -e 's/^[0-9]{2}\.[0-9]{2}\.[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3} //'
+    # Strip the leading RFC 3339 UTC timestamp from every log line.
+    -e 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z //'
     # Omit the port in startup URLs and request targets.
     -e 's/localhost:[0-9]+/localhost:<omitted>/g'
     # Omit the client IP address and port.
