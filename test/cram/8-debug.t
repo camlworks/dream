@@ -1,4 +1,4 @@
-  $ debug &> /dev/null &
+  $ start_server debug
   $ curl_cmd /bad
   <!DOCTYPE html>
   <html lang="en">
@@ -149,3 +149,18 @@
   dream.params: </code></pre>
     </body>
   </html>
+
+  $ server_log
+                        Running at http://localhost:<omitted>
+                        Type Ctrl+C to stop
+     dream.logger  INFO REQ 1 GET /bad <client>:<omitted> fd <omitted>
+     dream.logger  WARN REQ 1 400 in <omitted> μs
+     dream.logger  INFO REQ 2 GET /fail <client>:<omitted> fd <omitted>
+     dream.logger  WARN REQ 2 Aborted by: Failure("The Web app failed!")
+     dream.logger  WARN Raised at Dune__exe__Debug.(fun) in file "example/8-debug/debug.ml", line <omitted>, characters <omitted>
+     dream.logger  WARN Called from Lwt.Sequence_associated_storage.with_value in file "src/core/lwt.ml", line <omitted>, characters <omitted>
+     dream.logger  WARN Re-raised at Lwt.Sequence_associated_storage.with_value in file "src/core/lwt.ml", line <omitted>, characters <omitted>
+     dream.logger  WARN Called from Lwt.Sequential_composition.try_bind in file "src/core/lwt.ml", line <omitted>, characters <omitted>
+       dream.http ERROR REQ 2 Failure("The Web app failed!")
+       dream.http ERROR REQ 2 Raised at Stdlib__Map.Make.find in file "map.ml", line <omitted>, characters <omitted>
+       dream.http ERROR REQ 2 Called from Logs.Tag.find in file "src/logs.ml", line <omitted>, characters <omitted>
