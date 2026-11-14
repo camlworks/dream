@@ -404,9 +404,270 @@ let%expect_test _ =
   show ~method_:`HEAD "/abc" @@ Dream.router [
     Dream.head "/abc" (fun _ -> Dream.respond "foo");
   ];
+  [%expect {| Response: 200 OK |}]
+
+(* A HEAD request with no HEAD route falls back to the matching GET route, and
+   the body is stripped (RFC 9110 Section 9.3.2). *)
+let%expect_test _ =
+  show ~method_:`HEAD "/abc" @@ Dream.router [
+    Dream.get "/abc" (fun _ -> Dream.respond "foo");
+  ];
+  [%expect {|
+    Response: 200 OK |}]
+
+(* The stripped HEAD response still carries Content-Length equal to the length
+   of the body the GET request would have returned. *)
+let%expect_test _ =
+  let response =
+    show_response ~method_:`HEAD "/abc" @@ Dream.router [
+      Dream.get "/abc" (fun _ -> Dream.respond "foobar");
+    ]
+  in
+  Printf.printf "Content-Length: %s\n"
+    (match Dream.header response "Content-Length" with
+     | Some value -> value
+     | None -> "(absent)");
   [%expect {|
     Response: 200 OK
-    foo |}]
+    Content-Length: 6 |}]
+
+(* A Content-Length supplied by the GET response is preserved. *)
+let%expect_test _ =
+  let response =
+    show_response ~method_:`HEAD "/abc" @@ Dream.router [
+      Dream.get "/abc" (fun _ ->
+        Dream.respond ~headers:["Content-Length", "99"] "foo");
+    ]
+  in
+  Printf.printf "Content-Length: %s\n"
+    (match Dream.header response "Content-Length" with
+     | Some value -> value
+     | None -> "(absent)");
+  [%expect {|
+    Response: 200 OK
+    Content-Length: 99 |}]
+
+(* The HEAD fallback preserves per-response message fields set by the GET
+   handler. *)
+let%expect_test _ =
+  let field = Dream.new_field () in
+  let response =
+    show_response ~method_:`HEAD "/abc" @@ Dream.router [
+      Dream.get "/abc" (fun _ ->
+        let%lwt response = Dream.respond "foo" in
+        Dream.set_field response field "kept";
+        Lwt.return response);
+    ]
+  in
+  Printf.printf "Field: %s\n"
+    (match Dream.field response field with
+     | Some value -> value
+     | None -> "(missing)");
+  [%expect {|
+    Response: 200 OK
+    Field: kept |}]
+
+(* The HEAD fallback also matches GET routes inside scopes, including path
+   parameters and wildcards. *)
+let%expect_test _ =
+  let response =
+    show_response ~method_:`HEAD "/api/123/rest/of/path" @@ Dream.router [
+      Dream.scope "/api" [] [
+        Dream.get "/:id/**" (fun request ->
+          Dream.respond (Dream.param request "id"));
+      ];
+    ]
+  in
+  Printf.printf "Content-Length: %s\n"
+    (match Dream.header response "Content-Length" with
+     | Some value -> value
+     | None -> "(absent)");
+  [%expect {|
+    Response: 200 OK
+    Content-Length: 3 |}]
+
+(* The GET handler observes a HEAD request, not a rewritten GET request, and
+   middleware outside the router also still sees HEAD. *)
+let%expect_test _ =
+  let handler_method = ref None in
+  let middleware_method = ref None in
+  let router = Dream.router [
+    Dream.get "/abc" (fun request ->
+      handler_method := Some (Dream.method_ request);
+      Dream.respond "foo");
+  ] in
+  let app request =
+    let%lwt response = router request in
+    middleware_method := Some (Dream.method_ request);
+    Lwt.return response
+  in
+  let request = Dream.request ~method_:`HEAD ~target:"/abc" "" in
+  ignore (Dream.test app request);
+  let show = function
+    | Some method_ -> Dream.method_to_string method_
+    | None -> "(not set)"
+  in
+  Printf.printf "Handler method: %s\n" (show !handler_method);
+  Printf.printf "Middleware method: %s\n" (show !middleware_method);
+  [%expect {|
+    Handler method: HEAD
+    Middleware method: HEAD |}]
+
+(* Closing the GET response's stream stops a streaming producer instead of
+   leaving it blocked on a stream that is no longer forwarded. *)
+let%expect_test _ =
+  let producer = ref "pending" in
+  let response =
+    show_response ~method_:`HEAD "/stream" @@ Dream.router [
+      Dream.get "/stream" (fun _ ->
+        Dream.stream (fun stream ->
+          Lwt.catch
+            (fun () ->
+              let%lwt () = Dream.write stream "hello" in
+              producer := "sent";
+              Lwt.return_unit)
+            (function
+              | End_of_file ->
+                producer := "closed";
+                Lwt.return_unit
+              | exn ->
+                producer := Printexc.to_string exn;
+                Lwt.return_unit)));
+    ]
+  in
+  ignore response;
+  Lwt_main.run (Lwt.pause ());
+  Lwt_main.run (Lwt.pause ());
+  Printf.printf "Producer: %s\n" !producer;
+  [%expect {|
+    Response: 200 OK
+    Producer: closed |}]
+
+(* Run [f], printing any exception that reaches Lwt's async exception hook,
+   where Dream would log it as an error. *)
+let with_async_exceptions_printed f =
+  let previous_hook = !Lwt.async_exception_hook in
+  Lwt.async_exception_hook := (fun exn ->
+    Printf.printf "Async exception: %s\n" (Printexc.to_string exn));
+  Fun.protect f ~finally:(fun () -> Lwt.async_exception_hook := previous_hook)
+
+(* A streaming producer that does not handle [End_of_file] itself stops
+   silently on HEAD: the dropped body is not reported as an error. *)
+let%expect_test _ =
+  with_async_exceptions_printed (fun () ->
+    ignore @@ show_response ~method_:`HEAD "/stream" @@ Dream.router [
+      Dream.get "/stream" (fun _ ->
+        Dream.stream (fun stream ->
+          let%lwt () = Dream.write stream "hello" in
+          Dream.flush stream));
+    ];
+    Lwt_main.run (Lwt.pause ());
+    Lwt_main.run (Lwt.pause ()));
+  [%expect {|
+    Response: 200 OK |}]
+
+(* Other exceptions from the producer are still reported. *)
+let%expect_test _ =
+  with_async_exceptions_printed (fun () ->
+    ignore @@ show_response ~method_:`HEAD "/stream" @@ Dream.router [
+      Dream.get "/stream" (fun _ ->
+        Dream.stream (fun _ -> failwith "producer failed"));
+    ];
+    Lwt_main.run (Lwt.pause ());
+    Lwt_main.run (Lwt.pause ()));
+  [%expect {|
+    Async exception: Failure("producer failed")
+    Response: 200 OK |}]
+
+(* A HEAD request given as [`Method "HEAD"] is handled like [`HEAD]. *)
+let%expect_test _ =
+  show ~method_:(`Method "HEAD") "/abc" @@ Dream.router [
+    Dream.get "/abc" (fun _ -> Dream.respond "foo");
+  ];
+  [%expect {|
+    Response: 200 OK |}]
+
+(* An explicit HEAD route takes precedence over the GET fallback, regardless of
+   route order. Its body is suppressed like any other HEAD response. *)
+let%expect_test _ =
+  show ~method_:`HEAD "/abc" @@ Dream.router [
+    Dream.get "/abc" (fun _ -> Dream.respond "from-get");
+    Dream.head "/abc" (fun _ -> Dream.respond "from-head");
+  ];
+  [%expect {|
+    Response: 200 OK |}]
+
+(* Which handler answers GET and HEAD requests to [target]. *)
+let show_handlers target routes =
+  let handler name _ = Dream.respond ~headers:["X-Handler", name] name in
+  let app = Dream.router (routes handler) in
+  [`GET; `HEAD] |> List.iter (fun method_ ->
+    let response = Dream.test app (Dream.request ~method_ ~target "") in
+    Printf.printf "%s -> %s\n"
+      (Dream.method_to_string method_)
+      (Option.value ~default:"(404)" (Dream.header response "X-Handler")))
+
+(* An explicit HEAD route wins even when listed after the GET route. *)
+let%expect_test _ =
+  show_handlers "/abc" (fun handler -> [
+    Dream.get "/abc" (handler "get");
+    Dream.head "/abc" (handler "head");
+  ]);
+  [%expect {|
+    GET -> get
+    HEAD -> head |}]
+
+(* Without a HEAD route, HEAD goes where GET goes: an earlier GET route beats a
+   later catch-all [any] route... *)
+let%expect_test _ =
+  show_handlers "/abc" (fun handler -> [
+    Dream.get "/abc" (handler "get");
+    Dream.any "/**" (handler "any");
+  ]);
+  [%expect {|
+    GET -> get
+    HEAD -> get |}]
+
+(* ...and an earlier [any] route beats a later GET route. *)
+let%expect_test _ =
+  show_handlers "/abc" (fun handler -> [
+    Dream.any "/**" (handler "any");
+    Dream.get "/abc" (handler "get");
+  ]);
+  [%expect {|
+    GET -> any
+    HEAD -> any |}]
+
+(* An explicit HEAD route also wins over an earlier [any] route. *)
+let%expect_test _ =
+  show_handlers "/abc" (fun handler -> [
+    Dream.any "/**" (handler "any");
+    Dream.head "/abc" (handler "head");
+  ]);
+  [%expect {|
+    GET -> any
+    HEAD -> head |}]
+
+(* The same holds inside scopes. *)
+let%expect_test _ =
+  show_handlers "/api/abc" (fun handler -> [
+    Dream.scope "/api" [] [
+      Dream.get "/abc" (handler "get");
+    ];
+    Dream.any "/**" (handler "any");
+  ]);
+  [%expect {|
+    GET -> get
+    HEAD -> get |}]
+
+(* The fallback does not invent routes: HEAD still 404s when there is no GET
+   route for the path either. *)
+let%expect_test _ =
+  show ~method_:`HEAD "/abc" @@ Dream.router [
+    Dream.get "/def" (fun _ -> Dream.respond "foo");
+  ];
+  [%expect {|
+    Response: 404 Not Found |}]
 
 let%expect_test _ =
   show ~method_:`CONNECT "/abc" @@ Dream.router [

@@ -394,7 +394,8 @@ let test ?(prefix = "") handler request =
     @@ handler
   in
 
-  Lwt_main.run (app request)
+  Lwt_main.run (
+    Lwt.bind (app request) (Helpers.suppress_body_for_head request))
 
 let sort_headers = Message.sort_headers
 let echo = Echo.echo

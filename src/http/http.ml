@@ -136,6 +136,8 @@ let wrap_handler
            2. Upon failure to establish a WebSocket, the function is called to
               transmit the resulting error response. *)
         let forward_response response =
+          let%lwt response =
+            Helpers.suppress_body_for_head request response in
           if Body_size_limit.exceeded request then begin
             Httpun.Body.Reader.close request_body;
             Message.set_header response "Connection" "close"
@@ -161,7 +163,7 @@ let wrap_handler
         match Message.get_websocket response with
         | None ->
           forward_response response
-        | Some (client_stream, _server_stream) ->
+        | Some (client_stream, server_stream) ->
           let error_handler =
             Error_handler.websocket user's_error_handler request response in
           ignore error_handler; (* TODO *)
@@ -180,6 +182,8 @@ let wrap_handler
           |> function
           | Ok () -> Lwt.return_unit
           | Error error_string ->
+            let%lwt () =
+              Message.close_websocket (client_stream, server_stream) in
             let%lwt response =
               Error_handler.websocket_handshake
                 user's_error_handler request response error_string
@@ -260,6 +264,8 @@ let wrap_handler_h2
         (* Extract the Dream response's headers. *)
 
         let forward_response response =
+          let%lwt response =
+            Helpers.suppress_body_for_head request response in
           Message.drop_content_length_headers response;
           Message.lowercase_headers response;
           let headers =

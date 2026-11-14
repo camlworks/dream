@@ -40,6 +40,10 @@ An older If-Modified-Since serves the full 200 response.
   Hello
   HTTP 200
 
+A HEAD request to a static route returns the same headers without a body.
+  $ curl_cmd /static/hello --head -o /dev/null -w 'HTTP %{http_code} body=%{size_download} content-length=%header{content-length}\n'
+  HTTP 200 body=0 content-length=6
+
   $ server_log
                         Running at http://localhost:<omitted>
                         Type Ctrl+C to stop
@@ -59,3 +63,5 @@ An older If-Modified-Since serves the full 200 response.
      dream.logger  INFO REQ 7 304 in <omitted> μs
      dream.logger  INFO REQ 8 GET /static/hello <client>:<omitted> fd <omitted>
      dream.logger  INFO REQ 8 200 in <omitted> μs
+     dream.logger  INFO REQ 9 HEAD /static/hello <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 9 200 in <omitted> μs

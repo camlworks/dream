@@ -1308,6 +1308,24 @@ module Make
     {{:https://github.com/camlworks/dream/tree/master/example/3-router#folders-and-files}
     [3-router]} \[{{:http://dream.as/3-router} playground}\].
 
+    A [`HEAD] request that matches no {!Dream.head} route is
+    answered by the matching {!Dream.get} route, if any: the [GET] handler runs
+    with the request still marked as [`HEAD], and the response body is removed
+    before it is sent by the server, as required by
+    {{:https://www.rfc-editor.org/rfc/rfc9110#name-head} RFC 9110 §9.3.2}.
+
+    An explicit {!Dream.head} route takes precedence wherever it appears in the
+    route list. Otherwise, a [`HEAD] request goes to the same route as a [`GET]
+    request would: for example, an earlier {!Dream.get} route takes precedence
+    over a later {!Dream.any} route that also matches.
+
+    If the [GET] response already has a [Content-Length] header, or its body is
+    already available, the [HEAD] response preserves or derives the same
+    [Content-Length]. For a streamed body, no length is known, so the response
+    has [Transfer-Encoding: chunked] instead. The stream is closed, so the
+    {!Dream.stream} callback's next {!Dream.write} raises [End_of_file] and
+    the callback stops; this is not logged as an error.
+
     {[
       let () =
         Dream.run
@@ -1342,6 +1360,11 @@ module Make
 
   val get : string -> handler -> route
   (** Forwards [`GET] requests for the given path to the handler.
+
+      [`HEAD] requests for the path are forwarded to the same handler, unless a
+      {!Dream.head} route matches them; see {!Dream.router}. The handler sees
+      the request's method as [`HEAD], and the body of its response is not
+      sent.
 
       {[
         Dream.get "/home" home_template
@@ -1497,7 +1520,12 @@ module Make
       [If-None-Match:] is compared weakly and takes precedence over
       [If-Modified-Since:], per
       {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. A
-      loader opts into this handling simply by setting those headers. *)
+      loader opts into this handling simply by setting those headers.
+
+      {!Dream.static} answers [`GET] and [`HEAD] requests, and responds to other
+      methods with [404 Not Found]. The loader is called for both; it sees the
+      request's method as [`HEAD] for a [`HEAD] request, and the body of its
+      response is not sent. *)
 
   val mime_lookup : string -> (string * string) list
   (** Returns a [Content-Type:] header based on the given filename. This is mostly
