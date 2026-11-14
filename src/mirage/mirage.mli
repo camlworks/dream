@@ -1359,6 +1359,11 @@ module Make
   val get : string -> handler -> route
   (** Forwards [`GET] requests for the given path to the handler.
 
+      [`HEAD] requests for the path are forwarded to the same handler, unless a
+      {!Dream.head} route matches them; see {!Dream.router}. The handler sees
+      the request's method as [`HEAD], and the body of its response is not
+      sent.
+
       {[
         Dream.get "/home" home_template
       ]} *)

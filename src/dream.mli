@@ -1408,7 +1408,8 @@ val router : route list -> handler
     If the [GET] response already has a [Content-Length] header, or its body is
     already available, the [HEAD] response preserves or derives the same
     [Content-Length]. For a streamed body, no length is known, so no
-    [Content-Length] is added.
+    [Content-Length] is added. This applies to HTTP/1.1: over HTTP/2, Dream does
+    not send [Content-Length] in any response.
 
     {[
       let () =
@@ -1455,6 +1456,10 @@ val router : route list -> handler
 
 val get     : string -> handler -> route
 (** Forwards [`GET] requests for the given path to the handler.
+
+    [`HEAD] requests for the path are forwarded to the same handler, unless a
+    {!Dream.head} route matches them; see {!Dream.router}. The handler sees
+    the request's method as [`HEAD], and the body of its response is not sent.
 
     {[
       Dream.get "/home" home_template
