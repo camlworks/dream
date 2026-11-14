@@ -1312,8 +1312,12 @@ module Make
     answered by the matching {!Dream.get} route, if any: the [GET] handler runs
     with the request still marked as [`HEAD], and the response body is removed
     before it is sent by the server, as required by
-    {{:https://www.rfc-editor.org/rfc/rfc9110#name-head} RFC 9110 §9.3.2}. An
-    explicit {!Dream.head} route takes precedence over this fallback.
+    {{:https://www.rfc-editor.org/rfc/rfc9110#name-head} RFC 9110 §9.3.2}.
+
+    An explicit {!Dream.head} route takes precedence wherever it appears in the
+    route list. Otherwise, a [`HEAD] request goes to the same route as a [`GET]
+    request would: for example, an earlier {!Dream.get} route takes precedence
+    over a later {!Dream.any} route that also matches.
 
     If the [GET] response already has a [Content-Length] header, or its body is
     already available, the [HEAD] response preserves or derives the same

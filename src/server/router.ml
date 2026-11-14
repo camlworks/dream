@@ -282,11 +282,10 @@ let router routes =
     let prefix = internal_wildcard_prefix request in
     let path = path request in
 
-    (* Match the routes against [match_method] (normally the request's own
-       method, but a HEAD request also retries against GET below). It is a
-       parameter rather than read from the request so the retry does not have to
-       mutate the request before it knows a GET route exists. *)
-    let dispatch match_method ok fail =
+    (* Match the routes, keeping only handlers whose method set satisfies
+       [accepts]. It is a parameter rather than derived from the request's method
+       so that a HEAD request can be matched in two passes below. *)
+    let dispatch accepts ok fail =
       let rec try_routes bindings prefix path routes ok fail =
         match routes with
         | [] -> fail ()
@@ -310,7 +309,7 @@ let router routes =
 
       and try_node bindings prefix path node is_wildcard ok fail =
         match node with
-        | Handler (method_, handler) when method_matches method_ match_method ->
+        | Handler (method_, handler) when accepts method_ ->
           Message.set_field request params_field bindings;
           if is_wildcard then begin
             (* prefix was built in reverse order *)
@@ -340,13 +339,23 @@ let router routes =
     let found handler request = handler request in
     let not_found () = Helpers.not_found request in
 
-    (* A HEAD request with no matching HEAD route falls back to the matching GET
-       route, as in RFC 9110 Section 9.3.2 (and Express, Flask, Rails). An
-       explicit [Dream.head] route still takes precedence, because it is tried
-       first. The handler observes the request as HEAD; response body suppression
-       happens at the server and testing boundaries. *)
+    (* A HEAD request is routed like a GET request, as in RFC 9110 Section 9.3.2
+       (and Express, Flask, Rails), except that an explicit [Dream.head] route
+       takes precedence wherever it appears. So the first pass looks only at
+       [Dream.head] routes, and the second pass matches [Dream.get] and
+       [Dream.any] routes in order, exactly as for GET. [Dream.any] routes are
+       left out of the first pass; otherwise a later [Dream.any] would beat an
+       earlier matching [Dream.get]. The handler observes the request as HEAD;
+       response body suppression happens at the server and testing
+       boundaries. *)
     match Message.method_ request with
     | `HEAD ->
-      dispatch `HEAD found (fun () -> dispatch `GET found not_found)
+      let explicit_head = function
+        | `Any -> false
+        | #Method.method_ as method_ -> Method.methods_equal method_ `HEAD
+      in
+      dispatch explicit_head found (fun () ->
+        dispatch (fun method_ -> method_matches method_ `GET) found not_found)
     | method_ ->
-      dispatch method_ found not_found
+      dispatch (fun method_set -> method_matches method_set method_)
+        found not_found

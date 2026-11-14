@@ -553,6 +553,69 @@ let%expect_test _ =
   [%expect {|
     Response: 200 OK |}]
 
+(* Which handler answers GET and HEAD requests to [target]. *)
+let show_handlers target routes =
+  let handler name _ = Dream.respond ~headers:["X-Handler", name] name in
+  let app = Dream.router (routes handler) in
+  [`GET; `HEAD] |> List.iter (fun method_ ->
+    let response = Dream.test app (Dream.request ~method_ ~target "") in
+    Printf.printf "%s -> %s\n"
+      (Dream.method_to_string method_)
+      (Option.value ~default:"(404)" (Dream.header response "X-Handler")))
+
+(* An explicit HEAD route wins even when listed after the GET route. *)
+let%expect_test _ =
+  show_handlers "/abc" (fun handler -> [
+    Dream.get "/abc" (handler "get");
+    Dream.head "/abc" (handler "head");
+  ]);
+  [%expect {|
+    GET -> get
+    HEAD -> head |}]
+
+(* Without a HEAD route, HEAD goes where GET goes: an earlier GET route beats a
+   later catch-all [any] route... *)
+let%expect_test _ =
+  show_handlers "/abc" (fun handler -> [
+    Dream.get "/abc" (handler "get");
+    Dream.any "/**" (handler "any");
+  ]);
+  [%expect {|
+    GET -> get
+    HEAD -> get |}]
+
+(* ...and an earlier [any] route beats a later GET route. *)
+let%expect_test _ =
+  show_handlers "/abc" (fun handler -> [
+    Dream.any "/**" (handler "any");
+    Dream.get "/abc" (handler "get");
+  ]);
+  [%expect {|
+    GET -> any
+    HEAD -> any |}]
+
+(* An explicit HEAD route also wins over an earlier [any] route. *)
+let%expect_test _ =
+  show_handlers "/abc" (fun handler -> [
+    Dream.any "/**" (handler "any");
+    Dream.head "/abc" (handler "head");
+  ]);
+  [%expect {|
+    GET -> any
+    HEAD -> head |}]
+
+(* The same holds inside scopes. *)
+let%expect_test _ =
+  show_handlers "/api/abc" (fun handler -> [
+    Dream.scope "/api" [] [
+      Dream.get "/abc" (handler "get");
+    ];
+    Dream.any "/**" (handler "any");
+  ]);
+  [%expect {|
+    GET -> get
+    HEAD -> get |}]
+
 (* The fallback does not invent routes: HEAD still 404s when there is no GET
    route for the path either. *)
 let%expect_test _ =
