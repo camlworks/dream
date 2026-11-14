@@ -1407,8 +1407,10 @@ val router : route list -> handler
 
     If the [GET] response already has a [Content-Length] header, or its body is
     already available, the [HEAD] response preserves or derives the same
-    [Content-Length]. For a streamed body, no length is known, so no
-    [Content-Length] is added. This applies to HTTP/1.1: over HTTP/2, Dream does
+    [Content-Length]. For a streamed body, no length is known, so the response
+    has [Transfer-Encoding: chunked] instead. The stream is closed, so the
+    {!Dream.stream} callback's next {!Dream.write} raises [End_of_file] and
+    the callback stops; this is not logged as an error. This applies to HTTP/1.1: over HTTP/2, Dream does
     not send [Content-Length] in any response.
 
     {[
@@ -1622,7 +1624,12 @@ val static :
     [If-Modified-Since:], per
     {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. A
     custom loader can opt into the same handling simply by setting those
-    headers. *)
+    headers.
+
+    {!Dream.static} answers [`GET] and [`HEAD] requests, and responds to other
+    methods with [404 Not Found]. The loader is called for both; it sees the
+    request's method as [`HEAD] for a [`HEAD] request, and the body of its
+    response is not sent. *)
 
 val from_filesystem : string -> string -> handler
 (** [Dream.from_filesystem local_directory path request] responds with a file
@@ -1637,7 +1644,9 @@ val from_filesystem : string -> string -> handler
     ]}
 
     {!Dream.from_filesystem} calls {!Dream.mime_lookup} to guess a
-    [Content-Type:] based on the file's extension.
+    [Content-Type:] based on the file's extension. The file is read into memory
+    rather than streamed, so the response has a [Content-Length:], also when
+    answering a [`HEAD] request over HTTP/1.1.
 
     The response also carries an [ETag:] (a strong validator derived from the
     file's contents) and a [Last-Modified:] header (the file's modification
@@ -2606,7 +2615,10 @@ val test : ?prefix:string -> handler -> (request -> response)
     {{:https://ocsigen.org/lwt/latest/api/Lwt_main#VALrun} [Lwt_main.run]}
     internally to await the response, which is why the response returned from
     the test is not wrapped in a promise. If you don't need these facilities,
-    you can test [handler] by calling it directly with a request. *)
+    you can test [handler] by calling it directly with a request.
+
+    As in the server, the body of a response to a [`HEAD] request is removed;
+    see {!Dream.router}. *)
 
 val sort_headers : (string * string) list -> (string * string) list
 (** Sorts headers by name. Headers with the same name are not sorted by value or
