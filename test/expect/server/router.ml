@@ -543,6 +543,50 @@ let%expect_test _ =
     Response: 200 OK
     Producer: closed |}]
 
+(* Run [f], printing any exception that reaches Lwt's async exception hook,
+   where Dream would log it as an error. *)
+let with_async_exceptions_printed f =
+  let previous_hook = !Lwt.async_exception_hook in
+  Lwt.async_exception_hook := (fun exn ->
+    Printf.printf "Async exception: %s\n" (Printexc.to_string exn));
+  Fun.protect f ~finally:(fun () -> Lwt.async_exception_hook := previous_hook)
+
+(* A streaming producer that does not handle [End_of_file] itself stops
+   silently on HEAD: the dropped body is not reported as an error. *)
+let%expect_test _ =
+  with_async_exceptions_printed (fun () ->
+    ignore @@ show_response ~method_:`HEAD "/stream" @@ Dream.router [
+      Dream.get "/stream" (fun _ ->
+        Dream.stream (fun stream ->
+          let%lwt () = Dream.write stream "hello" in
+          Dream.flush stream));
+    ];
+    Lwt_main.run (Lwt.pause ());
+    Lwt_main.run (Lwt.pause ()));
+  [%expect {|
+    Response: 200 OK |}]
+
+(* Other exceptions from the producer are still reported. *)
+let%expect_test _ =
+  with_async_exceptions_printed (fun () ->
+    ignore @@ show_response ~method_:`HEAD "/stream" @@ Dream.router [
+      Dream.get "/stream" (fun _ ->
+        Dream.stream (fun _ -> failwith "producer failed"));
+    ];
+    Lwt_main.run (Lwt.pause ());
+    Lwt_main.run (Lwt.pause ()));
+  [%expect {|
+    Async exception: Failure("producer failed")
+    Response: 200 OK |}]
+
+(* A HEAD request given as [`Method "HEAD"] is handled like [`HEAD]. *)
+let%expect_test _ =
+  show ~method_:(`Method "HEAD") "/abc" @@ Dream.router [
+    Dream.get "/abc" (fun _ -> Dream.respond "foo");
+  ];
+  [%expect {|
+    Response: 200 OK |}]
+
 (* An explicit HEAD route takes precedence over the GET fallback, regardless of
    route order. Its body is suppressed like any other HEAD response. *)
 let%expect_test _ =

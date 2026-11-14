@@ -7,6 +7,7 @@
 
 module Formats = Dream_pure.Formats
 module Message = Dream_pure.Message
+module Method = Dream_pure.Method
 module Status = Dream_pure.Status
 module Stream = Dream_pure.Stream
 
@@ -91,6 +92,10 @@ let redirect ?status ?code ?headers _request location =
   Message.set_header response "Location" location;
   Lwt.return response
 
+(* Set by [head_response] on a response whose body it dropped. *)
+let head_body_dropped : unit Message.field =
+  Message.new_field ~name:"dream.head_body_dropped" ()
+
 let stream ?status ?code ?headers ?(close = true) callback =
   let reader, writer = Stream.pipe () in
   let client_stream = Stream.stream reader Stream.no_writer
@@ -98,17 +103,29 @@ let stream ?status ?code ?headers ?(close = true) callback =
   let response =
     Message.response ?status ?code ?headers client_stream server_stream in
 
+  (* When the response answers a HEAD request, its body stream is closed, so the
+     callback's next write raises [End_of_file]. That is expected, not an error
+     worth logging. *)
+  let ignore_dropped_head_body = function
+    | End_of_file when Message.field response head_body_dropped <> None ->
+      Lwt.return_unit
+    | exn ->
+      Lwt.fail exn
+  in
+
   (* TODO Make sure the request id is propagated to the callback. *)
   Lwt.async (fun () ->
-    if close then
-      match%lwt callback server_stream with
-      | () ->
-        Message.close server_stream
-      | exception exn ->
-        let%lwt () = Message.close server_stream in
-        raise exn
-    else
-      callback server_stream);
+    Lwt.catch (fun () ->
+      if close then
+        match%lwt callback server_stream with
+        | () ->
+          Message.close server_stream
+        | exception exn ->
+          let%lwt () = Message.close server_stream in
+          raise exn
+      else
+        callback server_stream)
+      ignore_dropped_head_body);
 
   Lwt.return response
 
@@ -125,14 +142,15 @@ let head_response response =
   Message.set_content_length_headers response;
   let old_client_stream = Message.client_stream response in
   Message.set_body response "";
+  Message.set_field response head_body_dropped ();
   Message.close old_client_stream
 
 let suppress_body_for_head request response =
-  match Message.method_ request with
-  | `HEAD ->
+  if Method.methods_equal (Message.method_ request) `HEAD then
     let%lwt () = head_response response in
     Lwt.return response
-  | _ -> Lwt.return response
+  else
+    Lwt.return response
 
 let not_found _ =
   respond ~status:`Not_Found ""

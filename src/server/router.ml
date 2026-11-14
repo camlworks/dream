@@ -348,14 +348,14 @@ let router routes =
        earlier matching [Dream.get]. The handler observes the request as HEAD;
        response body suppression happens at the server and testing
        boundaries. *)
-    match Message.method_ request with
-    | `HEAD ->
+    let method_ = Message.method_ request in
+    if Method.methods_equal method_ `HEAD then
       let explicit_head = function
         | `Any -> false
         | #Method.method_ as method_ -> Method.methods_equal method_ `HEAD
       in
       dispatch explicit_head found (fun () ->
         dispatch (fun method_ -> method_matches method_ `GET) found not_found)
-    | method_ ->
+    else
       dispatch (fun method_set -> method_matches method_set method_)
         found not_found
