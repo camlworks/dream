@@ -1,4 +1,4 @@
-  $ error &> /dev/null &
+  $ start_server error
   $ curl_cmd /bad
   <html>
   <body>
@@ -45,3 +45,11 @@
   dream.fd: <omitted></pre>
   </body>
   </html>
+
+  $ server_log
+                        Running at http://localhost:<omitted>
+                        Type Ctrl+C to stop
+     dream.logger  INFO REQ 1 GET /bad <client>:<omitted> fd <omitted>
+     dream.logger  WARN REQ 1 404 in <omitted> μs
+     dream.logger  INFO REQ 2 GET /fail <client>:<omitted> fd <omitted>
+     dream.logger  WARN REQ 2 404 in <omitted> μs

@@ -1,7 +1,7 @@
   $ mkdir testdata
   $ echo "Hello" > hello
   $ echo "World" > testdata/world
-  $ static &> /dev/null &
+  $ start_server static
   $ curl_cmd /static/hello
   Hello
   $ curl_cmd /static/testdata/world
@@ -43,3 +43,25 @@ An older If-Modified-Since serves the full 200 response.
 A HEAD request to a static route returns the same headers without a body.
   $ curl_cmd /static/hello --head -o /dev/null -w 'HTTP %{http_code} body=%{size_download} content-length=%header{content-length}\n'
   HTTP 200 body=0 content-length=6
+
+  $ server_log
+                        Running at http://localhost:<omitted>
+                        Type Ctrl+C to stop
+     dream.logger  INFO REQ 1 GET /static/hello <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 1 200 in <omitted> μs
+     dream.logger  INFO REQ 2 GET /static/testdata/world <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 2 200 in <omitted> μs
+     dream.logger  INFO REQ 3 GET /static/hello <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 3 200 in <omitted> μs
+     dream.logger  INFO REQ 4 GET /static/hello <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 4 304 in <omitted> μs
+     dream.logger  INFO REQ 5 GET /static/hello <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 5 200 in <omitted> μs
+     dream.logger  INFO REQ 6 GET /static/hello <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 6 200 in <omitted> μs
+     dream.logger  INFO REQ 7 GET /static/hello <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 7 304 in <omitted> μs
+     dream.logger  INFO REQ 8 GET /static/hello <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 8 200 in <omitted> μs
+     dream.logger  INFO REQ 9 HEAD /static/hello <client>:<omitted> fd <omitted>
+     dream.logger  INFO REQ 9 200 in <omitted> μs
