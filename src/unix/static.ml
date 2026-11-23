@@ -49,15 +49,14 @@ let from_filesystem local_root path _ =
         let headers =
           mime_lookup path @ ["ETag", etag content] @ last_modified
         in
-        Message.response
-          ~headers (Stream.string content) Stream.null
-        |> Lwt.return))
+        let response =
+          Message.response ~headers Stream.empty Stream.null
+        in
+        Message.set_body response content;
+        Lwt.return response))
     (fun _exn ->
       Message.response ~status:`Not_Found Stream.empty Stream.null
       |> Lwt.return)
-
-(* TODO Add Content-Length handling? *)
-(* TODO Support HEAD requests? *)
 
 (* TODO On Windows, should we also check for \ and drive letters? *)
 (* TODO Not an efficient implementation at the moment. *)
@@ -90,7 +89,9 @@ let validate_path request =
 
 let static ?(loader = from_filesystem) local_root = fun request ->
 
-  if not @@ Method.methods_equal (Message.method_ request) `GET then
+  let method_ = Message.method_ request in
+  if not (Method.methods_equal method_ `GET
+          || Method.methods_equal method_ `HEAD) then
     Message.response ~status:`Not_Found Stream.empty Stream.null
     |> Lwt.return
 

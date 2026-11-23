@@ -1394,6 +1394,24 @@ val router : route list -> handler
     {{:https://github.com/camlworks/dream/tree/master/example/3-router#folders-and-files}
     [3-router]}.
 
+    A [`HEAD] request for which no {!Dream.head} route matches is routed like
+    the corresponding [`GET] request. The handler still sees [`HEAD], and the
+    response body is discarded before it is sent, as required by
+    {{:https://www.rfc-editor.org/rfc/rfc9110#name-head} RFC 9110 §9.3.2}.
+
+    An explicit {!Dream.head} route takes precedence wherever it appears in the
+    route list. Otherwise, a [`HEAD] request goes to the same route as a [`GET]
+    request would: for example, an earlier {!Dream.get} route takes precedence
+    over a later {!Dream.any} route that also matches.
+
+    If the [GET] response has a [Content-Length] header, or its body is already
+    available, the [HEAD] response preserves or derives the same
+    [Content-Length]. A streamed body of unknown length instead uses
+    [Transfer-Encoding: chunked]. The stream is closed, so the next
+    {!Dream.write} in a {!Dream.stream} callback raises [End_of_file]; this is
+    expected and not logged as an error. Over HTTP/2, Dream does not send
+    [Content-Length] in any response.
+
     {[
       let () =
         Dream.run
@@ -1439,6 +1457,10 @@ val router : route list -> handler
 
 val get     : string -> handler -> route
 (** Forwards [`GET] requests for the given path to the handler.
+
+    [`HEAD] requests for the path are forwarded to the same handler unless a
+    {!Dream.head} route matches; see {!Dream.router}. The handler sees [`HEAD],
+    and its response body is discarded.
 
     {[
       Dream.get "/home" home_template
@@ -1601,7 +1623,11 @@ val static :
     [If-Modified-Since:], per
     {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. A
     custom loader can opt into the same handling simply by setting those
-    headers. *)
+    headers.
+
+    {!Dream.static} accepts [`GET] and [`HEAD] requests; other methods get [404
+    Not Found]. The loader runs for both. For [`HEAD], its response body is
+    discarded. *)
 
 val from_filesystem : string -> string -> handler
 (** [Dream.from_filesystem local_directory path request] responds with a file
@@ -1616,7 +1642,9 @@ val from_filesystem : string -> string -> handler
     ]}
 
     {!Dream.from_filesystem} calls {!Dream.mime_lookup} to guess a
-    [Content-Type:] based on the file's extension.
+    [Content-Type:] based on the file's extension. The file is read into memory,
+    so responses have a [Content-Length], including [`HEAD] responses over
+    HTTP/1.1.
 
     The response also carries an [ETag:] (a strong validator derived from the
     file's contents) and a [Last-Modified:] header (the file's modification
@@ -2585,7 +2613,10 @@ val test : ?prefix:string -> handler -> (request -> response)
     {{:https://ocsigen.org/lwt/latest/api/Lwt_main#VALrun} [Lwt_main.run]}
     internally to await the response, which is why the response returned from
     the test is not wrapped in a promise. If you don't need these facilities,
-    you can test [handler] by calling it directly with a request. *)
+    you can test [handler] by calling it directly with a request.
+
+    As with the server, a [`HEAD] response's body is discarded; see
+    {!Dream.router}. *)
 
 val sort_headers : (string * string) list -> (string * string) list
 (** Sorts headers by name. Headers with the same name are not sorted by value or

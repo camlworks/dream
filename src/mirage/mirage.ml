@@ -73,6 +73,8 @@ let wrap_handler_httpaf _user's_error_handler user's_dream_handler =
            2. Upon failure to establish a WebSocket, the function is called to
               transmit the resulting error response. *)
         let forward_response response =
+          let%lwt response =
+            Helpers.suppress_body_for_head request response in
           if Body_size_limit.exceeded request then begin
             H1.Body.Reader.close request_body;
             Message.set_header response "Connection" "close"
@@ -506,7 +508,9 @@ module Make (Stack : Tcpip.Stack.V4V6) = struct
 
   let static ~loader local_root = fun request ->
 
-    if not @@ Method.methods_equal (Message.method_ request) `GET then
+    let method_ = Message.method_ request in
+    if not (Method.methods_equal method_ `GET
+            || Method.methods_equal method_ `HEAD) then
       Message.response ~status:`Not_Found Stream.empty Stream.null
       |> Lwt.return
 

@@ -271,49 +271,6 @@ let router routes =
     (* TODO Probably unnecessary (because it's better to just convert this to a
        trie), but the method can be checked before descending down the route. *)
 
-    let rec try_routes bindings prefix path routes ok fail =
-      match routes with
-      | [] -> fail ()
-      | (pattern, node)::routes ->
-        try_route bindings prefix path pattern node ok (fun () ->
-          try_routes bindings prefix path routes ok fail)
-
-    and try_route bindings prefix path pattern node ok fail =
-      match pattern, path with
-      | [], _ ->
-        try_node bindings prefix path node false ok fail
-      | _,  [] -> fail ()
-      | Literal  s :: pattern, s' :: path when s = s' ->
-        try_route bindings            (s'::prefix) path pattern node ok fail
-      | Literal  _ :: _,       _                      -> fail ()
-      | Param    _ :: _,       s' :: _ when s' = ""   -> fail ()
-      | Param    s :: pattern, s' :: path ->
-        try_route ((s, s')::bindings) (s'::prefix) path pattern node ok fail
-      | Wildcard _ :: _,       _ ->
-        try_node bindings prefix path node true ok fail
-
-    and try_node bindings prefix path node is_wildcard ok fail =
-      match node with
-      | Handler (method_, handler)
-          when method_matches method_ (Message.method_ request) ->
-        Message.set_field request params_field bindings;
-        if is_wildcard then begin
-          (* prefix was built in reverse order *)
-          set_wildcard_prefix request prefix;
-          set_path request path;
-          ok handler request
-        end
-        else
-          if path = [] then
-            ok handler request
-          else
-            fail ()
-
-      | Handler _ -> fail ()
-      | Scope routes -> try_routes bindings prefix path routes ok fail
-
-    in
-
     let params =
       match Message.field request params_field with
       | Some params -> params
@@ -325,12 +282,80 @@ let router routes =
     let prefix = internal_wildcard_prefix request in
     let path = path request in
 
-    (* match match_site_prefix next_prefix path with
-    | None -> next_handler request
-    | Some path -> *)
-      (* TODO The initial bindings and prefix should be taken from the request
-         context when there is indirect nested router support. *)
-    try_routes
-      params prefix path routes
-      (fun handler request -> handler request)
-      (fun () -> Helpers.not_found request)
+    (* Match the routes, keeping only handlers whose method set satisfies
+       [accepts]. It is a parameter rather than derived from the request's method
+       so that a HEAD request can be matched in two passes below. *)
+    let dispatch accepts ok fail =
+      let rec try_routes bindings prefix path routes ok fail =
+        match routes with
+        | [] -> fail ()
+        | (pattern, node)::routes ->
+          try_route bindings prefix path pattern node ok (fun () ->
+            try_routes bindings prefix path routes ok fail)
+
+      and try_route bindings prefix path pattern node ok fail =
+        match pattern, path with
+        | [], _ ->
+          try_node bindings prefix path node false ok fail
+        | _,  [] -> fail ()
+        | Literal  s :: pattern, s' :: path when s = s' ->
+          try_route bindings            (s'::prefix) path pattern node ok fail
+        | Literal  _ :: _,       _                      -> fail ()
+        | Param    _ :: _,       s' :: _ when s' = ""   -> fail ()
+        | Param    s :: pattern, s' :: path ->
+          try_route ((s, s')::bindings) (s'::prefix) path pattern node ok fail
+        | Wildcard _ :: _,       _ ->
+          try_node bindings prefix path node true ok fail
+
+      and try_node bindings prefix path node is_wildcard ok fail =
+        match node with
+        | Handler (method_, handler) when accepts method_ ->
+          Message.set_field request params_field bindings;
+          if is_wildcard then begin
+            (* prefix was built in reverse order *)
+            set_wildcard_prefix request prefix;
+            set_path request path;
+            ok handler request
+          end
+          else
+            if path = [] then
+              ok handler request
+            else
+              fail ()
+
+        | Handler _ -> fail ()
+        | Scope routes -> try_routes bindings prefix path routes ok fail
+
+      in
+
+      (* match match_site_prefix next_prefix path with
+      | None -> next_handler request
+      | Some path -> *)
+        (* TODO The initial bindings and prefix should be taken from the request
+           context when there is indirect nested router support. *)
+      try_routes params prefix path routes ok fail
+    in
+
+    let found handler request = handler request in
+    let not_found () = Helpers.not_found request in
+
+    (* A HEAD request is routed like a GET request, as in RFC 9110 Section 9.3.2
+       (and Express, Flask, Rails), except that an explicit [Dream.head] route
+       takes precedence wherever it appears. So the first pass looks only at
+       [Dream.head] routes, and the second pass matches [Dream.get] and
+       [Dream.any] routes in order, exactly as for GET. [Dream.any] routes are
+       left out of the first pass; otherwise a later [Dream.any] would beat an
+       earlier matching [Dream.get]. The handler observes the request as HEAD;
+       response body suppression happens at the server and testing
+       boundaries. *)
+    let method_ = Message.method_ request in
+    if Method.methods_equal method_ `HEAD then
+      let explicit_head = function
+        | `Any -> false
+        | #Method.method_ as method_ -> Method.methods_equal method_ `HEAD
+      in
+      dispatch explicit_head found (fun () ->
+        dispatch (fun method_ -> method_matches method_ `GET) found not_found)
+    else
+      dispatch (fun method_set -> method_matches method_set method_)
+        found not_found
