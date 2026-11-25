@@ -29,6 +29,10 @@ let if_none_match request etag =
   | None -> false
   | Some value ->
     let value = String.trim value in
+    (* Open question (test/expect/server/static_imported.ml): splitting on
+       every ',' means an ETag such as "a,b" never matches. The built-in ETag is
+       hexadecimal; do any custom loaders produce commas? If so, parse
+       entity-tags as quoted strings. *)
     value = "*" || List.exists matches (String.split_on_char ',' value)
 
 (* [If-Modified-Since] is only consulted when there is no [If-None-Match]
@@ -36,6 +40,11 @@ let if_none_match request etag =
    exact-match against the value we would send covers the usual case where the
    client echoes it back; a mismatch simply falls through to a normal [200],
    which is always safe. *)
+(* Divergence (test/expect/server/static_imported.ml, jshttp/fresh): being a
+   string comparison, a later date gets 200, the other HTTP-date formats are
+   ignored, and a non-date [Last-Modified] equal to the header ("foo") gives
+   304. Likely fix: parse the three HTTP-date formats (RFC 9110 section 5.6.7)
+   and compare times. *)
 let if_modified_since request last_modified =
   match Message.header request "If-Modified-Since" with
   | None -> false
@@ -45,6 +54,14 @@ let if_modified_since request last_modified =
    consulted only when the request has no [If-None-Match] (RFC 9110 §13.1.3), so
    dispatch on which request header is present rather than on which validator the
    response happens to carry. *)
+(* Divergence (test/expect/server/static_imported.ml): an empty
+   "If-None-Match:" counts as present, so it disables [If-Modified-Since]. Go
+   and Starlette treat a header with no entity-tags as absent.
+
+   Open question (same file; Go, send and actix answer 412): [If-Match] and
+   [If-Unmodified-Since] are ignored. Does RFC 9110 section 13.2 require origin
+   servers to evaluate them for GET and HEAD, or only allow it? In the first
+   case this is a bug; in the second, documenting it is enough. *)
 let is_fresh request response =
   if Message.has_header request "If-None-Match" then
     match Message.header response "ETag" with

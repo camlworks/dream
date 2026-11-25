@@ -22,6 +22,12 @@ let html_escape s =
 let to_base64url string =
   Base64.encode_string ~pad:false ~alphabet:Base64.uri_safe_alphabet string
 
+(* Divergence (test/expect/pure/formats/base64/imported.ml): non-canonical
+   input is accepted. "Z" decodes to "", "Zh" to "f" (non-zero pad bits), and
+   padded input such as "Zg==" or "Zg===" is accepted, where a strict decoder
+   (RFC 4648 sections 3.3 and 3.5, Go's RawURLEncoding.Strict()) rejects all of
+   them. Likely fix: accept only input that re-encodes to itself. Low impact,
+   since tokens decoded here are authenticated afterwards. *)
 let from_base64url string =
   match Base64.decode ~pad:false ~alphabet:Base64.uri_safe_alphabet string with
   | Error _ -> None
@@ -29,6 +35,19 @@ let from_base64url string =
 
 
 
+(* Divergences (test/expect/pure/formats/cookie/imported.ml):
+
+   - A pair whose value contains '=' is dropped ("keebler=E=mc2",
+     "tok=YWJj=="; jshttp/cookie and CPython), because each pair is split on
+     every '=' rather than the first. Likely fix: split at the first '='.
+   - The fold returns the pairs in reverse header order, so [Dream.cookie]
+     (List.find_opt in src/server/cookie.ml) returns the last of duplicate
+     names, while dream.mli says the first, and [Dream.all_cookies] is
+     reversed (jshttp/cookie expects the first). Likely fix: reverse here.
+   - Open question: values wrapped in DQUOTEs keep their quotes; Go, Werkzeug
+     and CPython strip them, and RFC 6265 allows the quoted form of
+     cookie-value. Do clients send quoted values in practice? Dream's own
+     encrypted cookies are unaffected either way. *)
 let from_cookie s =
   let pairs =
     s
@@ -86,11 +105,32 @@ let to_http_date seconds =
     let seconds =
       if ss < 60 then ss else 59 [@coverage off]
     in
+    (* Divergence (test/expect/pure/formats/cookie/imported.ml, jshttp/cookie
+       and Go cookie tests): '%i' writes year 49 as "49", which RFC 6265 date
+       parsers read as 2049, and years before 1601 are emitted although that
+       grammar starts at 1601. Also used for [Last-Modified]. Likely fix: '%04i',
+       and let [to_set_cookie] omit Expires for years before 1601, as Go does. *)
     Some (Printf.sprintf "%s, %02i %s %i %02i:%02i:%02i GMT"
       weekday d month y hh mm seconds)
 
 
 
+(* Divergence (test/expect/pure/formats/cookie/imported.ml, Go
+   writeSetCookiesTests and TestCookieSanitize*, jshttp/cookie invalid name,
+   value, domain and path lists): names, values, Domain and Path are emitted
+   verbatim, including ';', spaces, CR, LF and NUL, so "Domain=example.com;
+   Path=/" or "Path=/; Path=/sensitive-data" inject attributes. Encrypted
+   cookies are base64url and unaffected; names, Domain, Path and values passed
+   to [Dream.set_cookie ~encrypt:false] are not.
+
+   Decision needed: raise Invalid_argument (jshttp), sanitize (Go removes
+   invalid bytes and quotes values containing spaces or commas), or drop the
+   attribute or cookie (Go, for invalid domains and names).
+
+   Open question that sets the urgency: do httpun and h2 reject or escape CR/LF
+   in header values? If not, this is header injection. A server-level or cram
+   test calling [Dream.set_cookie ~encrypt:false] with "\r\nX: y" in the value
+   would answer it. *)
 let to_set_cookie
     ?expires ?max_age ?domain ?path ?secure ?http_only ?same_site name value =
 
@@ -103,6 +143,9 @@ let to_set_cookie
   let max_age =
     match max_age with
     | None -> ""
+    (* Divergence (test/expect/pure/formats/cookie/imported.ml, jshttp/cookie):
+       infinity, nan and large values give "Max-Age=inf", "Max-Age=nan" and
+       "Max-Age=1e21". Likely fix: reject non-finite values, clamp the rest. *)
     | Some seconds -> Printf.sprintf "; Max-Age=%.0f" (floor seconds)
   in
 
@@ -166,6 +209,13 @@ let to_form_urlencoded dictionary =
   |> List.map (fun (name, value) -> name, [value])
   |> Uri.encoded_of_query
 
+(* Decision needed (test/expect/pure/formats/form_urlencoded/imported.ml):
+   "&" decodes to two ("", "") pairs, and "a=b&c=d&" gains a trailing one.
+   WHATWG (web-platform-tests), CPython and Node all skip empty pieces. This
+   reaches [Dream.form] and [Dream.all_queries]. [Uri.query_of_encoded] also
+   splits values on ',', hence the rejoin below. Skipping empty pieces is the
+   better behaviour, but changes the fields existing apps receive for such
+   input. *)
 let from_form_urlencoded string =
   if string = "" then
     []
@@ -197,6 +247,15 @@ let split_origin_form string =
       String.sub string (i + 1) (String.length string - i - 1)
     | None -> string, ""
   in
+  (* Decision needed (test/expect/server/router_imported.ml,
+     test/expect/pure/formats/target/imported.ml): decoding turns "%2e%2e" into
+     "..", and [from_path] below drops empty segments. So "/a/../c" binds a
+     route parameter to "..", "/static/%2e%2e/etc/passwd" reaches a "**"
+     handler as "/../etc/passwd", and "/x//z" matches "/x/z" with no redirect.
+     [Dream.static] rejects such paths itself; other "**" handlers do not.
+     Options: redirect to the cleaned path (Go), answer 400 (Plug, send,
+     actix), or leave it to handlers and document it. Interacts with
+     [Dream.trailing_slash]. *)
   let path =
     String.split_on_char '/' path
     |> List.map (fun segment ->
@@ -215,6 +274,10 @@ let split_target string =
   if String.length string > 0 && string.[0] = '/' then
     split_origin_form string
   else
+    (* Divergence (test/expect/pure/formats/target/imported.ml, Go requritests,
+       RFC 9112 section 3.2.3): "http://h" gives path "" and the authority-form
+       "www.example.com:80" gives path "80". Likely fix: "/" for an empty
+       absolute-form path, "" for authority-form. *)
     let uri = Uri.of_string string in
     let query =
       match Uri.verbatim_query uri with

@@ -34,6 +34,16 @@ let mime_lookup filename =
 let etag content =
   Printf.sprintf "\"%s\"" Digestif.SHA256.(to_hex (digest_string content))
 
+(* Decision needed (test/expect/server/static_imported.ml): dotfiles such as
+   ".env" are served, and symlinks pointing outside [local_root] are followed.
+   send, serve-static and actix hide dotfiles by default; Plug and Starlette
+   serve them; Starlette's code refuses symlinks that leave the root. Options:
+   keep and document, add ~dotfiles and ~follow_symlinks options, or change the
+   defaults.
+
+   Divergence (not testable without hanging): there is no [st_kind] check, so a
+   FIFO or device is read whole, hanging the request or exhausting memory.
+   Likely fix: serve only S_REG files. *)
 let from_filesystem local_root path _ =
   let file = Filename.concat local_root path in
   Lwt.catch
@@ -60,6 +70,12 @@ let from_filesystem local_root path _ =
 
 (* TODO On Windows, should we also check for \ and drive letters? *)
 (* TODO Not an efficient implementation at the moment. *)
+(* Divergence (test/expect/server/static_imported.ml, send, Go
+   testFileServerNullByte, Plug): NUL bytes in components are not rejected and
+   reach the loader. Open question setting the severity: with the current Lwt,
+   does "/readme.txt%00.html" still serve readme.txt as text/html, as found on
+   2026-11-05 (Lwt_unix.openfile passing a NUL-truncated path to C)? If so,
+   report it privately. Likely fix: reject components containing '\000'. *)
 let validate_path request =
   let path = Router.path request in
 
@@ -90,6 +106,9 @@ let validate_path request =
 let static ?(loader = from_filesystem) local_root = fun request ->
 
   let method_ = Message.method_ request in
+  (* Decision needed (test/expect/server/static_imported.ml, serve-static,
+     actix, Plug): other methods get 404 rather than 405 with an Allow header.
+     See the same question in src/server/router.ml. *)
   if not (Method.methods_equal method_ `GET
           || Method.methods_equal method_ `HEAD) then
     Message.response ~status:`Not_Found Stream.empty Stream.null
