@@ -56,7 +56,7 @@ let%expect_test _ =
   parse "k1=\\";
   [%expect {|
     ["Cookie-1"="v$1"]
-    ["c2"="v2"; "Cookie-1"="v$1"]
+    ["Cookie-1"="v$1"; "c2"="v2"]
     ["k1"=""]
     []
     [""="v1"]
@@ -69,8 +69,8 @@ let%expect_test _ =
   parse "Cookie-1=\"v$1\"; c2=\"v2\"";
   parse "Cookie-1=\"v$1\"; c2=v2;";
   [%expect {|
-    ["c2"="\"v2\""; "Cookie-1"="\"v$1\""]
-    ["c2"="v2"; "Cookie-1"="\"v$1\""] |}]
+    ["Cookie-1"="\"v$1\""; "c2"="\"v2\""]
+    ["Cookie-1"="\"v$1\""; "c2"="v2"] |}]
   (* Upstream (Go): quotes around values are stripped. *)
 
 (* Origin: Go cookie_test.go, TestParseCookie (L782) and readCookiesTests
@@ -99,29 +99,27 @@ let%expect_test _ =
   parse "toString=foo;valueOf=bar";
   [%expect {|
     ["foo"="bar"]
-    ["baz"="raz"; "FOO"="bar"]
+    ["FOO"="bar"; "baz"="raz"]
     []
-    ["bar"=""; "foo"=""]
-    ["b"=""; "f"=""]
+    ["foo"=""; "bar"=""]
+    ["f"=""; "b"=""]
     ["email"="%20%22%2c%3b%2f"]
     ["foo"="\"bar\""]
     ["foo"="\" a b c \""]
     [""="bar"]
     [""=""]
     ["foo"="bar"]
-    ["bar"="bar"; "foo"="%1"]
+    ["foo"="%1"; "bar"="bar"]
     ["foo"="bar"]
     ["foo"="bar"]
-    ["valueOf"="bar"; "toString"="foo"] |}]
+    ["toString"="foo"; "valueOf"="bar"] |}]
   (* Upstream (jshttp): values are percent-decoded by default. *)
 
 (* Origin: jshttp/cookie parse-cookie.spec.ts, "should URL-decode values"
    (L41). *)
 let%expect_test _ =
   parse "foo=\"bar=123456789&name=Magic+Mouse\"";
-  [%expect {| [] |}]
-  (* Upstream (jshttp): one cookie, foo, whose value keeps its '=' and
-     quotes. *)
+  [%expect {| ["foo"="\"bar=123456789&name=Magic+Mouse\""] |}]
 
 (* Origin: CPython test_http_cookies.py, test_basic (L26) and test_unquote
    (L110). *)
@@ -129,9 +127,9 @@ let%expect_test _ =
   parse "keebler=E=mc2";
   parse "a=\"b=\\\"\"";
   [%expect {|
-    []
-    [] |}]
-  (* Upstream (CPython): keebler="E=mc2", and a="b=\"" once unquoted. *)
+    ["keebler"="E=mc2"]
+    ["a"="\"b=\\\"\""] |}]
+  (* Upstream (CPython): a="b=\"" once unquoted. *)
 
 (* Origin: not from an upstream suite; added for Dream. An '=' inside a value,
    which every source above splits off at the first '=' only. *)
@@ -139,8 +137,8 @@ let%expect_test _ =
   parse "tok=YWJj==";
   parse "a=b=c; d=e";
   [%expect {|
-    []
-    ["d"="e"] |}]
+    ["tok"="YWJj=="]
+    ["a"="b=c"; "d"="e"] |}]
 
 (* Origin: not from an upstream suite; added for Dream. Werkzeug drops
    "==__Host-eq=bad" as a guard against cookie prefix spoofing (see its
@@ -151,11 +149,9 @@ let%expect_test _ =
   parse "=__Host-eq=bad";
   parse "==__Host-eq=bad; __Host-eq=good";
   [%expect {|
-    []
-    []
-    ["__Host-eq"="good"] |}]
-  (* Each piece with a leading '=' is dropped today, because its value
-     contains '='. Splitting at the first '=' would give it the name "". *)
+    [""="=__Host-eq=bad"]
+    [""="__Host-eq=bad"]
+    [""="=__Host-eq=bad"; "__Host-eq"="good"] |}]
 
 (* Origin: jshttp/cookie parse-cookie.spec.ts, "should ignore duplicate
    cookies" (L77-L90). *)
@@ -164,10 +160,9 @@ let%expect_test _ =
   lookup "foo=false;bar=bar;foo=true" "foo";
   lookup "foo=;bar=bar;foo=boo" "foo";
   [%expect {|
-    Some "boo"
-    Some "true"
-    Some "boo" |}]
-  (* Upstream (jshttp): the first occurrence wins: "%1", "false", "". *)
+    Some "%1"
+    Some "false"
+    Some "" |}]
 
 (* Origin: Werkzeug test_http.py, test_parse_cookie (L380). *)
 let%expect_test _ =
@@ -175,7 +170,7 @@ let%expect_test _ =
     "dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed;\
      a=42; b=\"\\\";\"; ; fo234{=bar;blub=Blah; \"__Secure-c\"=d;\
      ==__Host-eq=bad;__Host-eq=good;";
-  [%expect {| ["__Host-eq"="good"; "\"__Secure-c\""="d"; "blub"="Blah"; "fo234{"="bar"; "b"="\"\\\""; "a"="42"; "PHPSESSID"="0a539d42abc001cdc762809248d4beed"; "CP"="null*"; "dismiss-top"="6"] |}]
+  [%expect {| ["dismiss-top"="6"; "CP"="null*"; "PHPSESSID"="0a539d42abc001cdc762809248d4beed"; "a"="42"; "b"="\"\\\""; "fo234{"="bar"; "blub"="Blah"; "\"__Secure-c\""="d"; ""="=__Host-eq=bad"; "__Host-eq"="good"] |}]
   (* Upstream (Werkzeug): the quoted name "__Secure-c" and "==__Host-eq=bad"
      are dropped, as a guard against cookie prefix spoofing, and b is
      "\";". *)
@@ -185,10 +180,9 @@ let%expect_test _ =
   parse "first=IamTheFirst ; a=1; oops ; a=2 ;second = andMeTwo;";
   parse "spam=ham; duck=mallard; ; ";
   [%expect {|
-    ["second"="andMeTwo"; "a"="2"; "a"="1"; "first"="IamTheFirst"]
-    ["duck"="mallard"; "spam"="ham"] |}]
-  (* Upstream (Werkzeug): "oops" gets an empty value; a is "1" when read as a
-     single value (first wins). *)
+    ["first"="IamTheFirst"; "a"="1"; "a"="2"; "second"="andMeTwo"]
+    ["spam"="ham"; "duck"="mallard"] |}]
+  (* Upstream (Werkzeug): "oops" gets an empty value. *)
 
 (* Origin: Werkzeug test_http.py, test_cookie_quoting (L433) and
    test_parse_set_cookie_directive (L436). *)
@@ -197,7 +191,7 @@ let%expect_test _ =
   parse "foo=\"?foo\"; version=\"0.1\";";
   [%expect {|
     ["foo"="\"foo\\054bar\""]
-    ["version"="\"0.1\""; "foo"="\"?foo\""] |}]
+    ["foo"="\"?foo\""; "version"="\"0.1\""] |}]
   (* Upstream (Werkzeug): values are unquoted and octal escapes decoded:
      foo="foo,bar", then foo="?foo" and version="0.1". *)
 
@@ -216,17 +210,17 @@ let%expect_test _ =
   parse "key:term=value:term";
   parse "a=b; c=[; d=r; f=h";
   [%expect {|
-    ["vienna"="finger"; "chips"="ahoy"]
-    ["fudge"=""; "L"="\\\"Loves\\\""]
+    ["chips"="ahoy"; "vienna"="finger"]
+    ["keebler"="\"E=mc2"; "L"="\\\"Loves\\\""; "fudge"=""]
     ["key:term"="value:term"]
-    ["f"="h"; "d"="r"; "c"="["; "a"="b"] |}]
+    ["a"="b"; "c"="["; "d"="r"; "f"="h"] |}]
   (* Upstream (CPython): the quoted keebler value spans the ';' and is one
      cookie. *)
 
 (* Origin: CPython test_http_cookies.py, test_extra_spaces (L258). *)
 let%expect_test _ =
   parse "eggs  =  scrambled  ;  secure  ;  path  =  bar   ; foo=foo   ";
-  [%expect {| ["foo"="foo"; "path"="bar"; "eggs"="scrambled"] |}]
+  [%expect {| ["eggs"="scrambled"; "path"="bar"; "foo"="foo"] |}]
 
 (* Origin: CPython test_http_cookies.py, test_invalid_cookies (L293) and
    test_illegal_chars (L317). *)
@@ -241,7 +235,7 @@ let%expect_test _ =
     ["[foo"="x"]
     ["blah]foo"="x"]
     ["Set-Cookie: foo"="bar"]
-    ["c,d"="e"; "a"="b"] |}]
+    ["a"="b"; "c,d"="e"] |}]
   (* Upstream (CPython): all rejected entirely. *)
 
 
@@ -281,14 +275,13 @@ let%expect_test _ =
     "cookie-8=eight; Domain=::1"
     "cookie-9=expiring; Expires=Tue, 10 Nov 2009 23:00:00 GMT"
     "cookie-10=expiring-1601; Expires=Mon, 01 Jan 1601 01:01:01 GMT"
-    "cookie-11=invalid-expiry; Expires=Sat, 01 Jan 1600 01:01:01 GMT"
+    "cookie-11=invalid-expiry"
     "cookie-13=samesite-lax; SameSite=Lax"
     "cookie-14=samesite-strict; SameSite=Strict"
     "cookie-15=samesite-none; SameSite=None"
     "cookie-16=partitioned; Path=/; Secure; SameSite=None" |}]
   (* Upstream (Go): Domain drops a leading dot; invalid domains
-     ("wrong;bad.abc", "bad-.abc", "::1") are omitted; Expires before 1601 is
-     omitted. *)
+     ("wrong;bad.abc", "bad-.abc", "::1") are omitted. *)
 
 (* Origin: Go cookie_test.go, writeSetCookiesTests (L92-L152): special values,
    the empty value, and invalid names. *)
@@ -346,7 +339,7 @@ let%expect_test _ =
    MaxAge into Max-Age=0 (in cookie.go, not in its tests). *)
 let%expect_test _ =
   show @@ Dream.to_set_cookie "a" "b" ~max_age:(-1.);
-  [%expect {| "a=b; Max-Age=-1" |}]
+  [%expect {| "a=b; Max-Age=0" |}]
 
 (* Origin: jshttp/cookie stringify-set-cookie.spec.ts, "should URL-encode
    value" (L15) and "should pass through roundtrip-safe cookie-octet values"
@@ -414,19 +407,19 @@ let%expect_test _ =
   [%expect {|
     "a=b"
     "a=b"
-    "a=b; Expires=Sat, 01 Jan 0 00:00:00 GMT"
-    "a=b; Expires=Fri, 01 Jan 49 00:00:00 GMT"
-    "a=b; Expires=Sat, 01 Jan 50 00:00:00 GMT"
-    "a=b; Expires=Tue, 01 Jan 69 00:00:00 GMT"
-    "a=b; Expires=Thu, 01 Jan 99 00:00:00 GMT"
-    "a=b; Expires=Sat, 01 Jan 1600 00:00:00 GMT"
+    "a=b"
+    "a=b"
+    "a=b"
+    "a=b"
+    "a=b"
+    "a=b"
     "a=b"
     "a=b; Expires=Mon, 01 Jan 1601 00:00:00 GMT"
     "a=b; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
     "a=b; Expires=Fri, 01 Jan 9999 00:00:00 GMT"
     "a=b; Expires=Sun, 24 Dec 2000 10:30:59 GMT" |}]
   (* Upstream (jshttp): an invalid date, and years before 1601 or after 9999,
-     throw. RFC 9110's IMF-fixdate requires four-digit years. *)
+     throw. *)
 
 (* Origin: jshttp/cookie stringify-set-cookie.spec.ts, "with maxAge option"
    (L202-L219). *)
@@ -437,9 +430,9 @@ let%expect_test _ =
   show @@ Dream.to_set_cookie "a" "b" ~max_age:1000.;
   show @@ Dream.to_set_cookie "a" "b" ~max_age:0.;
   [%expect {|
-    "a=b; Max-Age=inf"
+    "a=b; Max-Age=34560000"
     "a=b; Max-Age=3"
-    "a=b; Max-Age=1000000000000000000000"
+    "a=b; Max-Age=34560000"
     "a=b; Max-Age=1000"
     "a=b; Max-Age=0" |}]
   (* Upstream (jshttp): Infinity, 3.14 and 1e21 throw. *)
@@ -447,7 +440,7 @@ let%expect_test _ =
 (* Origin: not from an upstream suite; added for Dream. *)
 let%expect_test _ =
   show @@ Dream.to_set_cookie "a" "b" ~max_age:nan;
-  [%expect {| "a=b; Max-Age=nan" |}]
+  [%expect {| "a=b" |}]
 
 (* Origin: Werkzeug test_http.py, test_dump_cookie (L397). Werkzeug defaults to
    Path=/, so it is passed explicitly where the upstream output has it. *)
@@ -509,10 +502,10 @@ let%expect_test _ =
      "foo bar" and "foo@bar" are rejected. *)
 
 (* Origin: not from an upstream suite; added for Dream. A value containing
-   '=' can be serialized but is not parsed back. *)
+   '=' survives a round trip. *)
 let%expect_test _ =
   Dream.to_set_cookie "key" "xxx=" |> parse;
-  [%expect {| [] |}]
+  [%expect {| ["key"="xxx="] |}]
 
 (* Origin: not from an upstream suite; added for Dream. The full attribute
    set, and SameSite=None without Secure. *)

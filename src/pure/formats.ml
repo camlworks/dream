@@ -35,29 +35,24 @@ let from_base64url string =
 
 
 
-(* Divergences (test/expect/pure/formats/cookie/imported.ml):
+(* Each pair is split at its first '=', so a value may contain '='
+   ("keebler=E=mc2"). A piece with no '=' is dropped. The pairs are returned in
+   header order, so [Dream.cookie] returns the first of duplicate names.
 
-   - A pair whose value contains '=' is dropped ("keebler=E=mc2",
-     "tok=YWJj=="; jshttp/cookie and CPython), because each pair is split on
-     every '=' rather than the first. Likely fix: split at the first '='.
-   - The fold returns the pairs in reverse header order, so [Dream.cookie]
-     (List.find_opt in src/server/cookie.ml) returns the last of duplicate
-     names, while dream.mli says the first, and [Dream.all_cookies] is
-     reversed (jshttp/cookie expects the first). Likely fix: reverse here.
-   - Open question: values wrapped in DQUOTEs keep their quotes; Go, Werkzeug
-     and CPython strip them, and RFC 6265 allows the quoted form of
-     cookie-value. Do clients send quoted values in practice? Dream's own
-     encrypted cookies are unaffected either way. *)
+   Open question (test/expect/pure/formats/cookie/imported.ml): values wrapped
+   in DQUOTEs keep their quotes; Go, Werkzeug and CPython strip them, and RFC
+   6265 allows the quoted form of cookie-value. Do clients send quoted values
+   in practice? Dream's own encrypted cookies are unaffected either way. *)
 let from_cookie s =
-  let pairs =
-    s
-    |> String.split_on_char ';'
-    |> List.map (String.split_on_char '=')
-  in
-
-  pairs |> List.fold_left (fun pairs -> function
-    | [name; value] -> (String.trim name, String.trim value)::pairs
-    | _ -> pairs) []
+  s
+  |> String.split_on_char ';'
+  |> List.filter_map (fun pair ->
+    match String.index_opt pair '=' with
+    | None -> None
+    | Some i ->
+      let name = String.sub pair 0 i in
+      let value = String.sub pair (i + 1) (String.length pair - i - 1) in
+      Some (String.trim name, String.trim value))
 (* Note: found ocaml-cookie and http-cookie libraries, but they appear to have
    equivalent code for parsing Cookie: headers, so there is no point in using
    them yet, especially as they have stringent OCaml version constraints for
@@ -105,12 +100,9 @@ let to_http_date seconds =
     let seconds =
       if ss < 60 then ss else 59 [@coverage off]
     in
-    (* Divergence (test/expect/pure/formats/cookie/imported.ml, jshttp/cookie
-       and Go cookie tests): '%i' writes year 49 as "49", which RFC 6265 date
-       parsers read as 2049, and years before 1601 are emitted although that
-       grammar starts at 1601. Also used for [Last-Modified]. Likely fix: '%04i',
-       and let [to_set_cookie] omit Expires for years before 1601, as Go does. *)
-    Some (Printf.sprintf "%s, %02i %s %i %02i:%02i:%02i GMT"
+    (* IMF-fixdate has a four-digit year, and RFC 6265 date parsers read a
+       two-digit year such as "49" as 2049. *)
+    Some (Printf.sprintf "%s, %02i %s %04i %02i:%02i:%02i GMT"
       weekday d month y hh mm seconds)
 
 
@@ -131,22 +123,34 @@ let to_http_date seconds =
    in header values? If not, this is header injection. A server-level or cram
    test calling [Dream.set_cookie ~encrypt:false] with "\r\nX: y" in the value
    would answer it. *)
+(* 1601-01-01T00:00:00Z. *)
+let first_cookie_date = -11644473600.
+
+(* User agents cap Max-Age at 400 days (RFC 6265bis section 5.6.2). *)
+let max_cookie_age = 34560000.
+
 let to_set_cookie
     ?expires ?max_age ?domain ?path ?secure ?http_only ?same_site name value =
 
+  (* The cookie-date grammar of RFC 6265 starts at 1601, so earlier dates are
+     omitted, as Go does. *)
   let expires =
-    match Option.bind expires to_http_date with
-    | None -> ""
-    | Some date -> "; Expires=" ^ date
+    match expires with
+    | Some seconds when seconds < first_cookie_date -> ""
+    | _ ->
+      match Option.bind expires to_http_date with
+      | None -> ""
+      | Some date -> "; Expires=" ^ date
   in
 
   let max_age =
     match max_age with
     | None -> ""
-    (* Divergence (test/expect/pure/formats/cookie/imported.ml, jshttp/cookie):
-       infinity, nan and large values give "Max-Age=inf", "Max-Age=nan" and
-       "Max-Age=1e21". Likely fix: reject non-finite values, clamp the rest. *)
-    | Some seconds -> Printf.sprintf "; Max-Age=%.0f" (floor seconds)
+    | Some seconds when Float.is_nan seconds -> ""
+    | Some seconds ->
+      (* [Float.max] also turns -0. into 0., which would print as "-0". *)
+      let seconds = Float.min max_cookie_age (Float.max 0. (floor seconds)) in
+      Printf.sprintf "; Max-Age=%.0f" seconds
   in
 
   let domain =

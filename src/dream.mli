@@ -597,12 +597,15 @@ val set_cookie :
       {!Dream.to_base64url}. See {!Dream.set_secret}.
     - [~expires] sets the [Expires=] attribute. The value is compatible with
       {{:https://v2.ocaml.org/api/Unix.html#VALgettimeofday}
-      [Unix.gettimeofday]}. See
+      [Unix.gettimeofday]}. Dates before 1601, which the cookie date grammar
+      cannot express, omit the attribute. See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.1}
       RFC 6265bis §4.1.2.1} and
       {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie}
       MDN}.
-    - [~max_age] sets the [Max-Age=] attribute. See
+    - [~max_age] sets the [Max-Age=] attribute, in whole seconds. Negative
+      values are sent as [0], values over 400 days as 400 days, the cap
+      user agents apply, and [nan] omits the attribute. See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.2}
       RFC 6265bis §4.1.2.2} and
       {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie}
@@ -2439,9 +2442,11 @@ val from_form_urlencoded : string -> (string * string) list
     §8.2.1}. Reverses the percent-encoding of names and values. *)
 
 val from_cookie : string -> (string * string) list
-(** Converts a [Cookie:] header value to key-value pairs. See
+(** Converts a [Cookie:] header value to key-value pairs, in header order. See
     {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.2.1}
-    RFC 6265bis §4.2.1}. Does not apply any decoding to names and values. *)
+    RFC 6265bis §4.2.1}. Each pair is split at its first [=], so values may
+    contain [=]; a piece without [=] is dropped. Does not apply any decoding to
+    names and values. *)
 
 val to_set_cookie :
   ?expires:float ->

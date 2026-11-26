@@ -31,9 +31,9 @@ let%expect_test _ =
     ["a"="b"]
     ["a"="b"]
     ["a"="\"b\""]
-    ["c"="d"; "a"="b"]
-    ["c"="d"; "a"="b"]
-    ["c"="d"; "a"="b"]
+    ["a"="b"; "c"="d"]
+    ["a"="b"; "c"="d"]
+    ["a"="b"; "c"="d"]
     ["a"="b"]
     ["c"="d"] |}]
 
@@ -111,12 +111,12 @@ let%expect_test _ =
   [%expect {|
     "a=b; Max-Age=1"
     "a=b; Max-Age=42"
-    "a=b; Max-Age=-1"
+    "a=b; Max-Age=0"
     "a=b; Max-Age=0"
     "a=b; Max-Age=1"
     "a=b; Max-Age=1"
-    "a=b; Max-Age=-2"
-    "a=b; Max-Age=-2" |}]
+    "a=b; Max-Age=0"
+    "a=b; Max-Age=0" |}]
 
 let%expect_test _ =
   show @@ Dream.to_set_cookie "a" "b" ~domain:"abc";
