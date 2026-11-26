@@ -395,12 +395,11 @@ let%expect_test _ =
   [%expect {|
     200  If-None-Match: "w/\"foo\""
     200  If-None-Match: "foo"
-    304  If-None-Match: "foo"
+    200  If-None-Match: "foo"
     200  If-None-Match: "W/"
     200  If-None-Match: "W/\"truc"
-    200  If-None-Match: "\"a,b\"" |}]
-  (* Go: the first, second, fourth and fifth never match; "\"a,b\"" matches
-     (304). *)
+    304  If-None-Match: "\"a,b\"" |}]
+  (* Go gives the same results. *)
 
 (* Origin: jshttp/fresh test/fresh.js, "when requested with If-Modified-Since"
    (L96-L135). *)
@@ -416,12 +415,10 @@ let%expect_test _ =
     ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
   [%expect {|
     200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
-    200  If-Modified-Since: "Sat, 01 Jan 2000 01:00:00 GMT"
+    304  If-Modified-Since: "Sat, 01 Jan 2000 01:00:00 GMT"
     200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
     200  If-Modified-Since: "foo"
     200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
-  (* Upstream (fresh): only the second, a date later than Last-Modified, is
-     fresh (304). *)
 
 (* Origin: not from an upstream suite; added for Dream. An exact match, two
    identical strings that are not dates, and the same date in the RFC 850 and
@@ -440,9 +437,9 @@ let%expect_test _ =
     ["If-Modified-Since", "sat, 01 jan 2000 00:00:00 GMT"];
   [%expect {|
     304  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
-    304  If-Modified-Since: "foo"
-    200  If-Modified-Since: "Saturday, 01-Jan-00 00:00:00 GMT"
-    200  If-Modified-Since: "Sat Jan  1 00:00:00 2000"
+    200  If-Modified-Since: "foo"
+    304  If-Modified-Since: "Saturday, 01-Jan-00 00:00:00 GMT"
+    304  If-Modified-Since: "Sat Jan  1 00:00:00 2000"
     200  If-Modified-Since: "sat, 01 jan 2000 00:00:00 GMT" |}]
 
 (* Origin: jshttp/fresh test/fresh.js, "when requested with If-Modified-Since
@@ -485,10 +482,10 @@ let%expect_test _ =
     ["If-None-Match", "\"foo\"";
      "If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
   [%expect {|
-    200  If-None-Match: "", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
+    304  If-None-Match: "", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
     200  If-None-Match: "\"foo\"", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
-  (* Go and Starlette ignore an empty If-None-Match (in their code, not their
-     tests), so the first would be 304 there. *)
+  (* As in Go and Starlette (in their code, not their tests), an empty
+     If-None-Match counts as absent. *)
 
 (* Origin: jshttp/fresh test/fresh.js, "when requested with Cache-Control:
    no-cache" (L172-L193). *)
@@ -501,7 +498,7 @@ let%expect_test _ =
   [%expect {|
     200  Cache-Control: " no-cache"
     304  Cache-Control: " no-cache", If-None-Match: "\"foo\""
-    200  Cache-Control: " no-cache", If-Modified-Since: "Sat, 01 Jan 2000 01:00:00 GMT" |}]
+    304  Cache-Control: " no-cache", If-Modified-Since: "Sat, 01 Jan 2000 01:00:00 GMT" |}]
   (* Upstream (fresh): all stale (200). Go, Starlette and actix ignore the
      directive. *)
 
@@ -522,17 +519,17 @@ let%expect_test _ =
   [%expect {|
     200  If-Match: "\"Z\", \"A\""
     200  If-Match: "*"
-    200  If-Match: "\"B\""
-    200  If-Match: "W/\"A\""
+    412  If-Match: "\"B\""
+    412  If-Match: "W/\"A\""
     200  If-Unmodified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
-    200  If-Unmodified-Since: "Fri, 31 Dec 1999 23:59:58 GMT" |}]
-  (* Upstream (Go): 200, 200, 412, 412, 200, 412. *)
+    412  If-Unmodified-Since: "Fri, 31 Dec 1999 23:59:58 GMT" |}]
 
 (* Origin: pillarjs/send test/send.js, "where If-Match is set" (L471-L503) and
-   "where If-Unmodified-Since is set" (L560-L592). *)
+   "where If-Unmodified-Since is set" (L560-L592). In the second case, the
+   file's ETag is not in the list. *)
 let%expect_test _ =
   conditional ["If-Match", "*"];
-  conditional ["If-Match", " \"foo\",, \"bar\" ,"];
+  conditional ~etag:(Some "\"baz\"") ["If-Match", " \"foo\",, \"bar\" ,"];
   conditional ["If-Match", "\"foo\", \"bar\", \"foo\""];
   conditional ~last_modified:lm0
     ["If-Unmodified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
@@ -541,12 +538,11 @@ let%expect_test _ =
   conditional ["If-Unmodified-Since", "foo"];
   [%expect {|
     200  If-Match: "*"
-    200  If-Match: " \"foo\",, \"bar\" ,"
+    412  If-Match: " \"foo\",, \"bar\" ,"
     200  If-Match: "\"foo\", \"bar\", \"foo\""
     200  If-Unmodified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
-    200  If-Unmodified-Since: "Fri, 31 Dec 1999 23:59:00 GMT"
+    412  If-Unmodified-Since: "Fri, 31 Dec 1999 23:59:00 GMT"
     200  If-Unmodified-Since: "foo" |}]
-  (* Upstream (send): the second and fifth are 412. *)
 
 (* Origin: actix-files src/lib.rs, test_if_match_overrides_if_unmodified_since
    (L250) and test_if_match_failure_with_if_unmodified_since (L264). *)
@@ -559,8 +555,7 @@ let%expect_test _ =
      "If-Unmodified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
   [%expect {|
     200  If-Match: "\"foo\"", If-Unmodified-Since: "Thu, 01 Jan 1970 00:00:00 GMT"
-    200  If-Match: "\"nonmatching-etag\"", If-Unmodified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
-  (* Upstream (actix): 200, then 412. *)
+    412  If-Match: "\"nonmatching-etag\"", If-Unmodified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
 
 (* Origin: not from an upstream suite; added for Dream. Range is not
    supported: the full representation is always sent. *)
