@@ -37,7 +37,7 @@ let%expect_test _ =
   split "foo.html";
   split "../dir/";
   [%expect {|
-    "http://foo.com"                             -> "" ""
+    "http://foo.com"                             -> "/" ""
     "http://foo.com/"                            -> "/" ""
     "http://foo.com/path"                        -> "/path" ""
     "/"                                          -> "/" ""
@@ -48,17 +48,14 @@ let%expect_test _ =
     "http://[fe80::1]/"                          -> "/" ""
     "foo.html"                                   -> "foo.html" ""
     "../dir/"                                    -> "../dir/" "" |}]
-  (* Upstream (Go): an absolute-form target with an empty path has request URI
-     "/" (requritests, L1694). *)
 
 (* Origin: Go net/url url_test.go, requritests (L1694 and L1703). *)
 let%expect_test _ =
   split "http://example.com";
   split "/a b";
   [%expect {|
-    "http://example.com"                         -> "" ""
+    "http://example.com"                         -> "/" ""
     "/a b"                                       -> "/a%20b" "" |}]
-  (* Upstream (Go): the request URIs are "/" and "/a%20b". *)
 
 (* Origin: RFC 9112 sections 3.2.1-3.2.4, one example of each form of
    request-target. *)
@@ -70,10 +67,8 @@ let%expect_test _ =
   [%expect {|
     "/where?q=now"                               -> "/where" "q=now"
     "http://www.example.org/pub/WWW/TheProject.html" -> "/pub/WWW/TheProject.html" ""
-    "www.example.com:80"                         -> "80" ""
+    "www.example.com:80"                         -> "" ""
     "*"                                          -> "*" "" |}]
-  (* Upstream (RFC 9112): "www.example.com:80" is the authority-form, used only
-     with CONNECT; it is not a path. *)
 
 (* Origin: not from an upstream suite; added for Dream. *)
 let%expect_test _ =
@@ -95,7 +90,7 @@ let%expect_test _ =
   split "/%3F?x";
   split "/a;b?c";
   [%expect {|
-    "http://h?x"                                 -> "" "x"
+    "http://h?x"                                 -> "/" "x"
     "http://h/a//b?q#f"                          -> "/a//b" "q"
     "https://u@h:8080/p?q"                       -> "/p" "q"
     "/a?b?c"                                     -> "/a" "b?c"
