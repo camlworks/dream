@@ -147,6 +147,21 @@ let%expect_test _ =
     []
     ["d"="e"] |}]
 
+(* Origin: not from an upstream suite; added for Dream. Werkzeug drops
+   "==__Host-eq=bad" as a guard against cookie prefix spoofing (see its
+   test_parse_cookie below). Whatever the split, such a piece must not yield a
+   cookie named "__Host-eq". *)
+let%expect_test _ =
+  parse "==__Host-eq=bad";
+  parse "=__Host-eq=bad";
+  parse "==__Host-eq=bad; __Host-eq=good";
+  [%expect {|
+    []
+    []
+    ["__Host-eq"="good"] |}]
+  (* Each piece with a leading '=' is dropped today, because its value
+     contains '='. Splitting at the first '=' would give it the name "". *)
+
 (* Origin: jshttp/cookie parse-cookie.spec.ts, "should ignore duplicate
    cookies" (L77-L90). *)
 let%expect_test _ =
