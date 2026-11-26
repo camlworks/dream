@@ -39,16 +39,15 @@ let etag content =
    send, serve-static and actix hide dotfiles by default; Plug and Starlette
    serve them; Starlette's code refuses symlinks that leave the root. Options:
    keep and document, add ~dotfiles and ~follow_symlinks options, or change the
-   defaults.
-
-   Divergence (not testable without hanging): there is no [st_kind] check, so a
-   FIFO or device is read whole, hanging the request or exhausting memory.
-   Likely fix: serve only S_REG files. *)
+   defaults. *)
+(* Only regular files are served: reading a FIFO or a device whole would hang
+   the request or exhaust memory. A directory gives 404 as before. *)
 let from_filesystem local_root path _ =
   let file = Filename.concat local_root path in
   Lwt.catch
     (fun () ->
       let%lwt stats = Lwt_unix.stat file in
+      if stats.Unix.st_kind <> Unix.S_REG then raise Not_found;
       Lwt_io.(with_file ~mode:Input file) (fun channel ->
         let%lwt content = Lwt_io.read channel in
         let last_modified =

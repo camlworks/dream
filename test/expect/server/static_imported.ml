@@ -676,6 +676,14 @@ let%expect_test _ =
     "/static/dir/"               404
     "/static/name.txt/"          404 |}]
 
+(* Origin: not from an upstream suite; added for Dream. A FIFO, which a loader
+   that read it whole would hang on. *)
+let%expect_test _ =
+  with_fixture (fun root ->
+    Unix.mkfifo (Filename.concat root "fifo") 0o600;
+    serve root "/static/fifo");
+  [%expect {| "/static/fifo"               404 |}]
+
 (* Origin: Starlette tests/test_staticfiles.py, L491 (a path below a file) and
    test_staticfiles_filename_too_long (L506). *)
 let%expect_test _ =
