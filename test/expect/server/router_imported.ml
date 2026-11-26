@@ -49,7 +49,9 @@ let () =
   ignore Initialize.require
 
 (* A route whose handler reports its label, the given parameters, and, for
-   wildcard routes, the remaining path. *)
+   wildcard routes, the remaining path. The label is also sent in an X-Route
+   header, so that the route that answered a HEAD request, which has no body,
+   can be shown. *)
 let route ?(params = []) make pattern label =
   make pattern (fun request ->
     let params =
@@ -66,7 +68,7 @@ let route ?(params = []) make pattern label =
       else
         ""
     in
-    Dream.respond (label ^ params ^ rest))
+    Dream.respond ~headers:["X-Route", label] (label ^ params ^ rest))
 
 let get ?params pattern label = route ?params Dream.get pattern label
 
@@ -79,6 +81,10 @@ let request ?(method_ = `GET) routes target =
     | _ -> Dream.method_to_string method_ ^ " " ^ target
   in
   match Dream.status_to_int (Dream.status response) with
+  | 200 when method_ = `HEAD ->
+    let route =
+      Option.value ~default:"?" (Dream.header response "X-Route") in
+    Printf.printf "%-32S -> %s (no body)\n" label route
   | 200 ->
     Printf.printf "%-32S -> %s\n" label
       (Lwt_main.run (Dream.body response))
@@ -157,18 +163,17 @@ let%expect_test _ =
   [%expect {|
     "/item/jba"                      -> GET item user="jba"
     "POST /item/jba"                 -> POST item user="jba"
-    "HEAD /item/jba"                 ->
+    "HEAD /item/jba"                 -> GET item (no body)
     "get /item/jba"                  -> any item user="jba"
     "POST /item/jba/17"              -> any item/:user/:id user="jba" id="17"
     "/item/jba/new"                  -> any item/:user/:id user="jba" id="new"
     "/item/"                         -> any item/
     "/item"                          -> 404
     "/headwins"                      -> GET headwins
-    "HEAD /headwins"                 ->
+    "HEAD /headwins"                 -> HEAD headwins (no body)
     "/path/to/file"                  -> any path/** path="/to/file"
     "/path/*"                        -> any path/** path="/*" |}]
-  (* Upstream (Go): HEAD /headwins goes to the HEAD route, which is more
-     specific; "/item/jba/new" goes to "/item/{user}/new". *)
+  (* Upstream (Go): "/item/jba/new" goes to "/item/{user}/new". *)
 
 (* Origin: Go routing_tree_test.go, TestRoutingNodeMatch (L179-L210): a
    trailing slash, a single wildcard, and a multi wildcard. *)
@@ -218,14 +223,14 @@ let%expect_test _ =
   request routes ~method_:`PUT "/r";
   [%expect {|
     "/g"                             -> GET g
-    "HEAD /g"                        ->
+    "HEAD /g"                        -> GET g (no body)
     "POST /g"                        -> 404
     "/x"                             -> 404
     "/p"                             -> 404
     "/./p"                           -> 404
     "/r/"                            -> GET r/
     "/r"                             -> 404
-    "HEAD /r/"                       ->
+    "HEAD /r/"                       -> GET r/ (no body)
     "HEAD /r"                        -> 404
     "PUT /r/"                        -> 404
     "PUT /r"                         -> PUT r |}]
