@@ -513,7 +513,8 @@ let%expect_test _ =
 (* Origin: Go fs_test.go, testServeContent (L943): ifmatch_matches,
    ifmatch_star, ifmatch_failed, ifmatch_fails_on_weak_etag,
    if_unmodified_since_true and if_unmodified_since_false (L1138-L1190). RFC
-   9110 section 13.1.1 lets an origin ignore these for GET. *)
+   9110 sections 13.1.1 and 13.1.4 require an origin server to evaluate these
+   for GET. *)
 let%expect_test _ =
   conditional ~etag:(Some "\"A\"") ["If-Match", "\"Z\", \"A\""];
   conditional ~etag:(Some "\"A\"") ["If-Match", "*"];

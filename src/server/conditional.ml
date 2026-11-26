@@ -58,10 +58,11 @@ let if_modified_since request last_modified =
    "If-None-Match:" counts as present, so it disables [If-Modified-Since]. Go
    and Starlette treat a header with no entity-tags as absent.
 
-   Open question (same file; Go, send and actix answer 412): [If-Match] and
-   [If-Unmodified-Since] are ignored. Does RFC 9110 section 13.2 require origin
-   servers to evaluate them for GET and HEAD, or only allow it? In the first
-   case this is a bug; in the second, documenting it is enough. *)
+   Divergence (same file; Go, send and actix answer 412): [If-Match] and
+   [If-Unmodified-Since] are ignored. RFC 9110 sections 13.1.1 and 13.1.4 say
+   an origin server MUST evaluate them for a request that selects a
+   representation, GET and HEAD included. Likely fix: evaluate them, in the
+   order of section 13.2.2, and answer 412 when one fails. *)
 let is_fresh request response =
   if Message.has_header request "If-None-Match" then
     match Message.header response "ETag" with
