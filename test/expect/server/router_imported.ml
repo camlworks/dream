@@ -5,11 +5,6 @@
 
 
 
-(* These tests record Dream's current behavior. They make no claim about
-   which behavior is correct, Dream's or the one the upstream tests expect. *)
-
-
-
 (* Routing cases adapted from the test suites of other web frameworks.
    Expectations record Dream's current behavior; "Upstream:" comments note where
    the sources expect something different. Each test starts with an "Origin:"

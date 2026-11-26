@@ -5,11 +5,6 @@
 
 
 
-(* These tests record Dream's current behavior. They make no claim about
-   which behavior is correct, Dream's or the one the upstream tests expect. *)
-
-
-
 (* HTML escaping vectors adapted from the round-trip strings of Go's
    src/html/escape_test.go, TestUnescapeEscape (BSD-3-Clause):
    https://github.com/golang/go/blob/5e9534e62225b2f58f3b4b3d410e63f29f6566f5/src/html/escape_test.go

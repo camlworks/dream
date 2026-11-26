@@ -5,11 +5,6 @@
 
 
 
-(* These tests record Dream's current behavior. They make no claim about
-   which behavior is correct, Dream's or the one the upstream tests expect. *)
-
-
-
 (* Request-target test vectors adapted from Go net/url and from the examples in
    RFC 9112 section 3.2. Expectations record Dream's current behavior;
    "Upstream:" comments note where the source expects something different.

@@ -5,11 +5,6 @@
 
 
 
-(* These tests record Dream's current behavior. They make no claim about
-   which behavior is correct, Dream's or the one the upstream tests expect. *)
-
-
-
 (* Path tests around dot-segments and encoded separators. No upstream suite
    tests Dream's path splitting directly, so these were added for Dream, as
    each test's "Origin:" comment says. For what dot-segment removal (RFC 3986

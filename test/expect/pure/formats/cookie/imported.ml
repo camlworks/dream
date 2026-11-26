@@ -5,11 +5,6 @@
 
 
 
-(* These tests record Dream's current behavior. They make no claim about
-   which behavior is correct, Dream's or the one the upstream tests expect. *)
-
-
-
 (* Cookie test vectors adapted from the test suites of other web frameworks and
    standard libraries. Each expectation below records Dream's current behavior;
    when the upstream suite expects something different, an "Upstream:" comment
@@ -291,8 +286,9 @@ let%expect_test _ =
     "cookie-14=samesite-strict; SameSite=Strict"
     "cookie-15=samesite-none; SameSite=None"
     "cookie-16=partitioned; Path=/; Secure; SameSite=None" |}]
-  (* Upstream (Go): Domain drops a leading dot; invalid domains ("wrong;bad.abc",
-     "bad-.abc", "::1") are omitted; Expires before 1601 is omitted. *)
+  (* Upstream (Go): Domain drops a leading dot; invalid domains
+     ("wrong;bad.abc", "bad-.abc", "::1") are omitted; Expires before 1601 is
+     omitted. *)
 
 (* Origin: Go cookie_test.go, writeSetCookiesTests (L92-L152): special values,
    the empty value, and invalid names. *)

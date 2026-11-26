@@ -5,11 +5,6 @@
 
 
 
-(* These tests record Dream's current behavior. They make no claim about
-   which behavior is correct, Dream's or the one the upstream tests expect. *)
-
-
-
 (* base64url test vectors from RFC 4648, mapped to the URL-safe alphabet
    without padding. Each test starts with an "Origin:" comment naming the
    section it comes from, or saying that it was added for Dream.

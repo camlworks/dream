@@ -5,11 +5,6 @@
 
 
 
-(* These tests record Dream's current behavior. They make no claim about
-   which behavior is correct, Dream's or the one the upstream tests expect. *)
-
-
-
 (* application/x-www-form-urlencoded test vectors adapted from other projects'
    test suites. Expectations record Dream's current behavior; "Upstream:"
    comments note where the source expects something different. Each test

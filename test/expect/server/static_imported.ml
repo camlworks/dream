@@ -5,11 +5,6 @@
 
 
 
-(* These tests record Dream's current behavior. They make no claim about
-   which behavior is correct, Dream's or the one the upstream tests expect. *)
-
-
-
 (* Static-file and conditional-request cases adapted from the test suites of
    other web frameworks. Expectations record Dream's current behavior;
    "Upstream:" comments note where the sources expect something different.
@@ -429,9 +424,9 @@ let%expect_test _ =
      fresh (304). *)
 
 (* Origin: not from an upstream suite; added for Dream. An exact match, two
-   identical strings that are not dates, and the same date in the RFC 850 and asctime
-   formats and in lower case. Go's ParseTime (not its tests) accepts all three
-   formats. *)
+   identical strings that are not dates, and the same date in the RFC 850 and
+   asctime formats and in lower case. Go's ParseTime (not its tests) accepts
+   all three formats. *)
 let%expect_test _ =
   conditional ~etag:None ~last_modified:lm0
     ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
