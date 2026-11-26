@@ -371,10 +371,7 @@ let%expect_test _ =
    ("/a/{x}/b/{x...}"). *)
 let%expect_test _ =
   registers "/a/:x/b/:x";
-  request [get "/a/:x/b/:x" "a/:x/b/:x" ~params:["x"]] "/a/1/b/2";
-  [%expect {|
-    "/a/:x/b/:x"         accepted
-    "/a/1/b/2"                       -> a/:x/b/:x x="2" |}]
+  [%expect {| "/a/:x/b/:x"         Duplicate path parameter name 'x' in '/a/:x/b/:x' |}]
 
 (* Origin: not from an upstream suite; added for Dream. *)
 let%expect_test _ =

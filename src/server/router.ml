@@ -31,16 +31,26 @@ type token =
    and duplicate patterns are accepted. "/:foo:bar" makes a parameter named
    "foo:bar"; "/user:", "/user:/" and "/src/*" become literals, since [parse]
    only treats ':' and '*' specially at the start of a segment; "/:foo*bar" is
-   accepted; and "/a/:x/b/:x" is accepted, with [param] returning the last
-   value. Rejecting them catches mistakes early, but an app whose routes load
-   today would fail at startup. Duplicate parameter names are the clearest
-   case, as Go and httprouter both reject them.
+   accepted. Rejecting them catches mistakes early, but an app whose routes
+   load today would fail at startup.
 
    Decision needed (Go TestEscapedPathsAndPatterns): literals are kept raw,
    while request segments are percent-decoded by [Formats.from_path]. So a
    "/%62" route matches "/%2562" but neither "/b" nor "/%62", and a route
    containing "%2F" can never match. Go 1.22 decodes patterns; doing so here
    would change which requests existing routes containing '%' match. *)
+(* A parameter name may appear only once in a pattern, as in Go and
+   httprouter, since [param] can return only one of the values. A route under a
+   scope may still bind a name of the scope's prefix again, and shadow it. *)
+let check_duplicate_params route tokens =
+  ignore @@ List.fold_left (fun names -> function
+    | Param name ->
+      if List.mem name names then
+        Printf.ksprintf failwith "Duplicate path parameter name '%s' in '%s'"
+          name route;
+      name::names
+    | Literal _ | Wildcard _ -> names) [] tokens
+
 let rec validate route = function
   | (Param "")::_ ->
     Printf.ksprintf failwith "Empty path parameter name in '%s'" route
@@ -98,6 +108,7 @@ let parse string =
 
   let tokens = parse_separator [] 0 in
   validate string tokens;
+  check_duplicate_params string tokens;
   tokens
 
 let rec strip_empty_trailing_token = function
@@ -275,8 +286,6 @@ let param request name =
   match Message.field request params_field with
   | None -> missing_param request name
   | Some params ->
-    (* Bindings are accumulated in reverse, so with a duplicate name this
-       returns the last value. See [validate]. *)
     try List.assoc name params
     with _ -> missing_param request name
 
