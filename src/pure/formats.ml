@@ -22,16 +22,20 @@ let html_escape s =
 let to_base64url string =
   Base64.encode_string ~pad:false ~alphabet:Base64.uri_safe_alphabet string
 
-(* Divergence (test/expect/pure/formats/base64/imported.ml): non-canonical
-   input is accepted. "Z" decodes to "", "Zh" to "f" (non-zero pad bits), and
-   padded input such as "Zg==" or "Zg===" is accepted, where a strict decoder
-   (RFC 4648 sections 3.3 and 3.5, Go's RawURLEncoding.Strict()) rejects all of
-   them. Likely fix: accept only input that re-encodes to itself. Low impact,
-   since tokens decoded here are authenticated afterwards. *)
+(* Only canonical input is accepted (RFC 4648 sections 3.3 and 3.5): no
+   impossible lengths such as "Z", zero pad bits, so "Zh" is rejected while
+   "Zg" decodes to "f", and either no padding or exactly the right padding
+   ("Zg==", but not "Zg=" or "Zg==="). Checking that the result re-encodes to
+   the input, with or without padding, covers all three. *)
 let from_base64url string =
   match Base64.decode ~pad:false ~alphabet:Base64.uri_safe_alphabet string with
   | Error _ -> None
-  | Ok result -> Some result
+  | Ok result ->
+    let padded =
+      Base64.encode_string ~pad:true ~alphabet:Base64.uri_safe_alphabet result
+    in
+    if to_base64url result = string || padded = string then Some result
+    else None
 
 
 

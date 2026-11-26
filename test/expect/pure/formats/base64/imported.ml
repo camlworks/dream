@@ -74,21 +74,22 @@ let%expect_test _ =
 (* Origin: not from an upstream suite; added for Dream. Inputs a strict
    decoder rejects (RFC 4648 sections 3.3 and 3.5): padding in an unpadded
    encoding, impossible lengths, non-zero pad bits, and characters outside the
-   alphabet. Go's base64.RawURLEncoding.Strict() rejects every one of them;
-   Dream accepts all but the last three. *)
+   alphabet. Go's base64.RawURLEncoding.Strict() rejects every one of them.
+   Dream rejects them too, except "Zg==", whose padding is exactly what RFC
+   4648 prescribes. *)
 let%expect_test _ =
   List.iter decode
     ["Zg=="; "Zg="; "Zg==="; "Zm9vYmFy===="; "Zh"; "Zm9"; "Z"; "-_";
      "Z m9v"; "Zm9v\n"; "+/"];
   [%expect {|
     "Zg=="           -> Some "f"
-    "Zg="            -> Some "f"
-    "Zg==="          -> Some "f"
-    "Zm9vYmFy===="   -> Some "foobar"
-    "Zh"             -> Some "f"
-    "Zm9"            -> Some "fo"
-    "Z"              -> Some ""
-    "-_"             -> Some "\251"
+    "Zg="            -> None
+    "Zg==="          -> None
+    "Zm9vYmFy===="   -> None
+    "Zh"             -> None
+    "Zm9"            -> None
+    "Z"              -> None
+    "-_"             -> None
     "Z m9v"          -> None
     "Zm9v\n"         -> None
     "+/"             -> None |}]
