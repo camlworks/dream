@@ -80,8 +80,9 @@ let http_date request name =
    (RFC 9110 section 13.2.2): the response itself, [304 Not Modified], or
    [412 Precondition Failed]. Only [Dream.static] calls this, so the method is
    GET or HEAD. A validator the response does not carry, or a date that does
-   not parse, makes the corresponding precondition ignored, except that
-   [If-Match] fails without a strong ETag to compare with. *)
+   not parse, makes the corresponding precondition ignored, except that an
+   [If-Match] listing entity-tags fails without a strong ETag to compare
+   with. *)
 let evaluate request response =
   let etag =
     match Message.header response "ETag" with

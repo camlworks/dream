@@ -1638,7 +1638,8 @@ val static :
 
     Dates may be in any of the three HTTP-date formats. A precondition whose
     validator the response lacks, or whose date does not parse, is ignored,
-    except that [If-Match:] fails without a strong [ETag:]. A custom loader
+    except that an [If-Match:] listing entity-tags fails without a strong
+    [ETag:]. A custom loader
     can opt into the same handling simply by setting those headers.
 
     {!Dream.static} accepts [`GET] and [`HEAD] requests; other methods get [404

@@ -27,8 +27,8 @@ type token =
   | Wildcard of string
 
 (* Decision needed (test/expect/server/router_imported.ml, httprouter
-   TestEmptyWildcardName and TestTreeDoubleWildcard, Go pattern_test.go): odd
-   and duplicate patterns are accepted. "/:foo:bar" makes a parameter named
+   TestEmptyWildcardName and TestTreeDoubleWildcard): odd patterns are
+   accepted. "/:foo:bar" makes a parameter named
    "foo:bar"; "/user:", "/user:/" and "/src/*" become literals, since [parse]
    only treats ':' and '*' specially at the start of a segment; "/:foo*bar" is
    accepted. Rejecting them catches mistakes early, but an app whose routes

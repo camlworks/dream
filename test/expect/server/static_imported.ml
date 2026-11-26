@@ -442,6 +442,29 @@ let%expect_test _ =
     304  If-Modified-Since: "Sat Jan  1 00:00:00 2000"
     200  If-Modified-Since: "sat, 01 jan 2000 00:00:00 GMT" |}]
 
+(* Origin: not from an upstream suite; added for Dream. Dates that do not
+   parse, so that If-Modified-Since is ignored: an impossible day, trailing
+   characters, and a missing "GMT". Then the RFC 850 century rule: "99" is
+   1999, earlier than Last-Modified, so the resource was modified, and "00" is
+   2000. *)
+let%expect_test _ =
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Wed, 30 Feb 2000 00:00:00 GMT"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT x"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Friday, 31-Dec-99 23:59:59 GMT"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Saturday, 01-Jan-00 00:00:01 GMT"];
+  [%expect {|
+    200  If-Modified-Since: "Wed, 30 Feb 2000 00:00:00 GMT"
+    200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT x"
+    200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00"
+    200  If-Modified-Since: "Friday, 31-Dec-99 23:59:59 GMT"
+    304  If-Modified-Since: "Saturday, 01-Jan-00 00:00:01 GMT" |}]
+
 (* Origin: jshttp/fresh test/fresh.js, "when requested with If-Modified-Since
    and If-None-Match" (L138-L169). *)
 let%expect_test _ =

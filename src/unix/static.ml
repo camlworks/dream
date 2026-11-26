@@ -40,8 +40,9 @@ let etag content =
    serve them; Starlette's code refuses symlinks that leave the root. Options:
    keep and document, add ~dotfiles and ~follow_symlinks options, or change the
    defaults. *)
-(* Only regular files are served: reading a FIFO or a device whole would hang
-   the request or exhaust memory. A directory gives 404 as before. *)
+(* Only regular files are served. Reading a device such as /dev/zero whole
+   would exhaust memory, and a FIFO would be served as whatever a writer sends,
+   or as an empty file. A directory gives 404 as before. *)
 let from_filesystem local_root path _ =
   let file = Filename.concat local_root path in
   Lwt.catch
