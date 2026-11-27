@@ -62,7 +62,8 @@ let%expect_test _ =
     [""="v1"]
     ["k1"="\\"] |}]
   (* Upstream (Go): "=v1" (empty name) and a value of a single backslash (not a
-     cookie-octet) are errors. *)
+     cookie-octet) are errors. No action: the application receives these pieces
+     as sent, and neither can be read as another cookie. *)
 
 (* Origin: Go cookie_test.go, readCookiesTests (L439). *)
 let%expect_test _ =
@@ -113,7 +114,9 @@ let%expect_test _ =
     ["foo"="bar"]
     ["foo"="bar"]
     ["toString"="foo"; "valueOf"="bar"] |}]
-  (* Upstream (jshttp): values are percent-decoded by default. *)
+  (* Upstream (jshttp): values are percent-decoded by default. No action: Dream
+     returns raw values (see Dream.from_cookie and Dream.all_cookies), so an
+     application decodes whatever encoding it chose when setting them. *)
 
 (* Origin: jshttp/cookie parse-cookie.spec.ts, "should URL-decode values"
    (L41). *)
@@ -173,7 +176,10 @@ let%expect_test _ =
   [%expect {| ["dismiss-top"="6"; "CP"="null*"; "PHPSESSID"="0a539d42abc001cdc762809248d4beed"; "a"="42"; "b"="\"\\\""; "fo234{"="bar"; "blub"="Blah"; "\"__Secure-c\""="d"; ""="=__Host-eq=bad"; "__Host-eq"="good"] |}]
   (* Upstream (Werkzeug): the quoted name "__Secure-c" and "==__Host-eq=bad"
      are dropped, as a guard against cookie prefix spoofing, and b is
-     "\";". *)
+     "\";". No action on the names: neither yields a cookie named
+     __Secure-c or __Host-eq, since the first keeps its quotes and the second
+     has the empty name. The value of b depends on unquoting, an open question
+     recorded at from_cookie in src/pure/formats.ml. *)
 
 (* Origin: Werkzeug test_http.py, test_bad_cookies (L410). *)
 let%expect_test _ =
@@ -182,7 +188,9 @@ let%expect_test _ =
   [%expect {|
     ["first"="IamTheFirst"; "a"="1"; "a"="2"; "second"="andMeTwo"]
     ["spam"="ham"; "duck"="mallard"] |}]
-  (* Upstream (Werkzeug): "oops" gets an empty value. *)
+  (* Upstream (Werkzeug): "oops" gets an empty value. No action: RFC 6265
+     §4.2.1 requires '=' in every cookie-pair, so a conforming client never
+     sends such a piece. *)
 
 (* Origin: Werkzeug test_http.py, test_cookie_quoting (L433) and
    test_parse_set_cookie_directive (L436). *)
@@ -193,7 +201,10 @@ let%expect_test _ =
     ["foo"="\"foo\\054bar\""]
     ["foo"="\"?foo\""; "version"="\"0.1\""] |}]
   (* Upstream (Werkzeug): values are unquoted and octal escapes decoded:
-     foo="foo,bar", then foo="?foo" and version="0.1". *)
+     foo="foo,bar", then foo="?foo" and version="0.1". Unquoting is an open
+     question recorded at from_cookie in src/pure/formats.ml. The octal
+     escapes need no action: they are a Python convention, not part of
+     RFC 6265. *)
 
 (* Origin: Werkzeug test_http.py, test_cookie_unicode_key_value (L452). The
    upstream string is the Latin-1 reading of these UTF-8 bytes. *)
@@ -236,7 +247,9 @@ let%expect_test _ =
     ["blah]foo"="x"]
     ["Set-Cookie: foo"="bar"]
     ["a"="b"; "c,d"="e"] |}]
-  (* Upstream (CPython): all rejected entirely. *)
+  (* Upstream (CPython): all rejected entirely. No action: these names are not
+     RFC 6265 tokens, but the application receives them as sent, and none can
+     be read as another cookie. *)
 
 
 
@@ -244,7 +257,8 @@ let%expect_test _ =
 
 (* Origin: Go cookie_test.go, writeSetCookiesTests (L20), cookies 1-11 and
    15-16 (L25-L87). Go orders attributes differently; the order has no
-   meaning. Dream has no Partitioned attribute, so cookie-16 omits it. *)
+   meaning. Dream has no Partitioned attribute, so cookie-16 omits it. No
+   action on Partitioned: it is a feature Dream does not offer. *)
 let%expect_test _ =
   show @@ Dream.to_set_cookie "cookie-1" "v$1";
   show @@ Dream.to_set_cookie "cookie-2" "two" ~max_age:3600.;
@@ -281,7 +295,9 @@ let%expect_test _ =
     "cookie-15=samesite-none; SameSite=None"
     "cookie-16=partitioned; Path=/; Secure; SameSite=None" |}]
   (* Upstream (Go): Domain drops a leading dot; invalid domains
-     ("wrong;bad.abc", "bad-.abc", "::1") are omitted. *)
+     ("wrong;bad.abc", "bad-.abc", "::1") are omitted. The leading dot needs
+     no action: user agents ignore it (RFC 6265 §5.2.3). Invalid domains are
+     a decision recorded at to_set_cookie in src/pure/formats.ml. *)
 
 (* Origin: Go cookie_test.go, writeSetCookiesTests (L92-L152): special values,
    the empty value, and invalid names. *)
@@ -467,7 +483,9 @@ let%expect_test _ =
     "foo=bar; Domain=\226\152\131.com; Path=/"
     "foo=\226\152\131; Path=/" |}]
   (* Upstream (Werkzeug): the domain is IDNA-encoded (xn--n3h.com), and the
-     value is octal-escaped: "\"\\342\\230\\203\"". *)
+     value is octal-escaped: "\"\\342\\230\\203\"". No action: Dream writes
+     the bytes it is given; IDNA conversion is left to the caller, and octal
+     escapes are a Python convention, not part of RFC 6265. *)
 
 (* Origin: Werkzeug test_http.py, test_cookie_maxsize (L473). *)
 let%expect_test _ =
@@ -479,7 +497,9 @@ let%expect_test _ =
     4085
     4086 |}]
   (* Upstream (Werkzeug): the first is 4093 bytes long with its default
-     "; Path=/"; the second triggers a "cookie is too large" warning. *)
+     "; Path=/"; the second triggers a "cookie is too large" warning. No
+     action: Dream enforces no cookie size or count limits; user agents apply
+     their own (RFC 6265 §6.1). *)
 
 (* Origin: CPython test_http_cookies.py, test_extended_encode (L174),
    test_comment_quoting (L323), test_set_secure_httponly_attrs (L205) and
@@ -499,7 +519,9 @@ let%expect_test _ =
     "foo@bar=v" |}]
   (* Upstream (CPython): "some,funky;stuff" becomes
      "\"some\\054funky\\073stuff\"", the value is "\"\\251\"", and the names
-     "foo bar" and "foo@bar" are rejected. *)
+     "foo bar" and "foo@bar" are rejected. The octal escapes need no action
+     (see above). Invalid names and values are a decision recorded at
+     to_set_cookie in src/pure/formats.ml. *)
 
 (* Origin: not from an upstream suite; added for Dream. A value containing
    '=' survives a round trip. *)

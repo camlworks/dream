@@ -1454,6 +1454,15 @@ val router : route list -> handler
     because, in the future, it may be possible to query routes for site
     structure metadata.
 
+    Routes are tried in the order given, and the first one that matches
+    handles the request, even if a later route is more specific. Matching is
+    case-sensitive, and a path that matches no route only by case or by a
+    trailing slash gets [404 Not Found], not a redirect. A parameter is a whole
+    path component: there are no parameters within a component, such as
+    ["/user_:name"]. A path ending in [**] matches any rest, including an
+    empty one: ["/src/**"] matches ["/src/"], with path ["/"], but not
+    ["/src"].
+
     Note: routes that end with [/] and routes that don't end with [/] are
     {{:https://github.com/camlworks/dream/issues/244#issuecomment-1511624682}
     different}. *)
@@ -1639,12 +1648,15 @@ val static :
     Dates may be in any of the three HTTP-date formats. A precondition whose
     validator the response lacks, or whose date does not parse, is ignored,
     except that an [If-Match:] listing entity-tags fails without a strong
-    [ETag:]. A custom loader
-    can opt into the same handling simply by setting those headers.
+    [ETag:]. A custom loader can opt into the same handling simply by setting
+    those headers.
 
     {!Dream.static} accepts [`GET] and [`HEAD] requests; other methods get [404
     Not Found]. The loader runs for both. For [`HEAD], its response body is
-    discarded. *)
+    discarded.
+
+    Range requests are not supported: [Range:] and [If-Range:] are ignored,
+    and the whole file is sent with [200 OK]. *)
 
 val from_filesystem : string -> string -> handler
 (** [Dream.from_filesystem local_directory path request] responds with a file

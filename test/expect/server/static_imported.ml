@@ -330,7 +330,9 @@ let%expect_test _ =
     200  If-None-Match: "*, \"bar\"" |}]
   (* Upstream (fresh): stale (200) without a precondition, on a mismatch, and
      without an ETag; "*" is ignored unless it is the only value, so
-     "*, \"bar\"" is stale. Go, by contrast, matches "*" anywhere. *)
+     "*, \"bar\"" is stale. Go, by contrast, matches "*" anywhere. No action:
+     Dream agrees with fresh. The header is invalid, since RFC 9110 §13.1.2
+     allows "*" only on its own, and the references disagree on it. *)
 
 (* Origin: Go fs_test.go, testServeContent (L943): not_modified_etag,
    not_modified_etag_no_seek, if_none_match_mismatch and
@@ -485,7 +487,6 @@ let%expect_test _ =
     304  If-None-Match: "\"foo\"", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
     200  If-None-Match: "\"foo\"", If-Modified-Since: "Sat, 01 Jan 2000 01:00:00 GMT"
     200  If-None-Match: "\"foo\"", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
-  (* Upstream (fresh): fresh, fresh, stale, stale. *)
 
 (* Origin: Starlette tests/test_staticfiles.py, L279-L281: when
    If-None-Match is present, If-Modified-Since is ignored. *)
@@ -523,7 +524,8 @@ let%expect_test _ =
     304  Cache-Control: " no-cache", If-None-Match: "\"foo\""
     304  Cache-Control: " no-cache", If-Modified-Since: "Sat, 01 Jan 2000 01:00:00 GMT" |}]
   (* Upstream (fresh): all stale (200). Go, Starlette and actix ignore the
-     directive. *)
+     directive. No action: Dream sides with the majority; no-cache in a
+     request addresses caches (RFC 9111 §5.2.1.4), not the origin server. *)
 
 (* Origin: Go fs_test.go, testServeContent (L943): ifmatch_matches,
    ifmatch_star, ifmatch_failed, ifmatch_fails_on_weak_etag,
@@ -581,7 +583,7 @@ let%expect_test _ =
     412  If-Match: "\"nonmatching-etag\"", If-Unmodified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
 
 (* Origin: not from an upstream suite; added for Dream. Range is not
-   supported: the full representation is always sent. *)
+   supported: the full representation is always sent (see Dream.static). *)
 let%expect_test _ =
   conditional ["Range", "bytes=0-1"];
   conditional ["Range", "bytes=9-50"];

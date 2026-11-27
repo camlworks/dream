@@ -168,7 +168,8 @@ let%expect_test _ =
     "HEAD /headwins"                 -> HEAD headwins (no body)
     "/path/to/file"                  -> any path/** path="/to/file"
     "/path/*"                        -> any path/** path="/*" |}]
-  (* Upstream (Go): "/item/jba/new" goes to "/item/{user}/new". *)
+  (* Upstream (Go): "/item/jba/new" goes to "/item/{user}/new". No action:
+     Dream picks the first matching route, by design (see Dream.router). *)
 
 (* Origin: Go routing_tree_test.go, TestRoutingNodeMatch (L179-L210): a
    trailing slash, a single wildcard, and a multi wildcard. *)
@@ -195,7 +196,10 @@ let%expect_test _ =
 
 (* Origin: Go request_test.go, TestStatus (L1639-L1666). Upstream: a method
    mismatch gives 405 Method Not Allowed, with an Allow header; "/r" and PUT
-   "/r" are redirected to "/r/". *)
+   "/r" are redirected to "/r/". The 405 is a decision recorded in
+   src/server/router.ml. The redirects need no action: Dream treats "/r" and
+   "/r/" as different routes (see Dream.router), and Dream.trailing_slash
+   offers redirects. *)
 let%expect_test _ =
   let routes = [
     get "/g" "GET g";
@@ -454,11 +458,14 @@ let%expect_test _ =
     "/info/gordon/public"            -> info/:user/public user="gordon"
     "/info/gordon/project/go"        -> info/:user/project/:project user="gordon" project="go" |}]
   (* Upstream (httprouter): "/user_gopher" matches "/user_:name" with
-     name=gopher; Dream has no mid-segment parameters. *)
+     name=gopher; Dream has no mid-segment parameters. No action: a parameter
+     is a whole path component, by design (see Dream.router). *)
 
 (* Origin: httprouter router_test.go, TestRouterNotFound (L409-L430).
    Upstream: each request but "/nope" is redirected (301): trailing slash,
-   case, or path cleaning. *)
+   case, or path cleaning. Trailing slashes and case need no action: Dream
+   matches both strictly, by design (see Dream.router). Path cleaning is a
+   decision recorded in src/server/router.ml. *)
 let%expect_test _ =
   let routes = [get "/path" "path"; get "/dir/" "dir/"; get "/" "/"] in
   List.iter (request routes)
@@ -578,7 +585,8 @@ let%expect_test _ =
     "/other/long/static/path/"       -> /other/long/static/path/ |}]
   (* Upstream (matchit): "/secret/978" goes to the static route "/secret/978",
      "/other/an_object/1" to "/other/an_object/:id", and "/other/static/path"
-     to its static route. *)
+     to its static route. No action: Dream picks the first matching route, by
+     design (see Dream.router). *)
 
 (* Origin: matchit tests/match.rs, catchall_off_by_one (L294). *)
 let%expect_test _ =
@@ -598,7 +606,8 @@ let%expect_test _ =
     "/bar/"                          -> bar/
     "/bar/x"                         -> bar/** path="/x" |}]
   (* Upstream (matchit): a catch-all needs a non-empty rest, so "/foo/" is not
-     found. *)
+     found. No action: in Dream, [**] also matches an empty rest, by design
+     (see Dream.router). *)
 
 (* Origin: matchit tests/match.rs, overlap (L310). *)
 let%expect_test _ =
@@ -631,7 +640,8 @@ let%expect_test _ =
     "/xxx"                           -> ** path="/xxx" |}]
   (* Upstream (matchit): each static route matches itself, "" is not found,
      and "/xxx/" goes to "/xxx/". In an HTTP request, "/???" is the path "/"
-     with the query "??". *)
+     with the query "??". No action: Dream picks the first matching route, by
+     design (see Dream.router), and reads the empty path as "/". *)
 
 (* Origin: matchit tests/match.rs, missing_trailing_slash_param (L342),
    extra_trailing_slash_param (L358), missing_trailing_slash_catch_all (L370)
@@ -671,7 +681,9 @@ let%expect_test _ =
     "/foo/secret/978/"               -> foo/** path="/secret/978/"
     "/foo/secret/978"                -> foo/** path="/secret/978" |}]
   (* Upstream (matchit): in the second table "/foo/secret/978" goes to its
-     static route, and in the last two each static route matches itself. *)
+     static route, and in the last two each static route matches itself. No
+     action: Dream picks the first matching route, by design (see
+     Dream.router). *)
 
 (* Origin: matchit tests/match.rs, trailing_slash_overlap (L437),
    backtracking_trailing_slash (L527) and root_trailing_slash (L536). *)
@@ -706,7 +718,8 @@ let%expect_test _ =
     "/y/"                            -> 404
     "/x//z"                          -> 404
     "/z/"                            -> z/** path="/" |}]
-  (* Upstream (matchit): all not found. *)
+  (* Upstream (matchit): all not found. No action: in Dream, [**] also
+     matches an empty rest, by design (see Dream.router). *)
 
 (* Origin: matchit tests/match.rs, basic (L705). *)
 let%expect_test _ =
@@ -799,7 +812,8 @@ let%expect_test _ =
     "/api/baz/foo/bad"               -> 404
     "/foo/p/p"                       -> 404 |}]
   (* Upstream (matchit): all not found, including "/src/" and "/no/a/b/",
-     since a catch-all needs a non-empty rest. *)
+     since a catch-all needs a non-empty rest. No action: in Dream, [**] also
+     matches an empty rest, by design (see Dream.router). *)
 
 (* Origin: pillarjs/router test/route.js, L694-L712. *)
 let%expect_test _ =
@@ -818,14 +832,16 @@ let%expect_test _ =
   [%expect {|
     "/FOO/bar"                       -> 404
     "/foo/"                          -> 404 |}]
-  (* Upstream (Express defaults): both match. *)
+  (* Upstream (Express defaults): both match. No action: Dream matches case
+     and trailing slashes strictly, by design (see Dream.router). *)
 
 (* Origin: pillarjs/router test/layer.js, L96-L106: a parameter that fails to
    percent-decode. *)
 let%expect_test _ =
   request [get "/:param" ":param" ~params:["param"]] "/%Z";
   [%expect {| "/%Z"                            -> :param param="%Z" |}]
-  (* Upstream (Express): 400, "Failed to decode param '%Z'". *)
+  (* Upstream (Express): 400, "Failed to decode param '%Z'". No action: as in
+     Dream.from_percent_encoded, a malformed escape passes through. *)
 
 (* Origin: pillarjs/path-to-regexp src/cases.spec.ts, path "/:test"
    (L457-L503). *)
@@ -841,7 +857,8 @@ let%expect_test _ =
     "/;,:@&=+$-_.!~*()"              -> :test test=";,:@&=+$-_.!~*()"
     "/param%2523"                    -> :test test="param%23" |}]
   (* Upstream (path-to-regexp): "/route/" matches with test=route, since a
-     trailing slash is allowed by default. *)
+     trailing slash is allowed by default. No action: Dream matches trailing
+     slashes strictly, by design (see Dream.router). *)
 
 (* Origin: pillarjs/path-to-regexp src/cases.spec.ts, path "/test/" (L445-L453)
    and path "/café" with encodePath (L1293-L1300). *)

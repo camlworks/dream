@@ -646,12 +646,15 @@ module Make
         {!Dream.to_base64url}. See {!Dream.run} argument [~secret].
       - [~expires] sets the [Expires=] attribute. The value is compatible with
         {{:https://v2.ocaml.org/api/Unix.html#VALgettimeofday}
-        [Unix.gettimeofday]}. See
+        [Unix.gettimeofday]}. Dates before 1601, which the cookie date grammar
+        cannot express, omit the attribute. See
         {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.1}
         RFC 6265bis §4.1.2.1} and
         {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie}
         MDN}.
-      - [~max_age] sets the [Max-Age=] attribute. See
+      - [~max_age] sets the [Max-Age=] attribute, in whole seconds. Negative
+        values are sent as [0], values over 400 days as 400 days, the cap
+        user agents apply, and [nan] omits the attribute. See
         {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.2}
         RFC 6265bis §4.1.2.2} and
         {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie}
@@ -1355,7 +1358,16 @@ module Make
     include its own router, into a subsite. However, it is better to compose
     sites with routes and {!Dream.scope} rather than opaque handlers and [**],
     because, in the future, it may be possible to query routes for site
-    structure metadata. *)
+    structure metadata.
+
+    Routes are tried in the order given, and the first one that matches
+    handles the request, even if a later route is more specific. Matching is
+    case-sensitive, and a path that matches no route only by case or by a
+    trailing slash gets [404 Not Found], not a redirect. A parameter is a whole
+    path component: there are no parameters within a component, such as
+    ["/user_:name"]. A path ending in [**] matches any rest, including an
+    empty one: ["/src/**"] matches ["/src/"], with path ["/"], but not
+    ["/src"]. *)
 
   val get : string -> handler -> route
   (** Forwards [`GET] requests for the given path to the handler.
@@ -1388,7 +1400,13 @@ module Make
   (* :((( *)
   val param : request -> string -> string
   (** Retrieves the path parameter. If it is missing, {!Dream.param} raises an
-      exception — the program is buggy. *)
+      exception — the program is buggy.
+
+      A parameter name may appear only once in a route pattern: {!Dream.get}
+      and the other route functions raise [Failure] for a pattern such as
+      ["/a/:x/b/:x"]. A route under {!Dream.scope} may bind a parameter of the
+      scope's prefix again, and {!Dream.param} then returns the value bound by
+      the route. *)
 
   val scope : string -> middleware list -> route list -> route
   (** Groups routes under a common path prefix and middlewares. Middlewares are
@@ -1512,17 +1530,28 @@ module Make
       [w-one-binary]} for a loader that serves files from memory instead.
 
       If the loader's response carries an [ETag:] or [Last-Modified:] header,
-      {!Dream.static} performs conditional-request handling: a request with a
-      matching [If-None-Match:] (or, in its absence, a matching
-      [If-Modified-Since:]) is answered with [304 Not Modified] and no body.
-      [If-None-Match:] is compared weakly and takes precedence over
-      [If-Modified-Since:], per
-      {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. A
-      loader opts into this handling simply by setting those headers.
+      {!Dream.static} evaluates the request's preconditions in the order of
+      {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.2.2} RFC 9110
+      §13.2.2}:
+
+      - A failing [If-Match:] (compared strongly), or, in its absence, a
+        failing [If-Unmodified-Since:], gives [412 Precondition Failed].
+      - A matching [If-None-Match:] (compared weakly), or, in its absence, an
+        [If-Modified-Since:] date no earlier than [Last-Modified:], gives
+        [304 Not Modified] with no body.
+
+      Dates may be in any of the three HTTP-date formats. A precondition whose
+      validator the response lacks, or whose date does not parse, is ignored,
+      except that an [If-Match:] listing entity-tags fails without a strong
+      [ETag:]. A loader opts into this handling simply by setting those
+      headers.
 
       {!Dream.static} accepts [`GET] and [`HEAD] requests; other methods get
       [404 Not Found]. The loader runs for both. For [`HEAD], its response body
-      is discarded. *)
+      is discarded.
+
+      Range requests are not supported: [Range:] and [If-Range:] are ignored,
+      and the whole file is sent with [200 OK]. *)
 
   val mime_lookup : string -> (string * string) list
   (** Returns a [Content-Type:] header based on the given filename. This is mostly
@@ -1977,7 +2006,10 @@ module Make
       library.*)
 
   val from_base64url : string -> string option
-  (** Inverse of {!Dream.to_base64url}. *)
+  (** Inverse of {!Dream.to_base64url}. Also accepts input with exactly the
+      padding that RFC 4648 prescribes. Returns [None] for any other input,
+      including non-canonical encodings such as ["Zh"], whose unused bits are
+      not zero. *)
 
   val to_percent_encoded : ?international:bool -> string -> string
   (** Percent-encodes a string for use inside a URL.
@@ -2007,9 +2039,12 @@ module Make
       §8.2.1}. Reverses the percent-encoding of names and values. *)
 
   val from_cookie : string -> (string * string) list
-  (** Converts a [Cookie:] header value to key-value pairs. See
+  (** Converts a [Cookie:] header value to key-value pairs, in header order.
+      See
       {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.2.1}
-      RFC 6265bis §4.2.1}. Does not apply any decoding to names and values. *)
+      RFC 6265bis §4.2.1}. Each pair is split at its first [=], so values may
+      contain [=]; a piece without [=] is dropped. Does not apply any decoding
+      to names and values. *)
 
   val to_set_cookie :
     ?expires:float ->

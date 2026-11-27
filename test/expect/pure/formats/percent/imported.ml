@@ -62,7 +62,9 @@ let%expect_test _ =
     "a+b"                        -> "a+b"
     "a%20b"                      -> "a b" |}]
   (* Upstream (Go): "%", "%a", "%1", "123%45%6" and "%zzzzz" are errors, and
-     "a+b" decodes to "a b" (query unescaping). *)
+     "a+b" decodes to "a b" (query unescaping). No action: WHATWG, Node and
+     CPython also pass malformed escapes through, and '+' means a space only in
+     form data, which Dream.from_form_urlencoded decodes. *)
 
 (* Origin: Node test-querystring.js, qsUnescapeTestCases (L170-L181). *)
 let%expect_test _ =
@@ -146,7 +148,9 @@ let%expect_test _ =
     "%20%3F%26%3D%23%2B%25%21%3C%3E%23%22%7B%7D%7C%5C%5E%5B%5D%60%E2%98%BA%09%3A%2F%40%24%27%28%29%2A%2C%3B"
     "%20%3F%26%3D%23%2B%25%21%3C%3E%23%22%7B%7D%7C%5C%5E%5B%5D%60\226\152\186%09%3A%2F%40%24%27%28%29%2A%2C%3B" |}]
   (* Upstream (Go PathEscape): "abc+def", and for the long string
-     "%20%3F&=%23+%25%21%3C%3E%23%22%7B%7D%7C%5C%5E%5B%5D%60%E2%98%BA%09:%2F@$%27%28%29%2A%2C%3B". *)
+     "%20%3F&=%23+%25%21%3C%3E%23%22%7B%7D%7C%5C%5E%5B%5D%60%E2%98%BA%09:%2F@$%27%28%29%2A%2C%3B".
+     No action: escaping a character that may appear raw does not change what
+     decoders read. *)
 
 (* Origin: not from an upstream suite; added for Dream. *)
 let%expect_test _ =

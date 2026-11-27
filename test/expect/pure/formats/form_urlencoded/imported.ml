@@ -46,7 +46,8 @@ let round_trip string =
 
 (* Origin: WPT url/urlencoded-parser.any.js, L2-L11. WHATWG decodes to UTF-16
    and replaces invalid UTF-8 with U+FFFD; Dream works on bytes and keeps
-   them. *)
+   them. No action: replacing bytes would lose data an application may need,
+   and an application that wants U+FFFD can replace them itself. *)
 let%expect_test _ =
   decode "test";
   decode "\xef\xbb\xbftest=\xef\xbb\xbf";
@@ -182,7 +183,9 @@ let%expect_test _ =
     "%81=%A9"                -> ["\129"="\169"] |}]
 
 (* Origin: Go net/url url_test.go, parseTests (L1521-L1600). Since Go 1.17,
-   ParseQuery reports an error for a ';' and drops the pair containing it. *)
+   ParseQuery reports an error for a ';' and drops the pair containing it. No
+   action: Dream keeps ';' as a literal, as WHATWG, Node and CPython (since
+   3.9.2) do. *)
 let%expect_test _ =
   decode "a=1";
   decode "a=1&b=2";
@@ -385,7 +388,9 @@ let%expect_test _ =
     "a%00b=c"
     "a=b%F0%9F%92%A9c"
     "a%F0%9F%92%A9b=c" |}]
-  (* Upstream (WHATWG): "a=b+c", "a+b=c", and "b=%3D". *)
+  (* Upstream (WHATWG): "a=b+c", "a+b=c", and "b=%3D". No action: decoders
+     read %20 and '+' alike, and a raw '=' in a value is unambiguous, since a
+     pair is split at its first '='. *)
 
 (* Origin: WPT url/urlsearchparams-stringifier.any.js, "URLSearchParams
    connected to URL" (L125) and "must not do newline normalization"
@@ -415,7 +420,9 @@ let%expect_test _ =
     "q=%20?%26=%23%2B%25!%3C%3E%23%22%7B%7D%7C%5C%5E%5B%5D%60%E2%98%BA%09:/@$'()*%2C%3B"
     "q=dogs&q=%26&q=7" |}]
   (* Upstream (Go QueryEscape): "one+two", and for the long value
-     "+%3F%26%3D%23%2B%25%21%3C%3E%23%22%7B%7D%7C%5C%5E%5B%5D%60%E2%98%BA%09%3A%2F%40%24%27%28%29%2A%2C%3B". *)
+     "+%3F%26%3D%23%2B%25%21%3C%3E%23%22%7B%7D%7C%5C%5E%5B%5D%60%E2%98%BA%09%3A%2F%40%24%27%28%29%2A%2C%3B".
+     No action: decoders read %20 and '+' alike, and the characters Go escapes
+     and Dream doesn't may appear raw in a query. *)
 
 (* Origin: WPT url/urlsearchparams-stringifier.any.js, "URLSearchParams.toString"
    (L104-L122): parse, then serialize. *)
@@ -433,7 +440,10 @@ let%expect_test _ =
     "b=%2sf%2a"              -> "b=%252sf*"
     "b=%2%2af%2a"            -> "b=%252*f*"
     "b=%%2a"                 -> "b=%25*" |}]
-  (* Upstream (WHATWG): "a=b&c=d&e=" and "a+=+b+&a=b&c=d+". *)
+  (* Upstream (WHATWG): "a=b&c=d&e=" and "a+=+b+&a=b&c=d+". The extra pairs
+     in the first come from empty pieces, a decision recorded at
+     from_form_urlencoded in src/pure/formats.ml. %20 in place of '+' needs no
+     action: decoders read both alike. *)
 
 (* Origin: WPT url/urlsearchparams-stringifier.any.js, L83 (the URLSearchParams
    is built from "id=0&value=%"). *)
