@@ -166,19 +166,16 @@ let from_http_date string =
 (* Divergence (test/expect/pure/formats/cookie/imported.ml, Go
    writeSetCookiesTests and TestCookieSanitize*, jshttp/cookie invalid name,
    value, domain and path lists): names, values, Domain and Path are emitted
-   verbatim, including ';', spaces, CR, LF and NUL, so "Domain=example.com;
-   Path=/" or "Path=/; Path=/sensitive-data" inject attributes. Encrypted
-   cookies are base64url and unaffected; names, Domain, Path and values passed
-   to [Dream.set_cookie ~encrypt:false] are not.
+   verbatim, including ';' and spaces, so "Domain=example.com; Path=/" or
+   "Path=/; Path=/sensitive-data" inject attributes. Encrypted cookies are
+   base64url and unaffected; names, Domain, Path and values passed to
+   [Dream.set_cookie ~encrypt:false] are not.
 
    Decision needed: raise Invalid_argument (jshttp), sanitize (Go removes
    invalid bytes and quotes values containing spaces or commas), or drop the
-   attribute or cookie (Go, for invalid domains and names).
-
-   Open question that sets the urgency: do httpun and h2 reject or escape CR/LF
-   in header values? If not, this is header injection. A server-level or cram
-   test calling [Dream.set_cookie ~encrypt:false] with "\r\nX: y" in the value
-   would answer it. *)
+   attribute or cookie (Go, for invalid domains and names). Part of this was
+   reported privately as a security issue; the decision waits for that
+   report. *)
 (* 1601-01-01T00:00:00Z. *)
 let first_cookie_date = -11644473600.
 
