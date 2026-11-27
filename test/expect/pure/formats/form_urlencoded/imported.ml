@@ -440,3 +440,19 @@ let%expect_test _ =
 let%expect_test _ =
   round_trip "id=0&value=%";
   [%expect {| "id=0&value=%"           -> "id=0&value=%25" |}]
+
+(* Origin: added for Dream (mirage/ocaml-uri issue #185). Decoding must leave
+   its argument unchanged; with OCaml >= 5.5, Uri replaced '+' in place when
+   the whole string is a single name. Dream.form decodes the cached body, which
+   Dream.body returns afterwards. *)
+let%expect_test _ =
+  ["a+b"; "+"; "a+b=c+d"; "a+b&c"]
+  |> List.iter (fun input ->
+    let string = Bytes.to_string (Bytes.of_string input) in
+    ignore (Dream.from_form_urlencoded string);
+    Printf.printf "%-10S -> %S\n" input string);
+  [%expect {|
+    "a+b"      -> "a+b"
+    "+"        -> "+"
+    "a+b=c+d"  -> "a+b=c+d"
+    "a+b&c"    -> "a+b&c" |}]
