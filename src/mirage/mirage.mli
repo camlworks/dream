@@ -1512,13 +1512,21 @@ module Make
       [w-one-binary]} for a loader that serves files from memory instead.
 
       If the loader's response carries an [ETag:] or [Last-Modified:] header,
-      {!Dream.static} performs conditional-request handling: a request with a
-      matching [If-None-Match:] (or, in its absence, a matching
-      [If-Modified-Since:]) is answered with [304 Not Modified] and no body.
-      [If-None-Match:] is compared weakly and takes precedence over
-      [If-Modified-Since:], per
-      {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. A
-      loader opts into this handling simply by setting those headers.
+      {!Dream.static} evaluates the request's preconditions in the order of
+      {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.2.2} RFC 9110
+      §13.2.2}:
+
+      - A failing [If-Match:] (compared strongly), or, in its absence, a
+        failing [If-Unmodified-Since:], gives [412 Precondition Failed].
+      - A matching [If-None-Match:] (compared weakly), or, in its absence, an
+        [If-Modified-Since:] date no earlier than [Last-Modified:], gives
+        [304 Not Modified] with no body.
+
+      Dates may be in any of the three HTTP-date formats. A precondition whose
+      validator the response lacks, or whose date does not parse, is ignored,
+      except that an [If-Match:] listing entity-tags fails without a strong
+      [ETag:]. A loader opts into this handling simply by setting those
+      headers.
 
       {!Dream.static} accepts [`GET] and [`HEAD] requests; other methods get
       [404 Not Found]. The loader runs for both. For [`HEAD], its response body

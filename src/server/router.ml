@@ -26,6 +26,19 @@ type token =
   | Param of string
   | Wildcard of string
 
+(* Decision needed (test/expect/server/router_imported.ml, httprouter
+   TestEmptyWildcardName and TestTreeDoubleWildcard): odd patterns are
+   accepted. "/:foo:bar" makes a parameter named
+   "foo:bar"; "/user:", "/user:/" and "/src/*" become literals, since [parse]
+   only treats ':' and '*' specially at the start of a segment; "/:foo*bar" is
+   accepted. Rejecting them catches mistakes early, but an app whose routes
+   load today would fail at startup.
+
+   Decision needed (Go TestEscapedPathsAndPatterns): literals are kept raw,
+   while request segments are percent-decoded by [Formats.from_path]. So a
+   "/%62" route matches "/%2562" but neither "/b" nor "/%62", and a route
+   containing "%2F" can never match. Go 1.22 decodes patterns; doing so here
+   would change which requests existing routes containing '%' match. *)
 let rec validate route = function
   | (Param "")::_ ->
     Printf.ksprintf failwith "Empty path parameter name in '%s'" route
@@ -337,6 +350,10 @@ let router routes =
     in
 
     let found handler request = handler request in
+    (* Decision needed (test/expect/server/router_imported.ml, Go TestStatus): a
+       path that matches only routes for other methods gets 404. Go, httprouter,
+       Starlette and actix answer 405 with an Allow header. More accurate, but a
+       visible change; it could be the default or opt-in. *)
     let not_found () = Helpers.not_found request in
 
     (* A HEAD request is routed like a GET request, as in RFC 9110 Section 9.3.2

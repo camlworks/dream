@@ -29,6 +29,10 @@ let from_base64url string =
 
 
 
+(* Open question (test/expect/pure/formats/cookie/imported.ml): values wrapped
+   in DQUOTEs keep their quotes; Go, Werkzeug and CPython strip them, and RFC
+   6265 allows the quoted form of cookie-value. Do clients send quoted values
+   in practice? Dream's own encrypted cookies are unaffected either way. *)
 let from_cookie s =
   let pairs =
     s
@@ -91,6 +95,71 @@ let to_http_date seconds =
 
 
 
+(* The three HTTP-date formats (RFC 9110 section 5.6.7): IMF-fixdate
+   ("Sun, 06 Nov 1994 08:49:37 GMT"), the obsolete RFC 850 format
+   ("Sunday, 06-Nov-94 08:49:37 GMT") and asctime ("Sun Nov  6 08:49:37 1994").
+   Returns the time in seconds since the epoch. Names are case-sensitive, as in
+   the grammar, and the day name is not checked against the date. A two-digit
+   RFC 850 year from 69 is read as 19xx, and below 69 as 20xx, as Go does. *)
+let from_http_date string =
+  let month = function
+    | "Jan" -> Some 1 | "Feb" -> Some 2 | "Mar" -> Some 3 | "Apr" -> Some 4
+    | "May" -> Some 5 | "Jun" -> Some 6 | "Jul" -> Some 7 | "Aug" -> Some 8
+    | "Sep" -> Some 9 | "Oct" -> Some 10 | "Nov" -> Some 11 | "Dec" -> Some 12
+    | _ -> None
+  in
+  let make year month_name day hours minutes seconds =
+    match month month_name with
+    | None -> None
+    | Some month ->
+      if hours > 23 || minutes > 59 || seconds > 60 then
+        None
+      else
+        Ptime.of_date_time
+          ((year, month, day), ((hours, minutes, seconds), 0))
+        |> Option.map Ptime.to_float_s
+  in
+  let attempt format =
+    try format () with Scanf.Scan_failure _ | Failure _ | End_of_file -> None
+  in
+  let imf_fixdate () =
+    Scanf.sscanf string "%3s, %2u %3s %4u %2u:%2u:%2u GMT%!"
+      (fun _ day month year hours minutes seconds ->
+        make year month day hours minutes seconds)
+  in
+  let rfc850 () =
+    Scanf.sscanf string "%[A-Za-z], %2u-%3s-%2u %2u:%2u:%2u GMT%!"
+      (fun _ day month year hours minutes seconds ->
+        let year = if year >= 69 then 1900 + year else 2000 + year in
+        make year month day hours minutes seconds)
+  in
+  let asctime () =
+    Scanf.sscanf string "%3s %3s %2u %2u:%2u:%2u %4u%!"
+      (fun _ month day hours minutes seconds year ->
+        make year month day hours minutes seconds)
+  in
+  match attempt imf_fixdate with
+  | Some _ as time -> time
+  | None ->
+    match attempt rfc850 with
+    | Some _ as time -> time
+    | None -> attempt asctime
+
+
+
+(* Divergence (test/expect/pure/formats/cookie/imported.ml, Go
+   writeSetCookiesTests and TestCookieSanitize*, jshttp/cookie invalid name,
+   value, domain and path lists): names, values, Domain and Path are emitted
+   verbatim, including ';' and spaces, so "Domain=example.com; Path=/" or
+   "Path=/; Path=/sensitive-data" inject attributes. Encrypted cookies are
+   base64url and unaffected; names, Domain, Path and values passed to
+   [Dream.set_cookie ~encrypt:false] are not.
+
+   Decision needed: raise Invalid_argument (jshttp), sanitize (Go removes
+   invalid bytes and quotes values containing spaces or commas), or drop the
+   attribute or cookie (Go, for invalid domains and names). Part of this was
+   reported privately as a security issue; the decision waits for that
+   report. *)
 let to_set_cookie
     ?expires ?max_age ?domain ?path ?secure ?http_only ?same_site name value =
 
@@ -166,6 +235,13 @@ let to_form_urlencoded dictionary =
   |> List.map (fun (name, value) -> name, [value])
   |> Uri.encoded_of_query
 
+(* Decision needed (test/expect/pure/formats/form_urlencoded/imported.ml):
+   "&" decodes to two ("", "") pairs, and "a=b&c=d&" gains a trailing one.
+   WHATWG (web-platform-tests), CPython and Node all skip empty pieces. This
+   reaches [Dream.form] and [Dream.all_queries]. [Uri.query_of_encoded] also
+   splits values on ',', hence the rejoin below. Skipping empty pieces is the
+   better behaviour, but changes the fields existing apps receive for such
+   input. *)
 let from_form_urlencoded string =
   if string = "" then
     []
@@ -197,6 +273,15 @@ let split_origin_form string =
       String.sub string (i + 1) (String.length string - i - 1)
     | None -> string, ""
   in
+  (* Decision needed (test/expect/server/router_imported.ml,
+     test/expect/pure/formats/target/imported.ml): decoding turns "%2e%2e" into
+     "..", and [from_path] below drops empty segments. So "/a/../c" binds a
+     route parameter to "..", "/static/%2e%2e/etc/passwd" reaches a "**"
+     handler as "/../etc/passwd", and "/x//z" matches "/x/z" with no redirect.
+     [Dream.static] rejects such paths itself; other "**" handlers do not.
+     Options: redirect to the cleaned path (Go), answer 400 (Plug, send,
+     actix), or leave it to handlers and document it. Interacts with
+     [Dream.trailing_slash]. *)
   let path =
     String.split_on_char '/' path
     |> List.map (fun segment ->

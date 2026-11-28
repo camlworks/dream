@@ -25,6 +25,7 @@ val text_html : string
 val application_json : string
 
 val to_http_date : float -> string option
+val from_http_date : string -> float option
 
 val to_set_cookie :
   ?expires:float ->
