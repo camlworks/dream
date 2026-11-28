@@ -1312,3 +1312,27 @@ let%expect_test _ =
   [%expect {|
     Response: 200 OK
     foo |}]
+
+
+
+(* Duplicate parameter names. *)
+
+(* Origin: Go src/net/http/pattern_test.go, L150, at
+   https://github.com/golang/go/blob/5e9534e62225b2f58f3b4b3d410e63f29f6566f5/src/net/http/pattern_test.go#L150:
+   duplicate wildcard names are rejected ("/a/{x}/b/{x...}"). *)
+let%expect_test _ =
+  show_tokens "/a/:x/b/:x";
+  begin
+    try
+      show "/a/1/b/2" @@ Dream.router [
+        Dream.get "/a/:x/b/:x" (fun request ->
+          Dream.respond (Dream.param request "x"));
+      ]
+    with Failure message -> print_endline message
+  end;
+  [%expect {|
+    ["a"; :"x"; "b"; :"x"]
+    Response: 200 OK
+    2 |}]
+  (* Expected: the pattern is rejected at registration. It is accepted, and
+     Dream.param returns only the last value. *)
