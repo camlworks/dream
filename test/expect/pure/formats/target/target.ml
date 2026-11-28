@@ -68,21 +68,16 @@ let%expect_test _ =
   decode "http://foo.com";
   decode "http://example.com";
   [%expect {|
-    "" ""
-    "" "" |}]
-  (* Expected: an absolute-form target with an empty path has the path "/"
-     (RFC 9112 section 3.2.2), as Go's request URI. *)
+    "/" ""
+    "/" "" |}]
 
 (* Origin: not from an upstream suite; added for Dream. *)
 let%expect_test _ =
   decode "http://h?x";
-  [%expect {| "" "x" |}]
-  (* Expected: the path "/". *)
+  [%expect {| "/" "x" |}]
 
 (* Origin: RFC 9112 section 3.2.3, the example of the authority-form, at
    https://www.rfc-editor.org/rfc/rfc9112#section-3.2.3 *)
 let%expect_test _ =
   decode "www.example.com:80";
-  [%expect {| "80" "" |}]
-  (* Expected: the empty path. The authority-form, used only with CONNECT, is
-     "host:port" and has no path; "80" is the port. *)
+  [%expect {| "" "" |}]
