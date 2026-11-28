@@ -147,3 +147,46 @@ let%expect_test _ =
     "a=b; SameSite=Strict"
     "a=b; SameSite=Lax"
     "a=b; SameSite=None" |}]
+
+
+
+(* A cookie value may contain '='. *)
+
+(* Origin: CPython Lib/test/test_http_cookies.py, test_basic (L26), at
+   https://github.com/python/cpython/blob/59829477e0b03008c23e6901d655a1e9b0bb2c62/Lib/test/test_http_cookies.py#L26
+   and jshttp/cookie src/parse-cookie.spec.ts, "should URL-decode values"
+   (L41), at
+   https://github.com/jshttp/cookie/blob/a437ef03993af559900010f62c294647589c29db/src/parse-cookie.spec.ts#L41 *)
+let%expect_test _ =
+  parse "keebler=E=mc2";
+  parse "foo=\"bar=123456789&name=Magic+Mouse\"";
+  [%expect {|
+    ["keebler"="E=mc2"]
+    ["foo"="\"bar=123456789&name=Magic+Mouse\""] |}]
+
+(* Origin: not from an upstream suite; added for Dream. Both sources above
+   split each pair at its first '=' only. *)
+let%expect_test _ =
+  parse "tok=YWJj==";
+  parse "a=b=c; d=e";
+  Dream.to_set_cookie "key" "xxx=" |> parse;
+  [%expect {|
+    ["tok"="YWJj=="]
+    ["d"="e"; "a"="b=c"]
+    ["key"="xxx="] |}]
+
+(* Origin: not from an upstream suite; added for Dream. Werkzeug drops
+   "==__Host-eq=bad" as a guard against cookie prefix spoofing
+   (test_parse_cookie, L380, at
+   https://github.com/pallets/werkzeug/blob/0f43c6ebd426039e4b99ec22535c2c8a2ec2f69f/tests/test_http.py#L380).
+   Whatever the split, such a piece must not yield a cookie named
+   "__Host-eq". *)
+let%expect_test _ =
+  parse "==__Host-eq=bad";
+  parse "=__Host-eq=bad";
+  parse "==__Host-eq=bad; __Host-eq=good";
+  [%expect {|
+    [""="=__Host-eq=bad"]
+    [""="__Host-eq=bad"]
+    ["__Host-eq"="good"; ""="=__Host-eq=bad"] |}]
+  (* A piece with a leading '=' has the empty name, never "__Host-eq". *)

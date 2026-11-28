@@ -29,16 +29,18 @@ let from_base64url string =
 
 
 
+(* Each pair is split at its first '=', so a value may contain '='
+   ("keebler=E=mc2"). A piece with no '=' is dropped. *)
 let from_cookie s =
-  let pairs =
-    s
-    |> String.split_on_char ';'
-    |> List.map (String.split_on_char '=')
-  in
-
-  pairs |> List.fold_left (fun pairs -> function
-    | [name; value] -> (String.trim name, String.trim value)::pairs
-    | _ -> pairs) []
+  s
+  |> String.split_on_char ';'
+  |> List.fold_left (fun pairs pair ->
+    match String.index_opt pair '=' with
+    | None -> pairs
+    | Some i ->
+      let name = String.sub pair 0 i in
+      let value = String.sub pair (i + 1) (String.length pair - i - 1) in
+      (String.trim name, String.trim value)::pairs) []
 (* Note: found ocaml-cookie and http-cookie libraries, but they appear to have
    equivalent code for parsing Cookie: headers, so there is no point in using
    them yet, especially as they have stringent OCaml version constraints for
