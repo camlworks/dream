@@ -41,12 +41,21 @@ let if_modified_since request last_modified =
   | None -> false
   | Some value -> String.trim value = last_modified
 
+(* An [If-None-Match] header with no entity-tags, such as an empty one, counts
+   as absent, as in Go and Starlette. *)
+let has_if_none_match request =
+  match Message.header request "If-None-Match" with
+  | None -> false
+  | Some value ->
+    String.split_on_char ',' value
+    |> List.exists (fun tag -> String.trim tag <> "")
+
 (* Precedence follows the request, not the response: [If-Modified-Since] is
    consulted only when the request has no [If-None-Match] (RFC 9110 §13.1.3), so
    dispatch on which request header is present rather than on which validator the
    response happens to carry. *)
 let is_fresh request response =
-  if Message.has_header request "If-None-Match" then
+  if has_if_none_match request then
     match Message.header response "ETag" with
     | Some etag -> if_none_match request etag
     | None -> false

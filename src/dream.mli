@@ -1621,9 +1621,10 @@ val static :
     matching [If-Modified-Since:]) is answered with [304 Not Modified] and no
     body. [If-None-Match:] is compared weakly and takes precedence over
     [If-Modified-Since:], per
-    {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. A
-    custom loader can opt into the same handling simply by setting those
-    headers.
+    {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. An
+    [If-None-Match:] that lists no entity-tags, such as an empty one, counts as
+    absent. A custom loader can opt into the same handling simply by setting
+    those headers.
 
     {!Dream.static} accepts [`GET] and [`HEAD] requests; other methods get [404
     Not Found]. The loader runs for both. For [`HEAD], its response body is
