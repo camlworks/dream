@@ -73,3 +73,100 @@ let%expect_test _ =
     ETag: "abc"
     X-Custom: dropped on 304
     body closed: false |}]
+
+
+
+(* Conditional requests against a loader that answers with fixed validators. *)
+
+let validator_loader headers _local_root _path _request =
+  Message.response
+    ~headers:(("Content-Type", "text/plain")::headers)
+    (Stream.string "body") Stream.null
+  |> Lwt.return
+
+let conditional ?(etag = Some "\"foo\"")
+    ?(last_modified = Some "Sat, 01 Jan 2000 00:00:00 GMT") headers =
+  let validators =
+    (match etag with None -> [] | Some e -> ["ETag", e]) @
+    (match last_modified with None -> [] | Some l -> ["Last-Modified", l])
+  in
+  let app =
+    Dream.router [
+      Dream.get "/static/**"
+        (Dream.static ~loader:(validator_loader validators) "www");
+    ]
+  in
+  let response =
+    Dream.test app (Dream.request ~headers ~target:"/static/x" "") in
+  let shown =
+    headers
+    |> List.map (fun (name, value) -> Printf.sprintf "%s: %S" name value)
+    |> String.concat ", "
+  in
+  Printf.printf "%i  %s\n" (Dream.status_to_int (Dream.status response)) shown
+
+let lm0 = Some "Sat, 01 Jan 2000 00:00:00 GMT"
+let lm1 = Some "Sat, 01 Jan 2000 01:00:00 GMT"
+
+(* Origin: jshttp/fresh test/fresh.js, "when requested with If-Modified-Since"
+   (L96-L135), at
+   https://github.com/jshttp/fresh/blob/ee7367318cf86a77e8259c63ee014ff0f8853437/test/fresh.js#L96-L135 *)
+let%expect_test _ =
+  conditional ~etag:None ~last_modified:lm1
+    ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Sat, 01 Jan 2000 01:00:00 GMT"];
+  conditional ~etag:None ~last_modified:None
+    ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
+  conditional ~etag:None ~last_modified:lm0 ["If-Modified-Since", "foo"];
+  conditional ~etag:None ~last_modified:(Some "foo")
+    ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
+  [%expect {|
+    200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
+    304  If-Modified-Since: "Sat, 01 Jan 2000 01:00:00 GMT"
+    200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
+    200  If-Modified-Since: "foo"
+    200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
+(* Origin: not from an upstream suite; added for Dream. An exact match, two
+   identical strings that are not dates, and the same date in the RFC 850 and
+   asctime formats and in lower case. Go's ParseTime (in its code, not its
+   tests) accepts all three formats. *)
+let%expect_test _ =
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
+  conditional ~etag:None ~last_modified:(Some "foo")
+    ["If-Modified-Since", "foo"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Saturday, 01-Jan-00 00:00:00 GMT"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Sat Jan  1 00:00:00 2000"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "sat, 01 jan 2000 00:00:00 GMT"];
+  [%expect {|
+    304  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
+    200  If-Modified-Since: "foo"
+    304  If-Modified-Since: "Saturday, 01-Jan-00 00:00:00 GMT"
+    304  If-Modified-Since: "Sat Jan  1 00:00:00 2000"
+    200  If-Modified-Since: "sat, 01 jan 2000 00:00:00 GMT" |}]
+(* Origin: not from an upstream suite; added for Dream. Dates that do not
+   parse, so that If-Modified-Since is ignored: an impossible day, trailing
+   characters, and a missing "GMT". Then the RFC 850 century rule: "99" is
+   1999, earlier than Last-Modified, so the resource was modified, and "00" is
+   2000. *)
+let%expect_test _ =
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Wed, 30 Feb 2000 00:00:00 GMT"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT x"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Friday, 31-Dec-99 23:59:59 GMT"];
+  conditional ~etag:None ~last_modified:lm0
+    ["If-Modified-Since", "Saturday, 01-Jan-00 00:00:01 GMT"];
+  [%expect {|
+    200  If-Modified-Since: "Wed, 30 Feb 2000 00:00:00 GMT"
+    200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT x"
+    200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00"
+    200  If-Modified-Since: "Friday, 31-Dec-99 23:59:59 GMT"
+    304  If-Modified-Since: "Saturday, 01-Jan-00 00:00:01 GMT" |}]

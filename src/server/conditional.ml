@@ -5,6 +5,7 @@
 
 
 
+module Formats = Dream_pure.Formats
 module Message = Dream_pure.Message
 module Stream = Dream_pure.Stream
 
@@ -32,14 +33,19 @@ let if_none_match request etag =
     value = "*" || List.exists matches (String.split_on_char ',' value)
 
 (* [If-Modified-Since] is only consulted when there is no [If-None-Match]
-   (RFC 9110 §13.1.3). We generate [Last-Modified] ourselves, so a conservative
-   exact-match against the value we would send covers the usual case where the
-   client echoes it back; a mismatch simply falls through to a normal [200],
-   which is always safe. *)
+   (RFC 9110 §13.1.3). The representation is unmodified if [Last-Modified] is no
+   later than the date in the header. Both may be in any of the three HTTP-date
+   formats; if either does not parse, the header is ignored. *)
 let if_modified_since request last_modified =
   match Message.header request "If-Modified-Since" with
   | None -> false
-  | Some value -> String.trim value = last_modified
+  | Some value ->
+    match
+      Formats.from_http_date (String.trim value),
+      Formats.from_http_date (String.trim last_modified)
+    with
+    | Some date, Some last_modified -> last_modified <= date
+    | _ -> false
 
 (* Precedence follows the request, not the response: [If-Modified-Since] is
    consulted only when the request has no [If-None-Match] (RFC 9110 §13.1.3), so
