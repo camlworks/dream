@@ -73,3 +73,65 @@ let%expect_test _ =
     ETag: "abc"
     X-Custom: dropped on 304
     body closed: false |}]
+
+
+
+(* Conditional requests against a loader that answers with fixed validators. *)
+
+let validator_loader headers _local_root _path _request =
+  Message.response
+    ~headers:(("Content-Type", "text/plain")::headers)
+    (Stream.string "body") Stream.null
+  |> Lwt.return
+
+let conditional ?(etag = Some "\"foo\"")
+    ?(last_modified = Some "Sat, 01 Jan 2000 00:00:00 GMT") headers =
+  let validators =
+    (match etag with None -> [] | Some e -> ["ETag", e]) @
+    (match last_modified with None -> [] | Some l -> ["Last-Modified", l])
+  in
+  let app =
+    Dream.router [
+      Dream.get "/static/**"
+        (Dream.static ~loader:(validator_loader validators) "www");
+    ]
+  in
+  let response =
+    Dream.test app (Dream.request ~headers ~target:"/static/x" "") in
+  let shown =
+    headers
+    |> List.map (fun (name, value) -> Printf.sprintf "%s: %S" name value)
+    |> String.concat ", "
+  in
+  Printf.printf "%i  %s\n" (Dream.status_to_int (Dream.status response)) shown
+
+let lm0 = Some "Sat, 01 Jan 2000 00:00:00 GMT"
+let lm1 = Some "Sat, 01 Jan 2000 01:00:00 GMT"
+
+(* Origin: not from an upstream suite; added for Dream. A quoted ETag
+   containing a comma, which RFC 9110 §8.8.3 allows and only a custom loader
+   can produce, alone and in a list. Then entity-tags that are not quoted
+   strings: Go's scanETag (in fs.go, at
+   https://github.com/golang/go/blob/5e9534e62225b2f58f3b4b3d410e63f29f6566f5/src/net/http/fs.go,
+   not in its tests) does not parse them, so they never match. *)
+let%expect_test _ =
+  conditional ~etag:(Some "\"a,b\"") ["If-None-Match", "\"a,b\""];
+  conditional ~etag:(Some "\"a,b\"") ["If-None-Match", "\"x\", \"a,b\""];
+  conditional ~etag:(Some "\"a,b\"") ["If-None-Match", "\"a"];
+  conditional ["If-None-Match", "w/\"foo\""];
+  conditional ["If-None-Match", "foo"];
+  conditional ~etag:(Some "foo") ["If-None-Match", "foo"];
+  conditional ["If-None-Match", "W/"];
+  conditional ["If-None-Match", "W/\"truc"];
+  [%expect {|
+    200  If-None-Match: "\"a,b\""
+    200  If-None-Match: "\"x\", \"a,b\""
+    200  If-None-Match: "\"a"
+    200  If-None-Match: "w/\"foo\""
+    200  If-None-Match: "foo"
+    304  If-None-Match: "foo"
+    200  If-None-Match: "W/"
+    200  If-None-Match: "W/\"truc" |}]
+  (* Expected: 304 for the first two and 200 for all the others, as in Go. The
+     list is split on every ',', so "\"a,b\"" never matches, and an unquoted
+     "foo" matches. *)
