@@ -31,9 +31,9 @@ let%expect_test _ =
     ["a"="b"]
     ["a"="b"]
     ["a"="\"b\""]
-    ["c"="d"; "a"="b"]
-    ["c"="d"; "a"="b"]
-    ["c"="d"; "a"="b"]
+    ["a"="b"; "c"="d"]
+    ["a"="b"; "c"="d"]
+    ["a"="b"; "c"="d"]
     ["a"="b"]
     ["c"="d"] |}]
 
@@ -147,3 +147,36 @@ let%expect_test _ =
     "a=b; SameSite=Strict"
     "a=b; SameSite=Lax"
     "a=b; SameSite=None" |}]
+
+
+
+(* Cookies are returned in header order, so Dream.cookie returns the first of
+   duplicate names, as its documentation says. *)
+
+(* What Dream.cookie returns for [name] when the request carries [header]. *)
+let lookup header name =
+  let request = Dream.request ~headers:["Cookie", header] "" in
+  match Dream.cookie ~decrypt:false request name with
+  | None -> print_endline "None"
+  | Some value -> Printf.printf "Some %S\n" value
+
+(* Origin: jshttp/cookie src/parse-cookie.spec.ts, "should ignore duplicate
+   cookies" (L77-L90), at
+   https://github.com/jshttp/cookie/blob/a437ef03993af559900010f62c294647589c29db/src/parse-cookie.spec.ts#L77 *)
+let%expect_test _ =
+  lookup "foo=%1;bar=bar;foo=boo" "foo";
+  lookup "foo=false;bar=bar;foo=true" "foo";
+  lookup "foo=;bar=bar;foo=boo" "foo";
+  [%expect {|
+    Some "%1"
+    Some "false"
+    Some "" |}]
+
+(* Origin: Werkzeug tests/test_http.py, test_bad_cookies (L410), at
+   https://github.com/pallets/werkzeug/blob/0f43c6ebd426039e4b99ec22535c2c8a2ec2f69f/tests/test_http.py#L410 *)
+let%expect_test _ =
+  parse "first=IamTheFirst ; a=1; oops ; a=2 ;second = andMeTwo;";
+  parse "spam=ham; duck=mallard; ; ";
+  [%expect {|
+    ["first"="IamTheFirst"; "a"="1"; "a"="2"; "second"="andMeTwo"]
+    ["spam"="ham"; "duck"="mallard"] |}]

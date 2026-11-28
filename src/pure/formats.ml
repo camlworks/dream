@@ -29,6 +29,8 @@ let from_base64url string =
 
 
 
+(* The pairs are returned in header order, so [Dream.cookie] returns the first
+   of duplicate names. *)
 let from_cookie s =
   let pairs =
     s
@@ -39,6 +41,7 @@ let from_cookie s =
   pairs |> List.fold_left (fun pairs -> function
     | [name; value] -> (String.trim name, String.trim value)::pairs
     | _ -> pairs) []
+  |> List.rev
 (* Note: found ocaml-cookie and http-cookie libraries, but they appear to have
    equivalent code for parsing Cookie: headers, so there is no point in using
    them yet, especially as they have stringent OCaml version constraints for
