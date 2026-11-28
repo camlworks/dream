@@ -675,7 +675,7 @@ val cookie :
     applicable. *)
 
 val all_cookies : request -> (string * string) list
-(** All cookies, with raw names and values. *)
+(** All cookies, with raw names and values, in header order. *)
 
 
 
@@ -2439,7 +2439,7 @@ val from_form_urlencoded : string -> (string * string) list
     §8.2.1}. Reverses the percent-encoding of names and values. *)
 
 val from_cookie : string -> (string * string) list
-(** Converts a [Cookie:] header value to key-value pairs. See
+(** Converts a [Cookie:] header value to key-value pairs, in header order. See
     {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.2.1}
     RFC 6265bis §4.2.1}. Does not apply any decoding to names and values. *)
 

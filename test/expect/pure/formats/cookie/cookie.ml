@@ -31,9 +31,9 @@ let%expect_test _ =
     ["a"="b"]
     ["a"="b"]
     ["a"="\"b\""]
-    ["c"="d"; "a"="b"]
-    ["c"="d"; "a"="b"]
-    ["c"="d"; "a"="b"]
+    ["a"="b"; "c"="d"]
+    ["a"="b"; "c"="d"]
+    ["a"="b"; "c"="d"]
     ["a"="b"]
     ["c"="d"] |}]
 
@@ -168,10 +168,9 @@ let%expect_test _ =
   lookup "foo=false;bar=bar;foo=true" "foo";
   lookup "foo=;bar=bar;foo=boo" "foo";
   [%expect {|
-    Some "boo"
-    Some "true"
-    Some "boo" |}]
-  (* Expected: the first occurrence wins: "%1", "false", "". *)
+    Some "%1"
+    Some "false"
+    Some "" |}]
 
 (* Origin: Werkzeug tests/test_http.py, test_bad_cookies (L410), at
    https://github.com/pallets/werkzeug/blob/0f43c6ebd426039e4b99ec22535c2c8a2ec2f69f/tests/test_http.py#L410 *)
@@ -179,6 +178,5 @@ let%expect_test _ =
   parse "first=IamTheFirst ; a=1; oops ; a=2 ;second = andMeTwo;";
   parse "spam=ham; duck=mallard; ; ";
   [%expect {|
-    ["second"="andMeTwo"; "a"="2"; "a"="1"; "first"="IamTheFirst"]
-    ["duck"="mallard"; "spam"="ham"] |}]
-  (* Expected: the pairs in header order. *)
+    ["first"="IamTheFirst"; "a"="1"; "a"="2"; "second"="andMeTwo"]
+    ["spam"="ham"; "duck"="mallard"] |}]
