@@ -23,13 +23,53 @@ let strip_weak tag =
   else
     tag
 
+(* An entity-tag list (RFC 9110 §8.8.3): entity-tags, each an optional weakness
+   prefix [W/] and a quoted opaque tag, separated by commas and optional
+   whitespace. Opaque tags may contain commas. Returns the opaque tags with
+   their quotes, or [None] if the list is malformed. *)
+let parse_entity_tags value =
+  let length = String.length value in
+  let is_separator c = c = ' ' || c = '\t' || c = ',' in
+  let rec skip_separators index =
+    if index < length && is_separator value.[index] then
+      skip_separators (index + 1)
+    else
+      index
+  in
+  let rec parse tags index =
+    let index = skip_separators index in
+    if index >= length then
+      Some (List.rev tags)
+    else
+      let index =
+        if index + 1 < length && value.[index] = 'W' && value.[index + 1] = '/'
+        then index + 2
+        else index
+      in
+      if index >= length || value.[index] <> '"' then
+        None
+      else
+        match String.index_from_opt value (index + 1) '"' with
+        | None -> None
+        | Some closing ->
+          let next = closing + 1 in
+          if next < length && not (is_separator value.[next]) then
+            None
+          else
+            parse (String.sub value index (next - index)::tags) next
+  in
+  parse [] 0
+
 let if_none_match request etag =
-  let matches tag = strip_weak (String.trim tag) = strip_weak etag in
+  let etag = strip_weak (String.trim etag) in
   match Message.header request "If-None-Match" with
   | None -> false
   | Some value ->
     let value = String.trim value in
-    value = "*" || List.exists matches (String.split_on_char ',' value)
+    value = "*" ||
+    match parse_entity_tags value with
+    | Some tags -> List.mem etag tags
+    | None -> false
 
 (* [If-Modified-Since] is only consulted when there is no [If-None-Match]
    (RFC 9110 §13.1.3). We generate [Last-Modified] ourselves, so a conservative

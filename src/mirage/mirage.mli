@@ -1517,8 +1517,10 @@ module Make
       [If-Modified-Since:]) is answered with [304 Not Modified] and no body.
       [If-None-Match:] is compared weakly and takes precedence over
       [If-Modified-Since:], per
-      {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}. A
-      loader opts into this handling simply by setting those headers.
+      {{:https://www.rfc-editor.org/rfc/rfc9110#section-13.1} RFC 9110 §13.1}.
+      Entity-tags are quoted strings, which may contain commas; an
+      [If-None-Match:] that is not a list of them matches nothing. A loader
+      opts into this handling simply by setting those headers.
 
       {!Dream.static} accepts [`GET] and [`HEAD] requests; other methods get
       [404 Not Found]. The loader runs for both. For [`HEAD], its response body
