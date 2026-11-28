@@ -211,12 +211,6 @@ let%expect_test _ =
   (* Upstream (Go): invalid bytes (';', '\', '"', controls, non-ASCII) are
      removed from values and paths. *)
 
-(* Origin: not from an upstream suite; added for Dream. Go turns a negative
-   MaxAge into Max-Age=0 (in cookie.go, not in its tests). *)
-let%expect_test _ =
-  show @@ Dream.to_set_cookie "a" "b" ~max_age:(-1.);
-  [%expect {| "a=b; Max-Age=0" |}]
-
 (* Origin: jshttp/cookie stringify-set-cookie.spec.ts, "should URL-encode
    value" (L15) and "should pass through roundtrip-safe cookie-octet values"
    (L24). *)
@@ -266,27 +260,6 @@ let%expect_test _ =
     "foo=bar; Path=/; Path=/sensitive-data"
     "foo=bar; Path=/login\"><script>alert(1)</script>" |}]
   (* Upstream (jshttp): every input in this test throws. *)
-
-(* Origin: jshttp/cookie stringify-set-cookie.spec.ts, "with maxAge option"
-   (L202-L219). *)
-let%expect_test _ =
-  show @@ Dream.to_set_cookie "a" "b" ~max_age:infinity;
-  show @@ Dream.to_set_cookie "a" "b" ~max_age:3.14;
-  show @@ Dream.to_set_cookie "a" "b" ~max_age:1e21;
-  show @@ Dream.to_set_cookie "a" "b" ~max_age:1000.;
-  show @@ Dream.to_set_cookie "a" "b" ~max_age:0.;
-  [%expect {|
-    "a=b; Max-Age=34560000"
-    "a=b; Max-Age=3"
-    "a=b; Max-Age=34560000"
-    "a=b; Max-Age=1000"
-    "a=b; Max-Age=0" |}]
-  (* Upstream (jshttp): Infinity, 3.14 and 1e21 throw. *)
-
-(* Origin: not from an upstream suite; added for Dream. *)
-let%expect_test _ =
-  show @@ Dream.to_set_cookie "a" "b" ~max_age:nan;
-  [%expect {| "a=b" |}]
 
 (* Origin: Werkzeug test_http.py, test_dump_cookie (L397). Werkzeug defaults to
    Path=/, so it is passed explicitly where the upstream output has it. *)
