@@ -26,6 +26,18 @@ type token =
   | Param of string
   | Wildcard of string
 
+(* A parameter name may appear only once in a pattern, as in Go and
+   httprouter, since [param] can return only one of the values. A route under a
+   scope may still bind a name of the scope's prefix again, and shadow it. *)
+let check_duplicate_params route tokens =
+  ignore @@ List.fold_left (fun names -> function
+    | Param name ->
+      if List.mem name names then
+        Printf.ksprintf failwith "Duplicate path parameter name '%s' in '%s'"
+          name route;
+      name::names
+    | Literal _ | Wildcard _ -> names) [] tokens
+
 let rec validate route = function
   | (Param "")::_ ->
     Printf.ksprintf failwith "Empty path parameter name in '%s'" route
@@ -83,6 +95,7 @@ let parse string =
 
   let tokens = parse_separator [] 0 in
   validate string tokens;
+  check_duplicate_params string tokens;
   tokens
 
 let rec strip_empty_trailing_token = function
