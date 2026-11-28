@@ -8,6 +8,7 @@
   lwt
   lwt.unix
   str
+  unix
   ppx_inline_test.config
   ppx_expect.config_types
  )

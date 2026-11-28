@@ -73,3 +73,53 @@ let%expect_test _ =
     ETag: "abc"
     X-Custom: dropped on 304
     body closed: false |}]
+
+
+
+(* Dream.from_filesystem, in a temporary directory. *)
+
+let with_temp_root f =
+  let root =
+    Filename.concat (Filename.get_temp_dir_name ())
+      (Printf.sprintf "dream-static-%i-%i"
+        (Unix.getpid ()) (Random.State.bits (Random.State.make_self_init ())))
+  in
+  Unix.mkdir root 0o700;
+  let rec remove path =
+    match (Unix.lstat path).st_kind with
+    | Unix.S_DIR ->
+      Array.iter (fun entry -> remove (Filename.concat path entry))
+        (Sys.readdir path);
+      Unix.rmdir path
+    | _ -> Unix.unlink path
+  in
+  Fun.protect ~finally:(fun () -> remove root) (fun () -> f root)
+
+let serve root target =
+  let app = Dream.router [Dream.get "/static/**" (Dream.static root)] in
+  let response = Dream.test app (Dream.request ~target "") in
+  match Dream.status_to_int (Dream.status response) with
+  | 200 ->
+    let body = Lwt_main.run (Dream.body response) in
+    Printf.printf "%-18S 200 %S\n" target body
+  | n -> Printf.printf "%-18S %i\n" target n
+
+(* Origin: not from an upstream suite; added for Dream. A FIFO, next to a
+   regular file and a directory. *)
+let%expect_test _ =
+  with_temp_root (fun root ->
+    let channel = open_out_bin (Filename.concat root "name.txt") in
+    output_string channel "name";
+    close_out channel;
+    Unix.mkdir (Filename.concat root "dir") 0o700;
+    Unix.mkfifo (Filename.concat root "fifo") 0o600;
+    serve root "/static/name.txt";
+    serve root "/static/dir";
+    serve root "/static/fifo");
+  [%expect {|
+    "/static/name.txt" 200 "name"
+    "/static/dir"      404
+    "/static/fifo"     200 "" |}]
+  (* Expected: 404 for the FIFO. Any file kind is read whole: a FIFO with no
+     writer is served as an empty file, and a device such as /dev/zero would
+     exhaust memory. *)
