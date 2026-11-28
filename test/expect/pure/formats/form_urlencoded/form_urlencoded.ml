@@ -91,3 +91,23 @@ let%expect_test _ =
   [%expect {|
     "a" = "b"
     "a" = "c" |}]
+
+
+
+(* Origin: not from an upstream suite; added for Dream (mirage/ocaml-uri issue
+   #185). Decoding must leave its argument unchanged; with OCaml >= 5.5, Uri
+   replaces '+' in place when the whole string is a single name. Dream.form
+   decodes the cached body, which Dream.body returns afterwards. *)
+let%expect_test _ =
+  ["a+b"; "+"; "a+b=c+d"; "a+b&c"]
+  |> List.iter (fun input ->
+    let string = Bytes.to_string (Bytes.of_string input) in
+    ignore (Dream.from_form_urlencoded string);
+    Printf.printf "%-10S -> %S\n" input string);
+  [%expect {|
+    "a+b"      -> "a b"
+    "+"        -> " "
+    "a+b=c+d"  -> "a+b=c+d"
+    "a+b&c"    -> "a+b&c" |}]
+  (* Expected: every argument unchanged. On OCaml 5.5, "a+b" and "+" are
+     changed in place. *)
