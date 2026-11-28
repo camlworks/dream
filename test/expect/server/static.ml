@@ -124,14 +124,12 @@ let%expect_test _ =
   conditional ["If-None-Match", "W/"];
   conditional ["If-None-Match", "W/\"truc"];
   [%expect {|
-    200  If-None-Match: "\"a,b\""
-    200  If-None-Match: "\"x\", \"a,b\""
+    304  If-None-Match: "\"a,b\""
+    304  If-None-Match: "\"x\", \"a,b\""
     200  If-None-Match: "\"a"
     200  If-None-Match: "w/\"foo\""
     200  If-None-Match: "foo"
-    304  If-None-Match: "foo"
+    200  If-None-Match: "foo"
     200  If-None-Match: "W/"
     200  If-None-Match: "W/\"truc" |}]
-  (* Expected: 304 for the first two and 200 for all the others, as in Go. The
-     list is split on every ',', so "\"a,b\"" never matches, and an unquoted
-     "foo" matches. *)
+  (* Go gives the same results. *)
