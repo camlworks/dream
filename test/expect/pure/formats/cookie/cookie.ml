@@ -169,20 +169,18 @@ let%expect_test _ =
   [%expect {|
     "a=b"
     "a=b"
-    "a=b; Expires=Sat, 01 Jan 0 00:00:00 GMT"
-    "a=b; Expires=Fri, 01 Jan 49 00:00:00 GMT"
-    "a=b; Expires=Sat, 01 Jan 50 00:00:00 GMT"
-    "a=b; Expires=Tue, 01 Jan 69 00:00:00 GMT"
-    "a=b; Expires=Thu, 01 Jan 99 00:00:00 GMT"
-    "a=b; Expires=Sat, 01 Jan 1600 00:00:00 GMT"
+    "a=b"
+    "a=b"
+    "a=b"
+    "a=b"
+    "a=b"
+    "a=b"
     "a=b"
     "a=b; Expires=Mon, 01 Jan 1601 00:00:00 GMT"
     "a=b; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
     "a=b; Expires=Fri, 01 Jan 9999 00:00:00 GMT"
     "a=b; Expires=Sun, 24 Dec 2000 10:30:59 GMT" |}]
-  (* Expected: no Expires before 1601, and four-digit years. RFC 6265 date
-     parsers read a two-digit year such as "49" as 2049. jshttp throws where
-     Dream omits the attribute. *)
+  (* jshttp throws where Dream omits the attribute. *)
 
 (* Origin: Go src/net/http/cookie_test.go, writeSetCookiesTests (L20),
    cookies 10 and 11, at
@@ -194,5 +192,4 @@ let%expect_test _ =
     ~expires:(-11676092339.);
   [%expect {|
     "cookie-10=expiring-1601; Expires=Mon, 01 Jan 1601 01:01:01 GMT"
-    "cookie-11=invalid-expiry; Expires=Sat, 01 Jan 1600 01:01:01 GMT" |}]
-  (* Expected (Go): no Expires for cookie-11. *)
+    "cookie-11=invalid-expiry" |}]

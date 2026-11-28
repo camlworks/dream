@@ -86,18 +86,28 @@ let to_http_date seconds =
     let seconds =
       if ss < 60 then ss else 59 [@coverage off]
     in
-    Some (Printf.sprintf "%s, %02i %s %i %02i:%02i:%02i GMT"
+    (* IMF-fixdate has a four-digit year, and RFC 6265 date parsers read a
+       two-digit year such as "49" as 2049. *)
+    Some (Printf.sprintf "%s, %02i %s %04i %02i:%02i:%02i GMT"
       weekday d month y hh mm seconds)
 
 
 
+(* 1601-01-01T00:00:00Z. *)
+let first_cookie_date = -11644473600.
+
 let to_set_cookie
     ?expires ?max_age ?domain ?path ?secure ?http_only ?same_site name value =
 
+  (* The cookie-date grammar of RFC 6265 starts at 1601, so earlier dates are
+     omitted, as Go does. *)
   let expires =
-    match Option.bind expires to_http_date with
-    | None -> ""
-    | Some date -> "; Expires=" ^ date
+    match expires with
+    | Some seconds when seconds < first_cookie_date -> ""
+    | _ ->
+      match Option.bind expires to_http_date with
+      | None -> ""
+      | Some date -> "; Expires=" ^ date
   in
 
   let max_age =
