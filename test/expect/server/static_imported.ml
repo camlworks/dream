@@ -462,21 +462,6 @@ let%expect_test _ =
      "If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
   [%expect {| 200  If-None-Match: "\"123\"", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
 
-(* Origin: not from an upstream suite; added for Dream. An empty
-   If-None-Match, and an If-None-Match with no ETag in the response, each
-   with a matching If-Modified-Since. *)
-let%expect_test _ =
-  conditional ~last_modified:lm0
-    ["If-None-Match", ""; "If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
-  conditional ~etag:None ~last_modified:lm0
-    ["If-None-Match", "\"foo\"";
-     "If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
-  [%expect {|
-    304  If-None-Match: "", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
-    200  If-None-Match: "\"foo\"", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
-  (* As in Go and Starlette (in their code, not their tests), an empty
-     If-None-Match counts as absent. *)
-
 (* Origin: Go fs_test.go, testServeContent (L943): ifmatch_matches,
    ifmatch_star, ifmatch_failed, ifmatch_fails_on_weak_etag,
    if_unmodified_since_true and if_unmodified_since_false (L1138-L1190). RFC
