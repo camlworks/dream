@@ -1331,8 +1331,5 @@ let%expect_test _ =
     with Failure message -> print_endline message
   end;
   [%expect {|
-    ["a"; :"x"; "b"; :"x"]
-    Response: 200 OK
-    2 |}]
-  (* Expected: the pattern is rejected at registration. It is accepted, and
-     Dream.param returns only the last value. *)
+    Duplicate path parameter name 'x' in '/a/:x/b/:x'
+    Duplicate path parameter name 'x' in '/a/:x/b/:x' |}]
