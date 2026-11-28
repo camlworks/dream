@@ -105,9 +105,7 @@ let%expect_test _ =
     ignore (Dream.from_form_urlencoded string);
     Printf.printf "%-10S -> %S\n" input string);
   [%expect {|
-    "a+b"      -> "a b"
-    "+"        -> " "
+    "a+b"      -> "a+b"
+    "+"        -> "+"
     "a+b=c+d"  -> "a+b=c+d"
     "a+b&c"    -> "a+b&c" |}]
-  (* Expected: every argument unchanged. On OCaml 5.5, "a+b" and "+" are
-     changed in place. *)
