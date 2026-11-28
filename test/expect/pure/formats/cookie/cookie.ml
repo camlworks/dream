@@ -161,10 +161,8 @@ let%expect_test _ =
   parse "keebler=E=mc2";
   parse "foo=\"bar=123456789&name=Magic+Mouse\"";
   [%expect {|
-    []
-    [] |}]
-  (* Expected: keebler="E=mc2", and foo with its '=' and quotes. Each pair is
-     split on every '=', so these pairs are dropped. *)
+    ["keebler"="E=mc2"]
+    ["foo"="\"bar=123456789&name=Magic+Mouse\""] |}]
 
 (* Origin: not from an upstream suite; added for Dream. Both sources above
    split each pair at its first '=' only. *)
@@ -173,11 +171,9 @@ let%expect_test _ =
   parse "a=b=c; d=e";
   Dream.to_set_cookie "key" "xxx=" |> parse;
   [%expect {|
-    []
-    ["d"="e"]
-    [] |}]
-  (* Expected: tok="YWJj==", a="b=c", and key="xxx=": a value that
-     Dream.to_set_cookie writes cannot be read back. *)
+    ["tok"="YWJj=="]
+    ["d"="e"; "a"="b=c"]
+    ["key"="xxx="] |}]
 
 (* Origin: not from an upstream suite; added for Dream. Werkzeug drops
    "==__Host-eq=bad" as a guard against cookie prefix spoofing
@@ -190,8 +186,7 @@ let%expect_test _ =
   parse "=__Host-eq=bad";
   parse "==__Host-eq=bad; __Host-eq=good";
   [%expect {|
-    []
-    []
-    ["__Host-eq"="good"] |}]
-  (* Each piece with a leading '=' is dropped today. Splitting at the first '='
-     gives it the empty name, never "__Host-eq". *)
+    [""="=__Host-eq=bad"]
+    [""="__Host-eq=bad"]
+    ["__Host-eq"="good"; ""="=__Host-eq=bad"] |}]
+  (* A piece with a leading '=' has the empty name, never "__Host-eq". *)

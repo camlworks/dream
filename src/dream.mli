@@ -2441,7 +2441,9 @@ val from_form_urlencoded : string -> (string * string) list
 val from_cookie : string -> (string * string) list
 (** Converts a [Cookie:] header value to key-value pairs. See
     {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.2.1}
-    RFC 6265bis §4.2.1}. Does not apply any decoding to names and values. *)
+    RFC 6265bis §4.2.1}. Each pair is split at its first [=], so values may
+    contain [=]; a piece without [=] is dropped. Does not apply any decoding to
+    names and values. *)
 
 val to_set_cookie :
   ?expires:float ->
