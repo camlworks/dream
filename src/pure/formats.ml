@@ -39,9 +39,8 @@ let from_base64url string =
 
 
 
-(* Each pair is split at its first '=', so a value may contain '='
-   ("keebler=E=mc2"). A piece with no '=' is dropped. The pairs are returned in
-   header order, so [Dream.cookie] returns the first of duplicate names.
+(* The pairs are returned in header order, so [Dream.cookie] returns the first
+   of duplicate names.
 
    Open question (test/expect/pure/formats/cookie/imported.ml): values wrapped
    in DQUOTEs keep their quotes; Go, Werkzeug and CPython strip them, and RFC
@@ -51,12 +50,9 @@ let from_cookie s =
   s
   |> String.split_on_char ';'
   |> List.filter_map (fun pair ->
-    match String.index_opt pair '=' with
-    | None -> None
-    | Some i ->
-      let name = String.sub pair 0 i in
-      let value = String.sub pair (i + 1) (String.length pair - i - 1) in
-      Some (String.trim name, String.trim value))
+    match String.split_on_char '=' pair with
+    | [name; value] -> Some (String.trim name, String.trim value)
+    | _ -> None)
 (* Note: found ocaml-cookie and http-cookie libraries, but they appear to have
    equivalent code for parsing Cookie: headers, so there is no point in using
    them yet, especially as they have stringent OCaml version constraints for

@@ -118,43 +118,11 @@ let%expect_test _ =
      returns raw values (see Dream.from_cookie and Dream.all_cookies), so an
      application decodes whatever encoding it chose when setting them. *)
 
-(* Origin: jshttp/cookie parse-cookie.spec.ts, "should URL-decode values"
-   (L41). *)
+(* Origin: CPython test_http_cookies.py, test_unquote (L110). *)
 let%expect_test _ =
-  parse "foo=\"bar=123456789&name=Magic+Mouse\"";
-  [%expect {| ["foo"="\"bar=123456789&name=Magic+Mouse\""] |}]
-
-(* Origin: CPython test_http_cookies.py, test_basic (L26) and test_unquote
-   (L110). *)
-let%expect_test _ =
-  parse "keebler=E=mc2";
   parse "a=\"b=\\\"\"";
-  [%expect {|
-    ["keebler"="E=mc2"]
-    ["a"="\"b=\\\"\""] |}]
+  [%expect {| [] |}]
   (* Upstream (CPython): a="b=\"" once unquoted. *)
-
-(* Origin: not from an upstream suite; added for Dream. An '=' inside a value,
-   which every source above splits off at the first '=' only. *)
-let%expect_test _ =
-  parse "tok=YWJj==";
-  parse "a=b=c; d=e";
-  [%expect {|
-    ["tok"="YWJj=="]
-    ["a"="b=c"; "d"="e"] |}]
-
-(* Origin: not from an upstream suite; added for Dream. Werkzeug drops
-   "==__Host-eq=bad" as a guard against cookie prefix spoofing (see its
-   test_parse_cookie below). Whatever the split, such a piece must not yield a
-   cookie named "__Host-eq". *)
-let%expect_test _ =
-  parse "==__Host-eq=bad";
-  parse "=__Host-eq=bad";
-  parse "==__Host-eq=bad; __Host-eq=good";
-  [%expect {|
-    [""="=__Host-eq=bad"]
-    [""="__Host-eq=bad"]
-    [""="=__Host-eq=bad"; "__Host-eq"="good"] |}]
 
 (* Origin: jshttp/cookie parse-cookie.spec.ts, "should ignore duplicate
    cookies" (L77-L90). *)
@@ -173,13 +141,14 @@ let%expect_test _ =
     "dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed;\
      a=42; b=\"\\\";\"; ; fo234{=bar;blub=Blah; \"__Secure-c\"=d;\
      ==__Host-eq=bad;__Host-eq=good;";
-  [%expect {| ["dismiss-top"="6"; "CP"="null*"; "PHPSESSID"="0a539d42abc001cdc762809248d4beed"; "a"="42"; "b"="\"\\\""; "fo234{"="bar"; "blub"="Blah"; "\"__Secure-c\""="d"; ""="=__Host-eq=bad"; "__Host-eq"="good"] |}]
+  [%expect {| ["dismiss-top"="6"; "CP"="null*"; "PHPSESSID"="0a539d42abc001cdc762809248d4beed"; "a"="42"; "b"="\"\\\""; "fo234{"="bar"; "blub"="Blah"; "\"__Secure-c\""="d"; "__Host-eq"="good"] |}]
   (* Upstream (Werkzeug): the quoted name "__Secure-c" and "==__Host-eq=bad"
      are dropped, as a guard against cookie prefix spoofing, and b is
      "\";". No action on the names: neither yields a cookie named
      __Secure-c or __Host-eq, since the first keeps its quotes and the second
-     has the empty name. The value of b depends on unquoting, an open question
-     recorded at from_cookie in src/pure/formats.ml. *)
+     is dropped (or, with #476, gets the empty name). The value of b depends
+     on unquoting, an open question recorded at from_cookie in
+     src/pure/formats.ml. *)
 
 (* Origin: Werkzeug test_http.py, test_bad_cookies (L410). *)
 let%expect_test _ =
@@ -222,7 +191,7 @@ let%expect_test _ =
   parse "a=b; c=[; d=r; f=h";
   [%expect {|
     ["chips"="ahoy"; "vienna"="finger"]
-    ["keebler"="\"E=mc2"; "L"="\\\"Loves\\\""; "fudge"=""]
+    ["L"="\\\"Loves\\\""; "fudge"=""]
     ["key:term"="value:term"]
     ["a"="b"; "c"="["; "d"="r"; "f"="h"] |}]
   (* Upstream (CPython): the quoted keebler value spans the ';' and is one
@@ -522,12 +491,6 @@ let%expect_test _ =
      "foo bar" and "foo@bar" are rejected. The octal escapes need no action
      (see above). Invalid names and values are a decision recorded at
      to_set_cookie in src/pure/formats.ml. *)
-
-(* Origin: not from an upstream suite; added for Dream. A value containing
-   '=' survives a round trip. *)
-let%expect_test _ =
-  Dream.to_set_cookie "key" "xxx=" |> parse;
-  [%expect {| ["key"="xxx="] |}]
 
 (* Origin: not from an upstream suite; added for Dream. The full attribute
    set, and SameSite=None without Secure. *)
