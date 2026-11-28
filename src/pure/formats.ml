@@ -39,20 +39,20 @@ let from_base64url string =
 
 
 
-(* The pairs are returned in header order, so [Dream.cookie] returns the first
-   of duplicate names.
-
-   Open question (test/expect/pure/formats/cookie/imported.ml): values wrapped
+(* Open question (test/expect/pure/formats/cookie/imported.ml): values wrapped
    in DQUOTEs keep their quotes; Go, Werkzeug and CPython strip them, and RFC
    6265 allows the quoted form of cookie-value. Do clients send quoted values
    in practice? Dream's own encrypted cookies are unaffected either way. *)
 let from_cookie s =
-  s
-  |> String.split_on_char ';'
-  |> List.filter_map (fun pair ->
-    match String.split_on_char '=' pair with
-    | [name; value] -> Some (String.trim name, String.trim value)
-    | _ -> None)
+  let pairs =
+    s
+    |> String.split_on_char ';'
+    |> List.map (String.split_on_char '=')
+  in
+
+  pairs |> List.fold_left (fun pairs -> function
+    | [name; value] -> (String.trim name, String.trim value)::pairs
+    | _ -> pairs) []
 (* Note: found ocaml-cookie and http-cookie libraries, but they appear to have
    equivalent code for parsing Cookie: headers, so there is no point in using
    them yet, especially as they have stringent OCaml version constraints for

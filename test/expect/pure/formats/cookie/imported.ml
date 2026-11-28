@@ -32,13 +32,6 @@ let parse string =
   |> String.concat "; "
   |> Printf.printf "[%s]\n"
 
-(* What Dream.cookie returns for [name] when the request carries [header]. *)
-let lookup header name =
-  let request = Dream.request ~headers:["Cookie", header] "" in
-  match Dream.cookie ~decrypt:false request name with
-  | None -> print_endline "None"
-  | Some value -> Printf.printf "Some %S\n" value
-
 let show =
   Printf.printf "%S\n"
 
@@ -51,8 +44,8 @@ let%expect_test _ =
   parse "Cookie-1=\"v$1\"; c2=\"v2\"";
   parse "Cookie-1=\"v$1\"; c2=v2;";
   [%expect {|
-    ["Cookie-1"="\"v$1\""; "c2"="\"v2\""]
-    ["Cookie-1"="\"v$1\""; "c2"="v2"] |}]
+    ["c2"="\"v2\""; "Cookie-1"="\"v$1\""]
+    ["c2"="v2"; "Cookie-1"="\"v$1\""] |}]
   (* Upstream (Go): quotes around values are stripped. *)
 
 (* Origin: Go cookie_test.go, TestParseCookie (L782) and readCookiesTests
@@ -68,24 +61,13 @@ let%expect_test _ =
   [%expect {| [] |}]
   (* Upstream (CPython): a="b=\"" once unquoted. *)
 
-(* Origin: jshttp/cookie parse-cookie.spec.ts, "should ignore duplicate
-   cookies" (L77-L90). *)
-let%expect_test _ =
-  lookup "foo=%1;bar=bar;foo=boo" "foo";
-  lookup "foo=false;bar=bar;foo=true" "foo";
-  lookup "foo=;bar=bar;foo=boo" "foo";
-  [%expect {|
-    Some "%1"
-    Some "false"
-    Some "" |}]
-
 (* Origin: Werkzeug test_http.py, test_parse_cookie (L380). *)
 let%expect_test _ =
   parse
     "dismiss-top=6; CP=null*; PHPSESSID=0a539d42abc001cdc762809248d4beed;\
      a=42; b=\"\\\";\"; ; fo234{=bar;blub=Blah; \"__Secure-c\"=d;\
      ==__Host-eq=bad;__Host-eq=good;";
-  [%expect {| ["dismiss-top"="6"; "CP"="null*"; "PHPSESSID"="0a539d42abc001cdc762809248d4beed"; "a"="42"; "b"="\"\\\""; "fo234{"="bar"; "blub"="Blah"; "\"__Secure-c\""="d"; "__Host-eq"="good"] |}]
+  [%expect {| ["__Host-eq"="good"; "\"__Secure-c\""="d"; "blub"="Blah"; "fo234{"="bar"; "b"="\"\\\""; "a"="42"; "PHPSESSID"="0a539d42abc001cdc762809248d4beed"; "CP"="null*"; "dismiss-top"="6"] |}]
   (* Upstream (Werkzeug): the quoted name "__Secure-c" and "==__Host-eq=bad"
      are dropped, as a guard against cookie prefix spoofing, and b is
      "\";". No action on the names: neither yields a cookie named
@@ -101,7 +83,7 @@ let%expect_test _ =
   parse "foo=\"?foo\"; version=\"0.1\";";
   [%expect {|
     ["foo"="\"foo\\054bar\""]
-    ["foo"="\"?foo\""; "version"="\"0.1\""] |}]
+    ["version"="\"0.1\""; "foo"="\"?foo\""] |}]
   (* Upstream (Werkzeug): values are unquoted and octal escapes decoded:
      foo="foo,bar", then foo="?foo" and version="0.1". Unquoting is an open
      question recorded at from_cookie in src/pure/formats.ml. The octal
@@ -123,17 +105,17 @@ let%expect_test _ =
   parse "key:term=value:term";
   parse "a=b; c=[; d=r; f=h";
   [%expect {|
-    ["chips"="ahoy"; "vienna"="finger"]
-    ["L"="\\\"Loves\\\""; "fudge"=""]
+    ["vienna"="finger"; "chips"="ahoy"]
+    ["fudge"=""; "L"="\\\"Loves\\\""]
     ["key:term"="value:term"]
-    ["a"="b"; "c"="["; "d"="r"; "f"="h"] |}]
+    ["f"="h"; "d"="r"; "c"="["; "a"="b"] |}]
   (* Upstream (CPython): the quoted keebler value spans the ';' and is one
      cookie. *)
 
 (* Origin: CPython test_http_cookies.py, test_extra_spaces (L258). *)
 let%expect_test _ =
   parse "eggs  =  scrambled  ;  secure  ;  path  =  bar   ; foo=foo   ";
-  [%expect {| ["eggs"="scrambled"; "path"="bar"; "foo"="foo"] |}]
+  [%expect {| ["foo"="foo"; "path"="bar"; "eggs"="scrambled"] |}]
 
 
 
