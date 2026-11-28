@@ -124,10 +124,7 @@ let%expect_test _ =
     ["If-None-Match", "\"foo\"";
      "If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
   [%expect {|
-    200  If-None-Match: "", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
-    200  If-None-Match: " ", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
-    200  If-None-Match: ",", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
+    304  If-None-Match: "", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
+    304  If-None-Match: " ", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
+    304  If-None-Match: ",", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
     200  If-None-Match: "\"foo\"", If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
-  (* Expected: 304 for the first three, where If-Modified-Since should apply.
-     An If-None-Match with no entity-tags counts as present today, so it
-     disables If-Modified-Since. *)
