@@ -646,8 +646,7 @@ module Make
         {!Dream.to_base64url}. See {!Dream.run} argument [~secret].
       - [~expires] sets the [Expires=] attribute. The value is compatible with
         {{:https://v2.ocaml.org/api/Unix.html#VALgettimeofday}
-        [Unix.gettimeofday]}. Dates before 1601, which the cookie date grammar
-        cannot express, omit the attribute. See
+        [Unix.gettimeofday]}. See
         {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.1}
         RFC 6265bis §4.1.2.1} and
         {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie}

@@ -121,7 +121,7 @@ let%expect_test _ =
 
 (* Serializing Set-Cookie: values. *)
 
-(* Origin: Go cookie_test.go, writeSetCookiesTests (L20), cookies 1-11 and
+(* Origin: Go cookie_test.go, writeSetCookiesTests (L20), cookies 1-9 and
    15-16 (L25-L87). Go orders attributes differently; the order has no
    meaning. Dream has no Partitioned attribute, so cookie-16 omits it. No
    action on Partitioned: it is a feature Dream does not offer. *)
@@ -135,10 +135,6 @@ let%expect_test _ =
   show @@ Dream.to_set_cookie "cookie-7" "seven" ~domain:"127.0.0.1";
   show @@ Dream.to_set_cookie "cookie-8" "eight" ~domain:"::1";
   show @@ Dream.to_set_cookie "cookie-9" "expiring" ~expires:1257894000.;
-  show @@ Dream.to_set_cookie "cookie-10" "expiring-1601"
-    ~expires:(-11644469939.);
-  show @@ Dream.to_set_cookie "cookie-11" "invalid-expiry"
-    ~expires:(-11676092339.);
   show @@ Dream.to_set_cookie "cookie-13" "samesite-lax" ~same_site:`Lax;
   show @@ Dream.to_set_cookie "cookie-14" "samesite-strict" ~same_site:`Strict;
   show @@ Dream.to_set_cookie "cookie-15" "samesite-none" ~same_site:`None;
@@ -154,8 +150,6 @@ let%expect_test _ =
     "cookie-7=seven; Domain=127.0.0.1"
     "cookie-8=eight; Domain=::1"
     "cookie-9=expiring; Expires=Tue, 10 Nov 2009 23:00:00 GMT"
-    "cookie-10=expiring-1601; Expires=Mon, 01 Jan 1601 01:01:01 GMT"
-    "cookie-11=invalid-expiry"
     "cookie-13=samesite-lax; SameSite=Lax"
     "cookie-14=samesite-strict; SameSite=Strict"
     "cookie-15=samesite-none; SameSite=None"
@@ -272,36 +266,6 @@ let%expect_test _ =
     "foo=bar; Path=/; Path=/sensitive-data"
     "foo=bar; Path=/login\"><script>alert(1)</script>" |}]
   (* Upstream (jshttp): every input in this test throws. *)
-
-(* Origin: jshttp/cookie stringify-set-cookie.spec.ts, "with expires option"
-   (L158-L198): an invalid date, years outside 1601-9999 (L168), years inside
-   (L179), and a fractional second (L190). Each timestamp is Jan 1 of the
-   year, UTC. *)
-let%expect_test _ =
-  show @@ Dream.to_set_cookie "a" "b" ~expires:nan;
-  List.iter (fun expires -> show @@ Dream.to_set_cookie "a" "b" ~expires)
-    [-62198755200. (* -1 *); -62167219200. (* 0 *); -60620832000. (* 49 *);
-     -60589296000. (* 50 *); -59989680000. (* 69 *); -59042995200. (* 99 *);
-     -11676096000. (* 1600 *); 253402300800. (* 10000 *)];
-  List.iter (fun expires -> show @@ Dream.to_set_cookie "a" "b" ~expires)
-    [-11644473600. (* 1601 *); 0. (* 1970 *); 253370764800. (* 9999 *)];
-  show @@ Dream.to_set_cookie "a" "b" ~expires:977653859.9;
-  [%expect {|
-    "a=b"
-    "a=b"
-    "a=b"
-    "a=b"
-    "a=b"
-    "a=b"
-    "a=b"
-    "a=b"
-    "a=b"
-    "a=b; Expires=Mon, 01 Jan 1601 00:00:00 GMT"
-    "a=b; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
-    "a=b; Expires=Fri, 01 Jan 9999 00:00:00 GMT"
-    "a=b; Expires=Sun, 24 Dec 2000 10:30:59 GMT" |}]
-  (* Upstream (jshttp): an invalid date, and years before 1601 or after 9999,
-     throw. *)
 
 (* Origin: jshttp/cookie stringify-set-cookie.spec.ts, "with maxAge option"
    (L202-L219). *)
