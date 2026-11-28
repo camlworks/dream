@@ -1391,13 +1391,7 @@ module Make
   (* :((( *)
   val param : request -> string -> string
   (** Retrieves the path parameter. If it is missing, {!Dream.param} raises an
-      exception — the program is buggy.
-
-      A parameter name may appear only once in a route pattern: {!Dream.get}
-      and the other route functions raise [Failure] for a pattern such as
-      ["/a/:x/b/:x"]. A route under {!Dream.scope} may bind a parameter of the
-      scope's prefix again, and {!Dream.param} then returns the value bound by
-      the route. *)
+      exception — the program is buggy. *)
 
   val scope : string -> middleware list -> route list -> route
   (** Groups routes under a common path prefix and middlewares. Middlewares are

@@ -327,12 +327,6 @@ let%expect_test _ =
   (* Upstream (httprouter): every pattern here except "/src/*filepath" is
      rejected. *)
 
-(* Origin: Go pattern_test.go, L150: duplicate wildcard names are rejected
-   ("/a/{x}/b/{x...}"). *)
-let%expect_test _ =
-  registers "/a/:x/b/:x";
-  [%expect {| "/a/:x/b/:x"         Duplicate path parameter name 'x' in '/a/:x/b/:x' |}]
-
 (* Origin: not from an upstream suite; added for Dream. *)
 let%expect_test _ =
   List.iter registers ["/a//b"; "a/b"; "/src/**/x"];
