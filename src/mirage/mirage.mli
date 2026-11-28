@@ -1355,7 +1355,16 @@ module Make
     include its own router, into a subsite. However, it is better to compose
     sites with routes and {!Dream.scope} rather than opaque handlers and [**],
     because, in the future, it may be possible to query routes for site
-    structure metadata. *)
+    structure metadata.
+
+    Routes are tried in the order given, and the first one that matches
+    handles the request, even if a later route is more specific. Matching is
+    case-sensitive, and a path that matches no route only by case or by a
+    trailing slash gets [404 Not Found], not a redirect. A parameter is a whole
+    path component: there are no parameters within a component, such as
+    ["/user_:name"]. A path ending in [**] matches any rest, including an
+    empty one: ["/src/**"] matches ["/src/"], with path ["/"], but not
+    ["/src"]. *)
 
   val get : string -> handler -> route
   (** Forwards [`GET] requests for the given path to the handler.
@@ -1522,7 +1531,10 @@ module Make
 
       {!Dream.static} accepts [`GET] and [`HEAD] requests; other methods get
       [404 Not Found]. The loader runs for both. For [`HEAD], its response body
-      is discarded. *)
+      is discarded.
+
+      Range requests are not supported: [Range:] and [If-Range:] are ignored,
+      and the whole file is sent with [200 OK]. *)
 
   val mime_lookup : string -> (string * string) list
   (** Returns a [Content-Type:] header based on the given filename. This is mostly
