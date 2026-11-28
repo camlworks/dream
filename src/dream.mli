@@ -2417,10 +2417,7 @@ val to_base64url : string -> string
     library.*)
 
 val from_base64url : string -> string option
-(** Inverse of {!Dream.to_base64url}. Also accepts input with exactly the
-    padding that RFC 4648 prescribes. Returns [None] for any other input,
-    including non-canonical encodings such as ["Zh"], whose unused bits are not
-    zero. *)
+(** Inverse of {!Dream.to_base64url}. *)
 
 val to_percent_encoded : ?international:bool -> string -> string
 (** Percent-encodes a string for use inside a URL.
