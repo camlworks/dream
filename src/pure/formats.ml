@@ -91,6 +91,9 @@ let to_http_date seconds =
 
 
 
+(* User agents cap Max-Age at 400 days (RFC 6265bis section 5.6.2). *)
+let max_cookie_age = 34560000.
+
 let to_set_cookie
     ?expires ?max_age ?domain ?path ?secure ?http_only ?same_site name value =
 
@@ -103,7 +106,11 @@ let to_set_cookie
   let max_age =
     match max_age with
     | None -> ""
-    | Some seconds -> Printf.sprintf "; Max-Age=%.0f" (floor seconds)
+    | Some seconds when Float.is_nan seconds -> ""
+    | Some seconds ->
+      (* [Float.max] also turns -0. into 0., which would print as "-0". *)
+      let seconds = Float.min max_cookie_age (Float.max 0. (floor seconds)) in
+      Printf.sprintf "; Max-Age=%.0f" seconds
   in
 
   let domain =

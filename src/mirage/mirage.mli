@@ -651,7 +651,9 @@ module Make
         RFC 6265bis §4.1.2.1} and
         {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie}
         MDN}.
-      - [~max_age] sets the [Max-Age=] attribute. See
+      - [~max_age] sets the [Max-Age=] attribute, in whole seconds. Negative
+        values are sent as [0], values over 400 days as 400 days, the cap
+        user agents apply, and [nan] omits the attribute. See
         {{:https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-07#section-4.1.2.2}
         RFC 6265bis §4.1.2.2} and
         {{:https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie}
