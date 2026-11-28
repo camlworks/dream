@@ -119,7 +119,4 @@ let%expect_test _ =
   [%expect {|
     "/static/name.txt" 200 "name"
     "/static/dir"      404
-    "/static/fifo"     200 "" |}]
-  (* Expected: 404 for the FIFO. Any file kind is read whole: a FIFO with no
-     writer is served as an empty file, and a device such as /dev/zero would
-     exhaust memory. *)
+    "/static/fifo"     404 |}]

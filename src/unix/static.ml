@@ -34,11 +34,15 @@ let mime_lookup filename =
 let etag content =
   Printf.sprintf "\"%s\"" Digestif.SHA256.(to_hex (digest_string content))
 
+(* Only regular files are served. Reading a device such as /dev/zero whole
+   would exhaust memory, and a FIFO would be served as whatever a writer sends,
+   or as an empty file. A directory gives 404 as before. *)
 let from_filesystem local_root path _ =
   let file = Filename.concat local_root path in
   Lwt.catch
     (fun () ->
       let%lwt stats = Lwt_unix.stat file in
+      if stats.Unix.st_kind <> Unix.S_REG then raise Not_found;
       Lwt_io.(with_file ~mode:Input file) (fun channel ->
         let%lwt content = Lwt_io.read channel in
         let last_modified =
