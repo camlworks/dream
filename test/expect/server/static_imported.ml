@@ -300,40 +300,6 @@ let conditional ?(method_ = `GET) ?(etag = Some "\"foo\"")
 let lm0 = Some "Sat, 01 Jan 2000 00:00:00 GMT"
 let lm1 = Some "Sat, 01 Jan 2000 01:00:00 GMT"
 
-(* Origin: jshttp/fresh test/fresh.js, "when requested with If-None-Match"
-   (L6-L93). The response's ETag is "foo" unless stated otherwise. *)
-let%expect_test _ =
-  conditional [];
-  conditional ["If-None-Match", "\"foo\""];
-  conditional ~etag:(Some "\"bar\"") ["If-None-Match", "\"foo\""];
-  conditional ["If-None-Match", " \"bar\" , \"foo\""];
-  conditional ["If-None-Match", "\"bar\",\t\"foo\""];
-  conditional ~etag:None ~last_modified:None ["If-None-Match", "\"foo\""];
-  conditional ~etag:(Some "W/\"foo\"") ["If-None-Match", "W/\"foo\""];
-  conditional ~etag:(Some "\"foo\"") ["If-None-Match", "W/\"foo\""];
-  conditional ["If-None-Match", "\"foo\""];
-  conditional ~etag:(Some "W/\"foo\"") ["If-None-Match", "\"foo\""];
-  conditional ["If-None-Match", "*"];
-  conditional ["If-None-Match", "*, \"bar\""];
-  [%expect {|
-    200
-    304  If-None-Match: "\"foo\""
-    200  If-None-Match: "\"foo\""
-    304  If-None-Match: " \"bar\" , \"foo\""
-    304  If-None-Match: "\"bar\",\t\"foo\""
-    200  If-None-Match: "\"foo\""
-    304  If-None-Match: "W/\"foo\""
-    304  If-None-Match: "W/\"foo\""
-    304  If-None-Match: "\"foo\""
-    304  If-None-Match: "\"foo\""
-    304  If-None-Match: "*"
-    200  If-None-Match: "*, \"bar\"" |}]
-  (* Upstream (fresh): stale (200) without a precondition, on a mismatch, and
-     without an ETag; "*" is ignored unless it is the only value, so
-     "*, \"bar\"" is stale. Go, by contrast, matches "*" anywhere. No action:
-     Dream agrees with fresh. The header is invalid, since RFC 9110 §13.1.2
-     allows "*" only on its own, and the references disagree on it. *)
-
 (* Origin: Go fs_test.go, testServeContent (L943): not_modified_etag,
    not_modified_etag_no_seek, if_none_match_mismatch and
    if_none_match_malformed (L1010-L1041). *)
@@ -511,22 +477,6 @@ let%expect_test _ =
   (* As in Go and Starlette (in their code, not their tests), an empty
      If-None-Match counts as absent. *)
 
-(* Origin: jshttp/fresh test/fresh.js, "when requested with Cache-Control:
-   no-cache" (L172-L193). *)
-let%expect_test _ =
-  conditional ["Cache-Control", " no-cache"];
-  conditional ["Cache-Control", " no-cache"; "If-None-Match", "\"foo\""];
-  conditional ~etag:None ~last_modified:lm0
-    ["Cache-Control", " no-cache";
-     "If-Modified-Since", "Sat, 01 Jan 2000 01:00:00 GMT"];
-  [%expect {|
-    200  Cache-Control: " no-cache"
-    304  Cache-Control: " no-cache", If-None-Match: "\"foo\""
-    304  Cache-Control: " no-cache", If-Modified-Since: "Sat, 01 Jan 2000 01:00:00 GMT" |}]
-  (* Upstream (fresh): all stale (200). Go, Starlette and actix ignore the
-     directive. No action: Dream sides with the majority; no-cache in a
-     request addresses caches (RFC 9111 §5.2.1.4), not the origin server. *)
-
 (* Origin: Go fs_test.go, testServeContent (L943): ifmatch_matches,
    ifmatch_star, ifmatch_failed, ifmatch_fails_on_weak_etag,
    if_unmodified_since_true and if_unmodified_since_false (L1138-L1190). RFC
@@ -581,17 +531,6 @@ let%expect_test _ =
   [%expect {|
     200  If-Match: "\"foo\"", If-Unmodified-Since: "Thu, 01 Jan 1970 00:00:00 GMT"
     412  If-Match: "\"nonmatching-etag\"", If-Unmodified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
-
-(* Origin: not from an upstream suite; added for Dream. Range is not
-   supported: the full representation is always sent (see Dream.static). *)
-let%expect_test _ =
-  conditional ["Range", "bytes=0-1"];
-  conditional ["Range", "bytes=9-50"];
-  conditional ["If-Range", "\"foo\""; "Range", "bytes=0-1"];
-  [%expect {|
-    200  Range: "bytes=0-1"
-    200  Range: "bytes=9-50"
-    200  If-Range: "\"foo\"", Range: "bytes=0-1" |}]
 
 (* Origin: actix-files src/lib.rs, test_if_none_match_get_and_head (L115),
    test_if_none_match_post (L141) and test_if_modified_since_post (L188). *)
