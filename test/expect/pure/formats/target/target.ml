@@ -56,3 +56,28 @@ let%expect_test _ =
     "/abc%2F&def" "a=b&c=d%2B"
     "/abc/" ""
     "/abc/" "de=f" |}]
+
+
+
+(* Absolute-form targets with an empty path, and the authority-form. *)
+
+(* Origin: Go net/url url_test.go, parseRequestURLTests (L777) and requritests
+   (L1694), at
+   https://github.com/golang/go/blob/5e9534e62225b2f58f3b4b3d410e63f29f6566f5/src/net/url/url_test.go#L1694 *)
+let%expect_test _ =
+  decode "http://foo.com";
+  decode "http://example.com";
+  [%expect {|
+    "/" ""
+    "/" "" |}]
+
+(* Origin: not from an upstream suite; added for Dream. *)
+let%expect_test _ =
+  decode "http://h?x";
+  [%expect {| "/" "x" |}]
+
+(* Origin: RFC 9112 section 3.2.3, the example of the authority-form, at
+   https://www.rfc-editor.org/rfc/rfc9112#section-3.2.3 *)
+let%expect_test _ =
+  decode "www.example.com:80";
+  [%expect {| "" "" |}]
