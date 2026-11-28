@@ -111,12 +111,12 @@ let%expect_test _ =
   [%expect {|
     "a=b; Max-Age=1"
     "a=b; Max-Age=42"
-    "a=b; Max-Age=-1"
+    "a=b; Max-Age=0"
     "a=b; Max-Age=0"
     "a=b; Max-Age=1"
     "a=b; Max-Age=1"
-    "a=b; Max-Age=-2"
-    "a=b; Max-Age=-2" |}]
+    "a=b; Max-Age=0"
+    "a=b; Max-Age=0" |}]
 
 let%expect_test _ =
   show @@ Dream.to_set_cookie "a" "b" ~domain:"abc";
@@ -147,3 +147,38 @@ let%expect_test _ =
     "a=b; SameSite=Strict"
     "a=b; SameSite=Lax"
     "a=b; SameSite=None" |}]
+
+
+
+(* Max-Age is a whole, non-negative number of seconds, at most 400 days. *)
+
+(* Origin: jshttp/cookie src/stringify-set-cookie.spec.ts, "with maxAge
+   option" (L202-L219), at
+   https://github.com/jshttp/cookie/blob/a437ef03993af559900010f62c294647589c29db/src/stringify-set-cookie.spec.ts#L202 *)
+let%expect_test _ =
+  show @@ Dream.to_set_cookie "a" "b" ~max_age:infinity;
+  show @@ Dream.to_set_cookie "a" "b" ~max_age:3.14;
+  show @@ Dream.to_set_cookie "a" "b" ~max_age:1e21;
+  show @@ Dream.to_set_cookie "a" "b" ~max_age:1000.;
+  show @@ Dream.to_set_cookie "a" "b" ~max_age:0.;
+  [%expect {|
+    "a=b; Max-Age=34560000"
+    "a=b; Max-Age=3"
+    "a=b; Max-Age=34560000"
+    "a=b; Max-Age=1000"
+    "a=b; Max-Age=0" |}]
+  (* jshttp throws for Infinity, 3.14 and 1e21. *)
+
+(* Origin: not from an upstream suite; added for Dream. Go turns a negative
+   MaxAge into Max-Age=0 (in src/net/http/cookie.go, not in its tests). *)
+let%expect_test _ =
+  show @@ Dream.to_set_cookie "a" "b" ~max_age:(-1.);
+  show @@ Dream.to_set_cookie "a" "b" ~max_age:(-0.);
+  [%expect {|
+    "a=b; Max-Age=0"
+    "a=b; Max-Age=0" |}]
+
+(* Origin: not from an upstream suite; added for Dream. *)
+let%expect_test _ =
+  show @@ Dream.to_set_cookie "a" "b" ~max_age:nan;
+  [%expect {| "a=b" |}]
