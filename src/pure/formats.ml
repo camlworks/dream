@@ -246,10 +246,7 @@ let from_form_urlencoded string =
   if string = "" then
     []
   else
-    (* [Uri.query_of_encoded] replaces '+' in place, which changes its argument
-       on OCaml >= 5.5 when the string has no '&' and no '=' (mirage/ocaml-uri
-       issue #185), so give it a copy. *)
-    Bytes.to_string (Bytes.of_string string)
+    string
     |> Uri.query_of_encoded
     |> List.map (fun (name, values) -> name, String.concat "," values)
 
