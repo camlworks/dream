@@ -147,3 +147,52 @@ let%expect_test _ =
     "a=b; SameSite=Strict"
     "a=b; SameSite=Lax"
     "a=b; SameSite=None" |}]
+
+
+
+(* Expires has a four-digit year, and is omitted before 1601. *)
+
+(* Origin: jshttp/cookie src/stringify-set-cookie.spec.ts, "with expires
+   option" (L158-L198), at
+   https://github.com/jshttp/cookie/blob/a437ef03993af559900010f62c294647589c29db/src/stringify-set-cookie.spec.ts#L158
+   An invalid date, years outside 1601-9999 (L168), years inside (L179), and
+   a fractional second (L190). Each timestamp is Jan 1 of the year, UTC. *)
+let%expect_test _ =
+  show @@ Dream.to_set_cookie "a" "b" ~expires:nan;
+  List.iter (fun expires -> show @@ Dream.to_set_cookie "a" "b" ~expires)
+    [-62198755200. (* -1 *); -62167219200. (* 0 *); -60620832000. (* 49 *);
+     -60589296000. (* 50 *); -59989680000. (* 69 *); -59042995200. (* 99 *);
+     -11676096000. (* 1600 *); 253402300800. (* 10000 *)];
+  List.iter (fun expires -> show @@ Dream.to_set_cookie "a" "b" ~expires)
+    [-11644473600. (* 1601 *); 0. (* 1970 *); 253370764800. (* 9999 *)];
+  show @@ Dream.to_set_cookie "a" "b" ~expires:977653859.9;
+  [%expect {|
+    "a=b"
+    "a=b"
+    "a=b; Expires=Sat, 01 Jan 0 00:00:00 GMT"
+    "a=b; Expires=Fri, 01 Jan 49 00:00:00 GMT"
+    "a=b; Expires=Sat, 01 Jan 50 00:00:00 GMT"
+    "a=b; Expires=Tue, 01 Jan 69 00:00:00 GMT"
+    "a=b; Expires=Thu, 01 Jan 99 00:00:00 GMT"
+    "a=b; Expires=Sat, 01 Jan 1600 00:00:00 GMT"
+    "a=b"
+    "a=b; Expires=Mon, 01 Jan 1601 00:00:00 GMT"
+    "a=b; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    "a=b; Expires=Fri, 01 Jan 9999 00:00:00 GMT"
+    "a=b; Expires=Sun, 24 Dec 2000 10:30:59 GMT" |}]
+  (* Expected: no Expires before 1601, and four-digit years. RFC 6265 date
+     parsers read a two-digit year such as "49" as 2049. jshttp throws where
+     Dream omits the attribute. *)
+
+(* Origin: Go src/net/http/cookie_test.go, writeSetCookiesTests (L20),
+   cookies 10 and 11, at
+   https://github.com/golang/go/blob/5e9534e62225b2f58f3b4b3d410e63f29f6566f5/src/net/http/cookie_test.go#L20 *)
+let%expect_test _ =
+  show @@ Dream.to_set_cookie "cookie-10" "expiring-1601"
+    ~expires:(-11644469939.);
+  show @@ Dream.to_set_cookie "cookie-11" "invalid-expiry"
+    ~expires:(-11676092339.);
+  [%expect {|
+    "cookie-10=expiring-1601; Expires=Mon, 01 Jan 1601 01:01:01 GMT"
+    "cookie-11=invalid-expiry; Expires=Sat, 01 Jan 1600 01:01:01 GMT" |}]
+  (* Expected (Go): no Expires for cookie-11. *)
