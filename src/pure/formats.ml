@@ -89,6 +89,56 @@ let to_http_date seconds =
     Some (Printf.sprintf "%s, %02i %s %i %02i:%02i:%02i GMT"
       weekday d month y hh mm seconds)
 
+(* The three HTTP-date formats (RFC 9110 section 5.6.7): IMF-fixdate
+   ("Sun, 06 Nov 1994 08:49:37 GMT"), the obsolete RFC 850 format
+   ("Sunday, 06-Nov-94 08:49:37 GMT") and asctime ("Sun Nov  6 08:49:37 1994").
+   Returns the time in seconds since the epoch. Names are case-sensitive, as in
+   the grammar, and the day name is not checked against the date. A two-digit
+   RFC 850 year from 69 is read as 19xx, and below 69 as 20xx, as Go does. *)
+let from_http_date string =
+  let month = function
+    | "Jan" -> Some 1 | "Feb" -> Some 2 | "Mar" -> Some 3 | "Apr" -> Some 4
+    | "May" -> Some 5 | "Jun" -> Some 6 | "Jul" -> Some 7 | "Aug" -> Some 8
+    | "Sep" -> Some 9 | "Oct" -> Some 10 | "Nov" -> Some 11 | "Dec" -> Some 12
+    | _ -> None
+  in
+  let make year month_name day hours minutes seconds =
+    match month month_name with
+    | None -> None
+    | Some month ->
+      if hours > 23 || minutes > 59 || seconds > 60 then
+        None
+      else
+        Ptime.of_date_time
+          ((year, month, day), ((hours, minutes, seconds), 0))
+        |> Option.map Ptime.to_float_s
+  in
+  let attempt format =
+    try format () with Scanf.Scan_failure _ | Failure _ | End_of_file -> None
+  in
+  let imf_fixdate () =
+    Scanf.sscanf string "%3s, %2u %3s %4u %2u:%2u:%2u GMT%!"
+      (fun _ day month year hours minutes seconds ->
+        make year month day hours minutes seconds)
+  in
+  let rfc850 () =
+    Scanf.sscanf string "%[A-Za-z], %2u-%3s-%2u %2u:%2u:%2u GMT%!"
+      (fun _ day month year hours minutes seconds ->
+        let year = if year >= 69 then 1900 + year else 2000 + year in
+        make year month day hours minutes seconds)
+  in
+  let asctime () =
+    Scanf.sscanf string "%3s %3s %2u %2u:%2u:%2u %4u%!"
+      (fun _ month day hours minutes seconds year ->
+        make year month day hours minutes seconds)
+  in
+  match attempt imf_fixdate with
+  | Some _ as time -> time
+  | None ->
+    match attempt rfc850 with
+    | Some _ as time -> time
+    | None -> attempt asctime
+
 
 
 let to_set_cookie

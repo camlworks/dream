@@ -123,14 +123,10 @@ let%expect_test _ =
     ["If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT"];
   [%expect {|
     200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
-    200  If-Modified-Since: "Sat, 01 Jan 2000 01:00:00 GMT"
+    304  If-Modified-Since: "Sat, 01 Jan 2000 01:00:00 GMT"
     200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
     200  If-Modified-Since: "foo"
     200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT" |}]
-  (* Expected (fresh): only the second, a date later than Last-Modified, is
-     fresh (304). If-Modified-Since is compared to Last-Modified as a
-     string. *)
-
 (* Origin: not from an upstream suite; added for Dream. An exact match, two
    identical strings that are not dates, and the same date in the RFC 850 and
    asctime formats and in lower case. Go's ParseTime (in its code, not its
@@ -148,13 +144,10 @@ let%expect_test _ =
     ["If-Modified-Since", "sat, 01 jan 2000 00:00:00 GMT"];
   [%expect {|
     304  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT"
-    304  If-Modified-Since: "foo"
-    200  If-Modified-Since: "Saturday, 01-Jan-00 00:00:00 GMT"
-    200  If-Modified-Since: "Sat Jan  1 00:00:00 2000"
+    200  If-Modified-Since: "foo"
+    304  If-Modified-Since: "Saturday, 01-Jan-00 00:00:00 GMT"
+    304  If-Modified-Since: "Sat Jan  1 00:00:00 2000"
     200  If-Modified-Since: "sat, 01 jan 2000 00:00:00 GMT" |}]
-  (* Expected: 304, 200, 304, 304, 200. Two equal strings that are not dates
-     give 304, and the other two date formats are ignored. *)
-
 (* Origin: not from an upstream suite; added for Dream. Dates that do not
    parse, so that If-Modified-Since is ignored: an impossible day, trailing
    characters, and a missing "GMT". Then the RFC 850 century rule: "99" is
@@ -176,5 +169,4 @@ let%expect_test _ =
     200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00 GMT x"
     200  If-Modified-Since: "Sat, 01 Jan 2000 00:00:00"
     200  If-Modified-Since: "Friday, 31-Dec-99 23:59:59 GMT"
-    200  If-Modified-Since: "Saturday, 01-Jan-00 00:00:01 GMT" |}]
-  (* Expected: 304 for the last, a date later than Last-Modified. *)
+    304  If-Modified-Since: "Saturday, 01-Jan-00 00:00:01 GMT" |}]
