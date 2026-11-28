@@ -1632,7 +1632,8 @@ val static :
 val from_filesystem : string -> string -> handler
 (** [Dream.from_filesystem local_directory path request] responds with a file
     from the file system found at [local_directory ^ "/" ^ path].
-    If such a file does not exist, it responds with [404 Not Found].
+    If such a file does not exist, or is not a regular file (a directory, a
+    FIFO or a device, for example), it responds with [404 Not Found].
 
     To serve single files like [sitemap.xml] from the file system, use routes
     like
