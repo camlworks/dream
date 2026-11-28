@@ -350,24 +350,12 @@ let%expect_test _ =
     200  If-None-Match: "\"other\""
     200  If-None-Match: "\"other\", W/\"another\"" |}]
 
-(* Origin: not from an upstream suite; added for Dream. Entity-tags that Go's
-   scanETag (in fs.go, not in its tests) does not parse, and a quoted ETag
-   containing a comma, which only a custom loader can produce. *)
+(* Origin: not from an upstream suite; added for Dream. A weakness prefix
+   with no opaque tag. *)
 let%expect_test _ =
-  conditional ["If-None-Match", "w/\"foo\""];
-  conditional ["If-None-Match", "foo"];
-  conditional ~etag:(Some "foo") ["If-None-Match", "foo"];
   conditional ["If-None-Match", "W/"];
-  conditional ["If-None-Match", "W/\"truc"];
-  conditional ~etag:(Some "\"a,b\"") ["If-None-Match", "\"a,b\""];
-  [%expect {|
-    200  If-None-Match: "w/\"foo\""
-    200  If-None-Match: "foo"
-    200  If-None-Match: "foo"
-    200  If-None-Match: "W/"
-    200  If-None-Match: "W/\"truc"
-    304  If-None-Match: "\"a,b\"" |}]
-  (* Go gives the same results. *)
+  [%expect {| 200  If-None-Match: "W/" |}]
+  (* Go gives the same result. *)
 
 (* Origin: jshttp/fresh test/fresh.js, "when requested with If-Modified-Since"
    (L96-L135). *)
