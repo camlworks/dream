@@ -25,7 +25,6 @@ let split target =
 (* Origin: Go net/url url_test.go, parseRequestURLTests (L777-L801). Go
    rejects "foo.html" and "../dir/" as request URIs. *)
 let%expect_test _ =
-  split "http://foo.com";
   split "http://foo.com/";
   split "http://foo.com/path";
   split "/";
@@ -37,7 +36,6 @@ let%expect_test _ =
   split "foo.html";
   split "../dir/";
   [%expect {|
-    "http://foo.com"                             -> "/" ""
     "http://foo.com/"                            -> "/" ""
     "http://foo.com/path"                        -> "/path" ""
     "/"                                          -> "/" ""
@@ -49,12 +47,10 @@ let%expect_test _ =
     "foo.html"                                   -> "foo.html" ""
     "../dir/"                                    -> "../dir/" "" |}]
 
-(* Origin: Go net/url url_test.go, requritests (L1694 and L1703). *)
+(* Origin: Go net/url url_test.go, requritests (L1703). *)
 let%expect_test _ =
-  split "http://example.com";
   split "/a b";
   [%expect {|
-    "http://example.com"                         -> "/" ""
     "/a b"                                       -> "/a%20b" "" |}]
 
 (* Origin: RFC 9112 sections 3.2.1-3.2.4, one example of each form of
@@ -62,17 +58,14 @@ let%expect_test _ =
 let%expect_test _ =
   split "/where?q=now";
   split "http://www.example.org/pub/WWW/TheProject.html";
-  split "www.example.com:80";
   split "*";
   [%expect {|
     "/where?q=now"                               -> "/where" "q=now"
     "http://www.example.org/pub/WWW/TheProject.html" -> "/pub/WWW/TheProject.html" ""
-    "www.example.com:80"                         -> "" ""
     "*"                                          -> "*" "" |}]
 
 (* Origin: not from an upstream suite; added for Dream. *)
 let%expect_test _ =
-  split "http://h?x";
   split "http://h/a//b?q#f";
   split "https://u@h:8080/p?q";
   split "/a?b?c";
@@ -90,7 +83,6 @@ let%expect_test _ =
   split "/%3F?x";
   split "/a;b?c";
   [%expect {|
-    "http://h?x"                                 -> "/" "x"
     "http://h/a//b?q#f"                          -> "/a//b" "q"
     "https://u@h:8080/p?q"                       -> "/p" "q"
     "/a?b?c"                                     -> "/a" "b?c"

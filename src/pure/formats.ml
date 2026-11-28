@@ -303,19 +303,6 @@ let split_origin_form string =
   in
   path, query
 
-(* "host:port": no '/', and digits after the last ':'. The host may be an IPv6
-   literal in brackets, which contains ':' itself. *)
-let is_authority_form string =
-  not (String.contains string '/') &&
-  match String.rindex_opt string ':' with
-  | None -> false
-  | Some i ->
-    let port = String.sub string (i + 1) (String.length string - i - 1) in
-    let is_digit c = c >= '0' && c <= '9' in
-    (* Not String.for_all, which needs OCaml 4.13; dream-pure supports 4.08. *)
-    port <> "" && Seq.fold_left (fun ok c -> ok && is_digit c) true
-      (String.to_seq port)
-
 let split_target string =
   (* Only origin-form targets (the common case) begin with '/', and they are the
      only form affected by the leading-"//" bug (issue #248), so handle them
@@ -326,26 +313,13 @@ let split_target string =
   if String.length string > 0 && string.[0] = '/' then
     split_origin_form string
   else
-    (* The authority-form (RFC 9112 section 3.2.3), used only with CONNECT, is
-       "host:port" and has no path. [Uri.of_string] would read "host" as a
-       scheme and "port" as the path. *)
-    if is_authority_form string then
-      "", ""
-    else
-      let uri = Uri.of_string string in
-      let query =
-        match Uri.verbatim_query uri with
-        | Some query -> query
-        | None -> ""
-      in
-      (* An absolute-form target with an empty path, such as "http://h", has
-         the path "/" (RFC 9112 section 3.2.2). *)
-      let path =
-        match Uri.path uri, Uri.host uri with
-        | "", Some _ -> "/"
-        | path, _ -> path
-      in
-      path, query
+    let uri = Uri.of_string string in
+    let query =
+      match Uri.verbatim_query uri with
+      | Some query -> query
+      | None -> ""
+    in
+    Uri.path uri, query
 
 let from_path =
   (* Not tail-recursive. *)
